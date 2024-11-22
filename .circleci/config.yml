@@ -89,12 +89,12 @@ jobs:
       - run:
           name: Build Docker Image
           command: |
-            docker build -t your-docker-repo/your-app:latest .
+            docker build -t your-docker-repo/jcraft-userman:latest .
       - run:
           name: Push Docker Image
           command: |
             echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin
-            docker push your-docker-repo/your-app:latest
+            docker push docker.io/jcraft/jcraft-userman:latest
 
   deploy-staging:
     docker:
