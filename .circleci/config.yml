@@ -1,42 +1,140 @@
-# This config was automatically generated from your source code
-# Stacks detected: deps:java:.,tool:gradle:
 version: 2.1
+
 jobs:
-  test-java:
+  build:
     docker:
       - image: cimg/openjdk:17.0
     steps:
       - checkout
       - run:
-          name: Calculate cache key
+          name: Calculate Cache Key
           command: |-
             find . -name 'pom.xml' -o -name 'gradlew*' -o -name '*.gradle*' | \
                     sort | xargs cat > /tmp/CIRCLECI_CACHE_KEY
       - restore_cache:
           key: cache-{{ checksum "/tmp/CIRCLECI_CACHE_KEY" }}
       - run:
-          command: ./gradlew check
-      - store_test_results:
-          path: build/test-results
+          name: Build the Project
+          command: ./gradlew build
       - save_cache:
           key: cache-{{ checksum "/tmp/CIRCLECI_CACHE_KEY" }}
           paths:
             - ~/.gradle/caches
+            - ~/.gradle/wrapper
+
+  unit-tests:
+    docker:
+      - image: cimg/openjdk:17.0
+    steps:
+      - checkout
+      - restore_cache:
+          key: cache-{{ checksum "/tmp/CIRCLECI_CACHE_KEY" }}
+      - run:
+          name: Run Unit Tests
+          command: ./gradlew test
+      - store_test_results:
+          path: build/test-results/test
+
+  code-quality:
+    docker:
+      - image: cimg/openjdk:17.0
+    steps:
+      - checkout
+      - restore_cache:
+          key: cache-{{ checksum "/tmp/CIRCLECI_CACHE_KEY" }}
+      - run:
+          name: Run SonarQube Analysis
+          command: ./gradlew sonarqube
+          environment:
+            SONAR_HOST_URL: "https://sonarcloud.io"
+            SONAR_LOGIN: $SONAR_AUTH_TOKEN
+
+  owasp-check:
+    docker:
+      - image: owasp/dependency-check:latest
+    steps:
+      - checkout
+      - run:
+          name: Run OWASP Dependency Check
+          command: |
+            dependency-check.sh \
+            --project "Java Project" \
+            --scan ./ \
+            --format "ALL" \
+            --out ./dependency-check-report
       - store_artifacts:
-          path: build/reports
-  deploy:
-    # This is an example deploy job, not actually used by the workflow
+          path: ./dependency-check-report
+
+  package:
+    docker:
+      - image: cimg/openjdk:17.0
+    steps:
+      - checkout
+      - restore_cache:
+          key: cache-{{ checksum "/tmp/CIRCLECI_CACHE_KEY" }}
+      - run:
+          name: Package the Application
+          command: ./gradlew bootJar
+      - store_artifacts:
+          path: build/libs/
+
+  docker-build:
+    docker:
+      - image: docker:20.10.16
+    steps:
+      - checkout
+      - restore_cache:
+          key: cache-{{ checksum "/tmp/CIRCLECI_CACHE_KEY" }}
+      - setup_remote_docker
+      - run:
+          name: Build Docker Image
+          command: |
+            docker build -t your-docker-repo/your-app:latest .
+      - run:
+          name: Push Docker Image
+          command: |
+            echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin
+            docker push your-docker-repo/your-app:latest
+
+  deploy-staging:
     docker:
       - image: cimg/base:stable
     steps:
-      # Replace this with steps to deploy to users
       - run:
-          name: deploy
-          command: '#e.g. ./deploy.sh'
+          name: Deploy to Staging
+          command: ./scripts/deploy.sh staging
+
+  deploy-production:
+    docker:
+      - image: cimg/base:stable
+    steps:
+      - run:
+          name: Deploy to Production
+          command: ./scripts/deploy.sh production
+
 workflows:
-  build-and-test:
+  build-test-deploy:
     jobs:
-      - test-java
-    # - deploy:
-    #     requires:
-    #       - test-java
+      - build
+      - unit-tests:
+          requires:
+            - build
+      - code-quality:
+          requires:
+            - build
+      - owasp-check:
+          requires:
+            - build
+      - package:
+          requires:
+            - unit-tests
+            - owasp-check
+      - docker-build:
+          requires:
+            - package
+      - deploy-staging:
+          requires:
+            - docker-build
+      - deploy-production:
+          requires:
+            - deploy-staging
