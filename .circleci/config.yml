@@ -121,7 +121,10 @@ workflows:
       - unit-tests:
           requires:
             - build
-        context: SonarCloud
+      - code-quality:
+          requires:
+            - build
+          context: SonarCloud
       - owasp-check:
           requires:
             - build
