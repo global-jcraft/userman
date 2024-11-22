@@ -7,9 +7,14 @@ plugins {
 group = 'com.huddey.core'
 version = '0.0.1-SNAPSHOT'
 
+jar {
+    archiveBaseName.set('userman')
+    archiveVersion.set("${version}")
+}
+
 java {
     toolchain {
-        languageVersion = JavaLanguageVersion.of(21)
+        languageVersion = JavaLanguageVersion.of(17)
     }
 }
 
