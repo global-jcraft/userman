@@ -49,7 +49,7 @@ jobs:
           key: cache-{{ checksum "/tmp/CIRCLECI_CACHE_KEY" }}
       - run:
           name: Run SonarQube Analysis
-          command: ./gradlew sonarqube
+          command: ./gradlew sonar
           environment:
             SONAR_HOST_URL: "https://sonarcloud.io"
             SONAR_LOGIN: $SONAR_AUTH_TOKEN
