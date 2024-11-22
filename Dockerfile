@@ -1,14 +1,22 @@
 # Use an official OpenJDK runtime as a parent image
-FROM eclipse-temurin:17-jdk-alpine
+FROM openjdk:17.0
 
-# Set the working directory
+# Set the working directory inside the container
 WORKDIR /jcraft-userman
 
-# Copy the JAR file into the container
-COPY build/libs/your-app.jar jcraft-userman.jar
+# Define a build argument for the version
+ARG VERSION=0.0.1-SNAPSHOT
 
-# Expose the port your app runs on (optional, replace 8080 with your app's port)
+# Copy the Spring Boot application JAR file into the container
+# Ensure the jar file is correctly named during the build process (e.g., jcraft-userman.jar)
+COPY build/libs/userman-${VERSION}.jar jcraft-userman.jar
+
+# Expose the port your application runs on (default is 8080 for Spring Boot)
 EXPOSE 8080
 
-# Command to run the JAR file
+# Set environment variables (optional)
+# Uncomment and set if needed, e.g., active Spring profiles
+# ENV SPRING_PROFILES_ACTIVE=prod
+
+# Command to run the application
 CMD ["java", "-jar", "jcraft-userman.jar"]

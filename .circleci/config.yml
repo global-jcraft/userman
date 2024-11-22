@@ -89,7 +89,7 @@ jobs:
       - run:
           name: Build Docker Image
           command: |
-            docker build -t your-docker-repo/jcraft-userman:latest .
+            docker build -t docker.io/jcraft/jcraft-userman:latest .
       - run:
           name: Push Docker Image
           command: |
