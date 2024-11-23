@@ -41,19 +41,15 @@ jobs:
     steps:
       - checkout
       - run:
-          name: Restore Cache
+          name: Calculate Cache Key
           command: |-
             find . -name 'pom.xml' -o -name 'gradlew*' -o -name '*.gradle*' | \
                     sort | xargs cat > /tmp/CIRCLECI_CACHE_KEY
       - restore_cache:
           key: cache-{{ checksum "/tmp/CIRCLECI_CACHE_KEY" }}
       - run:
-          name: Debug Context Variables
-          command: env | grep SONAR
-      - run:
           name: Run SonarQube Analysis
-          command: ./gradlew sonarqube
-
+          command: gradle build sonarqube
 
   package:
     docker:
