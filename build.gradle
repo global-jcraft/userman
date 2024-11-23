@@ -51,6 +51,7 @@ sonar {
         property "sonar.projectKey", "global-jcraft_userman"
         property "sonar.organization", "global-jcraft"
         property "sonar.host.url", "https://sonarcloud.io"
+        property "sonar.java.binaries", "${project.layout.buildDirectory.dir('classes/java/main')}"
     }
 }
 
