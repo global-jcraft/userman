@@ -49,7 +49,10 @@ jobs:
           key: cache-{{ checksum "/tmp/CIRCLECI_CACHE_KEY" }}
       - run:
           name: Run SonarQube Analysis
-          command: gradle build sonarqube
+          command: ./gradlew sonar
+          environment:
+            SONAR_HOST_URL: "https://sonarcloud.io"
+            SONAR_LOGIN: $SONAR_AUTH_TOKEN
 
   owasp-check:
     docker:
@@ -126,7 +129,6 @@ workflows:
       - code-quality:
           requires:
             - build
-          context: SonarCloud
       - owasp-check:
           requires:
             - build
