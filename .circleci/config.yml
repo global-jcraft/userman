@@ -53,24 +53,30 @@ jobs:
 
   owasp-check:
     docker:
-      - image: owasp/dependency-check:latest
+      - image: docker:20.10.16  # Docker image to run other Docker containers
     steps:
+      - setup_remote_docker
       - checkout
       - run:
           name: Create Output Directory
           command: mkdir -p ./dependency-check-report
       - run:
-          name: Run OWASP Dependency Check
+          name: Run OWASP Dependency Check with Docker
           command: |
-            /usr/share/dependency-check/bin/dependency-check.sh \
+            docker run --rm \
+            -v $(pwd):/src \
+            -v $(pwd)/dependency-check-report:/report \
+            -e NVD_API_KEY=$NVD_API_KEY \
+            owasp/dependency-check:7.4.1 \
             --project "userman" \
-            --scan ./ \
+            --scan /src \
             --format "ALL" \
-            --out ./dependency-check-report \
-            --nvdApiKey $NVD_API_KEY
+            --out /report \
+            --exclude /src/node_modules --exclude /src/build
       - store_artifacts:
           path: ./dependency-check-report
           destination: owasp-reports
+
 
   package:
     docker:
