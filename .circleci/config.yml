@@ -57,11 +57,6 @@ jobs:
     steps:
       - checkout
       - run:
-          name: Authenticate Snyk
-          command: snyk auth $SNYK_TOKEN
-          environment:
-            SNYK_TOKEN: $SNYK_TOKEN
-      - run:
           name: Run Snyk Vulnerability Check
           command: snyk test --all-projects
       - run:
@@ -136,6 +131,7 @@ workflows:
       - docker-build:
           requires:
             - package
+            - snyk-check
       - deploy-staging:
           requires:
             - docker-build
