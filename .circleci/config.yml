@@ -48,10 +48,12 @@ jobs:
       - restore_cache:
           key: cache-{{ checksum "/tmp/CIRCLECI_CACHE_KEY" }}
       - run:
+          name: Debug Context Variables
+          command: env | grep SONAR
+      - run:
           name: Run SonarQube Analysis
           command: ./gradlew sonarqube
-          environment:
-            SONAR_TOKEN: $SONAR_TOKEN
+
 
   package:
     docker:
