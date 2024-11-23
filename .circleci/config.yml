@@ -1,5 +1,8 @@
 version: 2.1
 
+orbs:
+  dependency-check: circleci/dependency-check@1.0.0
+
 jobs:
   build:
     docker:
@@ -54,18 +57,15 @@ jobs:
   owasp-check:
     docker:
       - image: owasp/dependency-check:latest
+    executor: dependency-check/default
     steps:
       - checkout
-      - run:
-          name: Run OWASP Dependency Check
-          command: |
-            dependency-check.sh \
-            --project "Java Project" \
-            --scan ./ \
-            --format "ALL" \
-            --out ./dependency-check-report
-      - store_artifacts:
-          path: ./dependency-check-report
+      - dependency-check/run:
+          project: "userman"
+          scan: "./"
+          format: "ALL"
+          outputDirectory: "./dependency-check-report"
+
 
   package:
     docker:
