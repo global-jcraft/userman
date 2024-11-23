@@ -38,14 +38,21 @@ jobs:
       - run:
           name: Package the Application
           command: ./gradlew bootJar
-      - store_artifacts:
-          path: build/libs/
+      - persist_to_workspace:
+          root: build/libs/
+          paths:
+            - '*.jar'
 
   docker-build:
     docker:
       - image: docker:latest
     steps:
       - checkout
+      - attach_workspace:
+          at: /workspace
+      - run:
+          name: Copy JAR from Workspace
+          command: cp /workspace/*.jar .
       - setup_remote_docker:
           docker_layer_caching: true
       - run:
