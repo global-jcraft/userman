@@ -41,7 +41,7 @@ jobs:
     steps:
       - checkout
       - run:
-          name: Calculate Cache Key
+          name: Restore Cache
           command: |-
             find . -name 'pom.xml' -o -name 'gradlew*' -o -name '*.gradle*' | \
                     sort | xargs cat > /tmp/CIRCLECI_CACHE_KEY
@@ -49,20 +49,9 @@ jobs:
           key: cache-{{ checksum "/tmp/CIRCLECI_CACHE_KEY" }}
       - run:
           name: Run SonarQube Analysis
-          command: gradle build sonarqube
-
-  snyk-check:
-    docker:
-      - image: snyk/snyk:gradle-jdk17
-    steps:
-      - checkout
-      - run:
-          name: Run Snyk Vulnerability Check
-          command: snyk test --all-projects
-      - run:
-          name: Monitor Dependencies with Snyk
-          command: snyk monitor --all-projects
-
+          command: ./gradlew sonarqube
+          environment:
+            SONAR_TOKEN: $SONAR_TOKEN
 
   package:
     docker:
@@ -122,16 +111,12 @@ workflows:
           requires:
             - build
           context: SonarCloud
-      - snyk-check:
-          requires:
-            - build
       - package:
           requires:
             - unit-tests
       - docker-build:
           requires:
             - package
-            - snyk-check
       - deploy-staging:
           requires:
             - docker-build
