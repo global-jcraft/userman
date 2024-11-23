@@ -57,16 +57,19 @@ jobs:
     steps:
       - checkout
       - run:
+          name: Create Output Directory
+          command: mkdir -p ./dependency-check-report
+      - run:
           name: Run OWASP Dependency Check
           command: |
-            echo "Listing files in the /usr/share/dependency-check directory"
-            ls -la /usr/share/dependency-check
-            echo "Checking if dependency-check.sh is executable"
-            if [ -x "$(command -v dependency-check.sh)" ]; then
-              echo "dependency-check.sh found in PATH"
-            else
-              echo "dependency-check.sh not found in PATH"
-            fi
+            /usr/share/dependency-check/bin/dependency-check.sh \
+            --project "userman" \
+            --scan ./ \
+            --format "ALL" \
+            --out ./dependency-check-report
+      - store_artifacts:
+          path: ./dependency-check-report
+          destination: owasp-reports
 
   package:
     docker:
