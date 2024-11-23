@@ -7,28 +7,14 @@ jobs:
     steps:
       - checkout
       - run:
-          name: Calculate Cache Key
-          command: |-
-            find . -name 'pom.xml' -o -name 'gradlew*' -o -name '*.gradle*' | \
-                    sort | xargs cat > /tmp/CIRCLECI_CACHE_KEY
-      - restore_cache:
-          key: cache-{{ checksum "/tmp/CIRCLECI_CACHE_KEY" }}
-      - run:
           name: Build the Project
           command: ./gradlew build
-      - save_cache:
-          key: cache-{{ checksum "/tmp/CIRCLECI_CACHE_KEY" }}
-          paths:
-            - ~/.gradle/caches
-            - ~/.gradle/wrapper
 
   unit-tests:
     docker:
       - image: cimg/openjdk:17.0
     steps:
       - checkout
-      - restore_cache:
-          key: cache-{{ checksum "/tmp/CIRCLECI_CACHE_KEY" }}
       - run:
           name: Run Unit Tests
           command: ./gradlew test
@@ -41,13 +27,6 @@ jobs:
     steps:
       - checkout
       - run:
-          name: Calculate Cache Key
-          command: |-
-            find . -name 'pom.xml' -o -name 'gradlew*' -o -name '*.gradle*' | \
-                    sort | xargs cat > /tmp/CIRCLECI_CACHE_KEY
-      - restore_cache:
-          key: cache-{{ checksum "/tmp/CIRCLECI_CACHE_KEY" }}
-      - run:
           name: Run SonarQube Analysis
           command: gradle build sonarqube
 
@@ -56,8 +35,6 @@ jobs:
       - image: cimg/openjdk:17.0
     steps:
       - checkout
-      - restore_cache:
-          key: cache-{{ checksum "/tmp/CIRCLECI_CACHE_KEY" }}
       - run:
           name: Package the Application
           command: ./gradlew bootJar
@@ -69,18 +46,17 @@ jobs:
       - image: docker:20.10.16
     steps:
       - checkout
-      - restore_cache:
-          key: cache-{{ checksum "/tmp/CIRCLECI_CACHE_KEY" }}
-      - setup_remote_docker
+      - setup_remote_docker:
+          version: 20.10.16
+          docker_layer_caching: true
       - run:
           name: Build Docker Image
-          command: |
-            docker build -t docker.io/jcraft/jcraft-userman:latest .
+          command: docker build -t docker.io/${DOCKER_USERNAME}/jcraft-userman:latest .
       - run:
           name: Push Docker Image
           command: |
             echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin
-            docker push docker.io/jcraft/jcraft-userman:latest
+            docker push docker.io/${DOCKER_USERNAME}/jcraft-userman:latest
 
   deploy-staging:
     docker:
