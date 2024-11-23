@@ -28,7 +28,7 @@ jobs:
       - checkout
       - run:
           name: Run SonarQube Analysis
-          command: ./gradlew sonarqube
+          command: gradle build sonarqube
 
   package:
     docker:
