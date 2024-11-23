@@ -53,7 +53,7 @@ jobs:
 
   snyk-check:
     docker:
-      - image: snyk/snyk-cli:stable
+      - image: snyk/snyk:gradle-jdk17
     steps:
       - checkout
       - run:
