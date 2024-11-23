@@ -71,16 +71,18 @@ jobs:
       - checkout
       - restore_cache:
           key: cache-{{ checksum "/tmp/CIRCLECI_CACHE_KEY" }}
-      - setup_remote_docker
+      - setup_remote_docker:
+          version: 20.10.16
+          docker_layer_caching: true
       - run:
           name: Build Docker Image
-          command: |
-            docker build -t docker.io/jcraft/jcraft-userman:latest .
+          command: docker build -t docker.io/${DOCKER_USERNAME}/jcraft-userman:latest .
       - run:
           name: Push Docker Image
           command: |
             echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin
-            docker push docker.io/jcraft/jcraft-userman:latest
+            docker push docker.io/${DOCKER_USERNAME}/jcraft-userman:latest
+  
 
   deploy-staging:
     docker:
