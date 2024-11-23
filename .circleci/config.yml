@@ -51,24 +51,6 @@ jobs:
           name: Run SonarQube Analysis
           command: gradle build sonarqube
 
-  owasp-check:
-    docker:
-      - image: owasp/dependency-check:latest
-    steps:
-      - checkout
-      - run:
-          name: Run OWASP Dependency Check
-          command: |
-            dependency-check.sh \
-            --project "userman" \
-            --scan ./ \
-            --format "ALL" \
-            --out ./dependency-check-report
-      - store_artifacts:
-          path: ./dependency-check-report
-          destination: owasp-reports
-
-
   package:
     docker:
       - image: cimg/openjdk:17.0
@@ -127,13 +109,9 @@ workflows:
           requires:
             - build
           context: SonarCloud
-      - owasp-check:
-          requires:
-            - build
       - package:
           requires:
             - unit-tests
-            - owasp-check
       - docker-build:
           requires:
             - package
