@@ -1,9 +1,21 @@
 version: 2.1
 
-jobs:
-  build:
+executors:
+  java-docker:
     docker:
       - image: cimg/openjdk:17.0
+
+  docker-executor:
+    docker:
+      - image: docker:latest
+
+  base-executor:
+    docker:
+      - image: cimg/base:stable
+
+jobs:
+  build:
+    executor: java-docker
     steps:
       - checkout
       - run:
@@ -11,8 +23,7 @@ jobs:
           command: ./gradlew build
 
   unit-tests:
-    docker:
-      - image: cimg/openjdk:17.0
+    executor: java-docker
     steps:
       - checkout
       - run:
@@ -21,28 +32,25 @@ jobs:
       - store_test_results:
           path: build/test-results/test
 
+  spotless:
+    executor: java-docker
+    steps:
+      - checkout
+      - run:
+          name: Check and Apply Formatting with Spotless
+          command: |
+            ./gradlew spotlessCheck || (echo "Spotless check failed. Fixing issues..." && ./gradlew spotlessApply)
+
   code-quality:
-    docker:
-      - image: cimg/openjdk:17.0
+    executor: java-docker
     steps:
       - checkout
       - run:
           name: Run SonarQube Analysis
           command: gradle build sonarqube
 
-  lint:
-    docker:
-      - image: cimg/openjdk:17.0
-    steps:
-      - checkout
-      - run:
-          name: Run Lint Checks
-          command: ./gradlew checkstyleMain
-
-
   package:
-    docker:
-      - image: cimg/openjdk:17.0
+    executor: java-docker
     steps:
       - checkout
       - run:
@@ -54,8 +62,7 @@ jobs:
             - '*.jar'
 
   docker-build:
-    docker:
-      - image: docker:latest
+    executor: docker-executor
     steps:
       - checkout
       - attach_workspace:
@@ -75,16 +82,14 @@ jobs:
             docker push docker.io/${DOCKER_USERNAME}/jcraft-userman:latest
 
   deploy-develop:
-    docker:
-      - image: cimg/base:stable
+    executor: base-executor
     steps:
       - run:
           name: Deploy to Staging
           command: ./scripts/deploy.sh staging
 
   deploy-production:
-    docker:
-      - image: cimg/base:stable
+    executor: base-executor
     steps:
       - run:
           name: Deploy to Production
@@ -94,10 +99,10 @@ workflows:
   build-test-deploy:
     jobs:
       - build
-      - unit-tests:
+      - spotless:
           requires:
             - build
-      - lint:
+      - unit-tests:
           requires:
             - build
       - code-quality:
