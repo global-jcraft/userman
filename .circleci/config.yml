@@ -97,9 +97,21 @@ workflows:
       - docker-build:
           requires:
             - package
+          filters:
+            branches:
+              only:
+                - develop
       - deploy-staging:
           requires:
             - docker-build
+          filters:
+            branches:
+              only:
+                - develop
       - deploy-production:
           requires:
             - deploy-staging
+          filters:
+            branches:
+              only:
+                - develop
