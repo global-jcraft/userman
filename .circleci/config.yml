@@ -30,6 +30,16 @@ jobs:
           name: Run SonarQube Analysis
           command: gradle build sonarqube
 
+  lint:
+    docker:
+      - image: cimg/openjdk:17.0
+    steps:
+      - checkout
+      - run:
+          name: Run Lint Checks
+          command: ./gradlew checkstyleMain
+
+
   package:
     docker:
       - image: cimg/openjdk:17.0
@@ -38,16 +48,22 @@ jobs:
       - run:
           name: Package the Application
           command: ./gradlew bootJar
-      - store_artifacts:
-          path: build/libs/
+      - persist_to_workspace:
+          root: build/libs/
+          paths:
+            - '*.jar'
 
   docker-build:
     docker:
-      - image: docker:20.10.16
+      - image: docker:latest
     steps:
       - checkout
+      - attach_workspace:
+          at: /workspace
+      - run:
+          name: Copy JAR from Workspace
+          command: cp /workspace/*.jar .
       - setup_remote_docker:
-          version: 20.10.16
           docker_layer_caching: true
       - run:
           name: Build Docker Image
@@ -58,7 +74,7 @@ jobs:
             echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin
             docker push docker.io/${DOCKER_USERNAME}/jcraft-userman:latest
 
-  deploy-staging:
+  deploy-develop:
     docker:
       - image: cimg/base:stable
     steps:
@@ -81,6 +97,9 @@ workflows:
       - unit-tests:
           requires:
             - build
+      - lint:
+          requires:
+            - build
       - code-quality:
           requires:
             - build
@@ -91,9 +110,21 @@ workflows:
       - docker-build:
           requires:
             - package
-      - deploy-staging:
+          filters:
+            branches:
+              only:
+                - develop
+      - deploy-develop:
           requires:
             - docker-build
+          filters:
+            branches:
+              only:
+                - develop
       - deploy-production:
           requires:
-            - deploy-staging
+            - deploy-develop
+          filters:
+            branches:
+              only:
+                - master
