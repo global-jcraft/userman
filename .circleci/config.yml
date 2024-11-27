@@ -30,6 +30,16 @@ jobs:
           name: Run SonarQube Analysis
           command: gradle build sonarqube
 
+  lint:
+    docker:
+      - image: cimg/openjdk:17.0
+    steps:
+      - checkout
+      - run:
+          name: Run Lint Checks
+          command: ./gradlew checkstyleMain
+
+
   package:
     docker:
       - image: cimg/openjdk:17.0
@@ -85,6 +95,9 @@ workflows:
     jobs:
       - build
       - unit-tests:
+          requires:
+            - build
+      - lint:
           requires:
             - build
       - code-quality:
