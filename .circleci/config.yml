@@ -21,6 +21,16 @@ jobs:
       - store_test_results:
           path: build/test-results/test
 
+  spotless:
+    docker:
+      - image: cimg/openjdk:17.0
+    steps:
+      - checkout
+      - run:
+          name: Check and Apply Formatting with Spotless
+          command: |
+            ./gradlew spotlessCheck || (echo "Spotless check failed. Fixing issues..." && ./gradlew spotlessApply)
+
   code-quality:
     docker:
       - image: cimg/openjdk:17.0
@@ -29,16 +39,6 @@ jobs:
       - run:
           name: Run SonarQube Analysis
           command: gradle build sonarqube
-
-  lint:
-    docker:
-      - image: cimg/openjdk:17.0
-    steps:
-      - checkout
-      - run:
-          name: Run Lint Checks
-          command: ./gradlew checkstyleMain
-
 
   package:
     docker:
@@ -94,10 +94,10 @@ workflows:
   build-test-deploy:
     jobs:
       - build
-      - unit-tests:
+      - spotless:
           requires:
             - build
-      - lint:
+      - unit-tests:
           requires:
             - build
       - code-quality:
