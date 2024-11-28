@@ -9,6 +9,9 @@ executors:
     docker:
       - image: cimg/openjdk:17.0 # Primary container with Java
       - image: docker:latest     # Additional service container for Docker CLI
+        auth:
+          username: $DOCKER_USERNAME
+          password: $DOCKER_PASSWORD
     working_directory: ~/project
 
   base-executor:
@@ -67,26 +70,23 @@ jobs:
     executor: docker-executor
     steps:
       - checkout
+      - setup_remote_docker:
+          docker_layer_caching: true
       - run:
           name: Prepare Version
           command: |
             VERSION=$(./gradlew properties -q | grep "^version:" | awk '{print $2}')
             echo "VERSION=$VERSION" >> version.env
-      - setup_remote_docker:
-          docker_layer_caching: true
       - run:
           name: Build Docker Image
           command: |
-            source version.env
-            docker build --build-arg VERSION=$VERSION -t docker.io/${DOCKER_USERNAME}/jcraft-userman:$VERSION .
+            docker build --build-arg VERSION=$VERSION -t ${DOCKER_USERNAME}/jcraft-userman:$VERSION .
       - run:
           name: Push Docker Image
           command: |
-            source version.env
             echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin
-            docker push docker.io/${DOCKER_USERNAME}/jcraft-userman:$VERSION
+            docker push ${DOCKER_USERNAME}/jcraft-userman:$VERSION
   
-
   deploy-develop:
     executor: base-executor
     steps:
