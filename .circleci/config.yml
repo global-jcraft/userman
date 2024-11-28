@@ -7,7 +7,9 @@ executors:
 
   docker-executor:
     docker:
-      - image: docker:latest
+      - image: cimg/openjdk:17.0 # Primary container with Java
+      - image: docker:latest     # Additional service container for Docker CLI
+    #working_directory: ~/project
 
   base-executor:
     docker:
