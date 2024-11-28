@@ -18,4 +18,4 @@ EXPOSE 8080
 # ENV SPRING_PROFILES_ACTIVE=prod
 
 # Command to run the application
-CMD ["java", "-jar", "jcraft-userman.jar"]
+CMD ["java", "-jar", "userman.jar"]
