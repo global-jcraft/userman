@@ -76,10 +76,13 @@ jobs:
           name: Prepare Version
           command: |
             VERSION=$(./gradlew properties -q | grep "^version:" | awk '{print $2}')
+            VERSION=${VERSION:-1.0.0}  # Use default version 1.0.0 if empty
+            echo "Using version: $VERSION"
             echo "VERSION=$VERSION" >> version.env
       - run:
           name: Build Docker Image
           command: |
+            source version.env
             docker build --build-arg VERSION=$VERSION -t ${DOCKER_USERNAME}/jcraft-userman:$VERSION .
       - run:
           name: Push Docker Image
