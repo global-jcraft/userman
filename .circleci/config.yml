@@ -67,18 +67,11 @@ jobs:
     executor: docker-executor
     steps:
       - checkout
-      - attach_workspace:
-          at: /workspace
       - run:
           name: Prepare Version
           command: |
             VERSION=$(./gradlew properties -q | grep "^version:" | awk '{print $2}')
             echo "VERSION=$VERSION" >> version.env
-      - run:
-          name: Copy JAR for Docker Build
-          command: |
-            source version.env
-            cp /workspace/build/libs/userman-${VERSION}.jar userman.jar
       - setup_remote_docker:
           docker_layer_caching: true
       - run:
