@@ -57,7 +57,7 @@ jobs:
       - checkout
       - run:
           name: Package the Application
-          command: ./gradlew bootJar
+          command: ./gradlew clean bootJar
       - persist_to_workspace:
           root: build/libs/
           paths:

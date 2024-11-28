@@ -6,6 +6,7 @@ WORKDIR /jcraft-userman
 
 # Define a build argument for the version
 ARG VERSION
+RUN echo "VERSION is ${VERSION}"
 # Copy the Spring Boot application JAR file into the container
 # Ensure the jar file is correctly named during the build process (e.g., jcraft-userman.jar)
 COPY build/libs/userman-${VERSION}.jar userman.jar
