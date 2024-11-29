@@ -64,7 +64,7 @@ jobs:
       - checkout
       - run:
           name: Authenticate Snyk
-          command: snyk auth $SNYK_AUTH_TOKEN
+          command: snyk auth $SNYK_TOKEN
       - run:
           name: Test for Vulnerabilities in Dependencies
           command: snyk test --all-projects --severity-threshold=medium
