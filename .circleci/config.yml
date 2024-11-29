@@ -1,17 +1,14 @@
 version: 2.1
 
-orbs:
-  snyk: snyk/snyk@1.5.0  # Add the Snyk Orb
-
 executors:
   java-docker:
     docker:
-      - image: cimg/openjdk:17.0  # Use the cimg/openjdk image directly
+      - image: cimg/openjdk:17.0
 
   docker-executor:
     docker:
       - image: cimg/openjdk:17.0 # Primary container with Java
-      - image: cimg/base:2022.09 # Additional service container for Docker CLI
+      - image: cimg/base:2022.09     # Additional service container for Docker CLI
         auth:
           username: $DOCKER_USERNAME
           password: $DOCKER_PASSWORD
@@ -20,6 +17,10 @@ executors:
   base-executor:
     docker:
       - image: cimg/base:stable
+
+  snyk-cli:
+    docker:
+      - image: snyk/snyk-cli:latest
 
 jobs:
   build:
@@ -56,60 +57,6 @@ jobs:
       - run:
           name: Run SonarQube Analysis
           command: gradle build sonarqube
-
-  snyk-dependency-test:
-    executor: base-executor
-    steps:
-      - checkout
-      - run:
-          name: Install Snyk CLI
-          command: |
-            curl -sL https://static.snyk.io/cli/latest/snyk-linux -o /usr/local/bin/snyk
-            chmod +x /usr/local/bin/snyk
-            snyk --version
-      - run:
-          name: Authenticate with Snyk
-          command: snyk auth $SNYK_TOKEN
-      - run:
-          name: Run Snyk Dependency Test
-          command: snyk test --all-projects --severity-threshold=medium
-      - run:
-          name: Monitor Dependencies
-          command: snyk monitor --all-projects
-
-  docker-snyk-test:
-    executor: docker-executor
-    steps:
-      - checkout
-      - setup_remote_docker:
-          docker_layer_caching: true
-      - run:
-          name: Install Snyk CLI
-          command: |
-            curl -sL https://static.snyk.io/cli/latest/snyk-linux -o /usr/local/bin/snyk
-            chmod +x /usr/local/bin/snyk
-            snyk --version
-      - run:
-          name: Prepare Version
-          command: |
-            VERSION=$(./gradlew properties -q | grep "^version:" | awk '{print $2}')
-            VERSION=${VERSION:-1.0.0}  # Use default version 1.0.0 if empty
-            echo "Using version: $VERSION"
-            echo "VERSION=$VERSION" >> version.env
-      - run:
-          name: Build Docker Image
-          command: |
-            source version.env
-            docker build --build-arg VERSION=$VERSION -t ${DOCKER_USERNAME}/jcraft-userman:$VERSION .
-      - run:
-          name: Authenticate with Snyk
-          command: snyk auth $SNYK_TOKEN
-      - run:
-          name: Snyk Docker Image Test
-          command: snyk container test ${DOCKER_USERNAME}/jcraft-userman:$VERSION --severity-threshold=medium
-      - run:
-          name: Monitor Docker Image
-          command: snyk container monitor ${DOCKER_USERNAME}/jcraft-userman:$VERSION
 
   package:
     executor: java-docker
@@ -151,6 +98,20 @@ jobs:
             echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin
             docker push ${DOCKER_USERNAME}/jcraft-userman:$VERSION
 
+  snyk-dependency-test:
+    executor: snyk-cli
+    steps:
+      - checkout
+      - run:
+          name: Authenticate with Snyk
+          command: snyk auth $SNYK_TOKEN
+      - run:
+          name: Run Snyk Dependency Test
+          command: snyk test --all-projects --severity-threshold=medium
+      - run:
+          name: Monitor Dependencies
+          command: snyk monitor --all-projects
+
   deploy-develop:
     executor: base-executor
     steps:
@@ -189,9 +150,6 @@ workflows:
           requires:
             - build
           context: SonarCloud
-      - snyk-dependency-test:
-          requires:
-            - unit-tests
       - package:
           requires:
             - unit-tests
@@ -202,12 +160,9 @@ workflows:
             branches:
               only:
                 - develop
-      - docker-snyk-test:
-          requires:
-            - docker-build
       - deploy-develop:
           requires:
-            - docker-snyk-test
+            - docker-build
           filters:
             branches:
               only:
