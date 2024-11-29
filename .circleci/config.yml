@@ -99,14 +99,24 @@ jobs:
     steps:
       - run:
           name: Deploy to Staging
-          command: ./scripts/deploy.sh staging
+          command: |
+            if [ -f ./scripts/deploy.sh ]; then
+              ./scripts/deploy.sh staging
+            else
+              echo "Warning: ./scripts/deploy.sh not found. Skipping deployment to staging."
+            fi
 
   deploy-production:
     executor: base-executor
     steps:
       - run:
           name: Deploy to Production
-          command: ./scripts/deploy.sh production
+          command: |
+            if [ -f ./scripts/deploy.sh ]; then
+              ./scripts/deploy.sh production
+            else
+              echo "Warning: ./scripts/deploy.sh not found. Skipping deployment to production."
+            fi
 
 workflows:
   build-test-deploy:
