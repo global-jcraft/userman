@@ -89,6 +89,8 @@ jobs:
       - run:
           name: Push Docker Image
           command: |
+            source version.env
+            echo "Pushing image: ${DOCKER_USERNAME}/jcraft-userman:$VERSION"
             echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin
             docker push ${DOCKER_USERNAME}/jcraft-userman:$VERSION
 
