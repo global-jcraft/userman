@@ -18,9 +18,10 @@ executors:
     docker:
       - image: cimg/base:stable
 
-  snyk-cli:
+  snyk-cli-executor:
     docker:
       - image: snyk/snyk-cli:docker
+      - image: cimg/openjdk:17.0
 
 jobs:
   build:
@@ -99,7 +100,7 @@ jobs:
             docker push ${DOCKER_USERNAME}/jcraft-userman:$VERSION
 
   snyk-dependency-test:
-    executor: snyk-cli
+    executor: snyk-cli-executor
     steps:
       - checkout
       - run:
