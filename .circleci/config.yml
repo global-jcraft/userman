@@ -160,6 +160,9 @@ workflows:
             branches:
               only:
                 - develop
+      - snyk-dependency-test:
+          requires:
+            - package
       - deploy-develop:
           requires:
             - docker-build
