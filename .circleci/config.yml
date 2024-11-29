@@ -20,7 +20,7 @@ executors:
 
   snyk-cli:
     docker:
-      - image: snyk/snyk-cli:latest
+      - image: snyk/snyk-cli:docker
 
 jobs:
   build:
