@@ -1,9 +1,12 @@
 version: 2.1
 
+orbs:
+  snyk: snyk/snyk@1.5.0  # Add the Snyk Orb
+
 executors:
   java-docker:
     docker:
-      - image: cimg/openjdk:17.0
+      - image: cimg/openjdk:17.0  # Use the cimg/openjdk image directly
 
   docker-executor:
     docker:
@@ -13,10 +16,6 @@ executors:
           username: $DOCKER_USERNAME
           password: $DOCKER_PASSWORD
     working_directory: ~/project
-
-  snyk-executor:
-    docker:
-      - image: snyk/snyk-cli:latest
 
   base-executor:
     docker:
@@ -58,30 +57,47 @@ jobs:
           name: Run SonarQube Analysis
           command: gradle build sonarqube
 
-  snyk-scan:
-    executor: snyk-executor
+  snyk-dependency-test:
+    executor: base-executor
     steps:
       - checkout
       - run:
-          name: Authenticate Snyk
-          command: snyk auth $SNYK_TOKEN
+          name: Snyk Authenticate
+          command: snyk auth $SNYK_AUTH_TOKEN
       - run:
-          name: Test for Vulnerabilities in Dependencies
+          name: Snyk Dependency Test
           command: snyk test --all-projects --severity-threshold=medium
       - run:
-          name: Monitor Dependencies in Snyk Dashboard
+          name: Snyk Monitor
           command: snyk monitor --all-projects
+
+  docker-snyk-test:
+    executor: docker-executor
+    steps:
+      - checkout
+      - setup_remote_docker:
+          docker_layer_caching: true
       - run:
-          name: Test for Vulnerabilities in Docker Image
+          name: Prepare Version
+          command: |
+            VERSION=$(./gradlew properties -q | grep "^version:" | awk '{print $2}')
+            VERSION=${VERSION:-1.0.0}  # Use default version 1.0.0 if empty
+            echo "Using version: $VERSION"
+            echo "VERSION=$VERSION" >> version.env
+      - run:
+          name: Build Docker Image
           command: |
             source version.env
             docker build --build-arg VERSION=$VERSION -t ${DOCKER_USERNAME}/jcraft-userman:$VERSION .
-            snyk container test ${DOCKER_USERNAME}/jcraft-userman:$VERSION --severity-threshold=medium
       - run:
-          name: Monitor Docker Image in Snyk Dashboard
-          command: |
-            source version.env
-            snyk container monitor ${DOCKER_USERNAME}/jcraft-userman:$VERSION
+          name: Snyk Authenticate
+          command: snyk auth $SNYK_AUTH_TOKEN
+      - run:
+          name: Snyk Docker Image Test
+          command: snyk container test ${DOCKER_USERNAME}/jcraft-userman:$VERSION --severity-threshold=medium
+      - run:
+          name: Snyk Monitor Docker Image
+          command: snyk container monitor ${DOCKER_USERNAME}/jcraft-userman:$VERSION
 
   package:
     executor: java-docker
@@ -161,7 +177,7 @@ workflows:
           requires:
             - build
           context: SonarCloud
-      - snyk-scan:
+      - snyk-dependency-test:
           requires:
             - unit-tests
       - package:
@@ -174,9 +190,12 @@ workflows:
             branches:
               only:
                 - develop
-      - deploy-develop:
+      - docker-snyk-test:
           requires:
             - docker-build
+      - deploy-develop:
+          requires:
+            - docker-snyk-test
           filters:
             branches:
               only:
