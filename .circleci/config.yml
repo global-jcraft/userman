@@ -8,11 +8,15 @@ executors:
   docker-executor:
     docker:
       - image: cimg/openjdk:17.0 # Primary container with Java
-      - image: cimg/base:2022.09     # Additional service container for Docker CLI
+      - image: cimg/base:2022.09 # Additional service container for Docker CLI
         auth:
           username: $DOCKER_USERNAME
           password: $DOCKER_PASSWORD
     working_directory: ~/project
+
+  snyk-executor:
+    docker:
+      - image: snyk/snyk-cli:latest
 
   base-executor:
     docker:
@@ -53,6 +57,31 @@ jobs:
       - run:
           name: Run SonarQube Analysis
           command: gradle build sonarqube
+
+  snyk-scan:
+    executor: snyk-executor
+    steps:
+      - checkout
+      - run:
+          name: Authenticate Snyk
+          command: snyk auth $SNYK_AUTH_TOKEN
+      - run:
+          name: Test for Vulnerabilities in Dependencies
+          command: snyk test --all-projects --severity-threshold=medium
+      - run:
+          name: Monitor Dependencies in Snyk Dashboard
+          command: snyk monitor --all-projects
+      - run:
+          name: Test for Vulnerabilities in Docker Image
+          command: |
+            source version.env
+            docker build --build-arg VERSION=$VERSION -t ${DOCKER_USERNAME}/jcraft-userman:$VERSION .
+            snyk container test ${DOCKER_USERNAME}/jcraft-userman:$VERSION --severity-threshold=medium
+      - run:
+          name: Monitor Docker Image in Snyk Dashboard
+          command: |
+            source version.env
+            snyk container monitor ${DOCKER_USERNAME}/jcraft-userman:$VERSION
 
   package:
     executor: java-docker
@@ -132,6 +161,9 @@ workflows:
           requires:
             - build
           context: SonarCloud
+      - snyk-scan:
+          requires:
+            - unit-tests
       - package:
           requires:
             - unit-tests
