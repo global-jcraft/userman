@@ -62,13 +62,19 @@ jobs:
     steps:
       - checkout
       - run:
-          name: Snyk Authenticate
+          name: Install Snyk CLI
+          command: |
+            curl -sL https://static.snyk.io/cli/latest/snyk-linux -o /usr/local/bin/snyk
+            chmod +x /usr/local/bin/snyk
+            snyk --version
+      - run:
+          name: Authenticate with Snyk
           command: snyk auth $SNYK_TOKEN
       - run:
-          name: Snyk Dependency Test
+          name: Run Snyk Dependency Test
           command: snyk test --all-projects --severity-threshold=medium
       - run:
-          name: Snyk Monitor
+          name: Monitor Dependencies
           command: snyk monitor --all-projects
 
   docker-snyk-test:
@@ -77,6 +83,12 @@ jobs:
       - checkout
       - setup_remote_docker:
           docker_layer_caching: true
+      - run:
+          name: Install Snyk CLI
+          command: |
+            curl -sL https://static.snyk.io/cli/latest/snyk-linux -o /usr/local/bin/snyk
+            chmod +x /usr/local/bin/snyk
+            snyk --version
       - run:
           name: Prepare Version
           command: |
@@ -90,13 +102,13 @@ jobs:
             source version.env
             docker build --build-arg VERSION=$VERSION -t ${DOCKER_USERNAME}/jcraft-userman:$VERSION .
       - run:
-          name: Snyk Authenticate
+          name: Authenticate with Snyk
           command: snyk auth $SNYK_TOKEN
       - run:
           name: Snyk Docker Image Test
           command: snyk container test ${DOCKER_USERNAME}/jcraft-userman:$VERSION --severity-threshold=medium
       - run:
-          name: Snyk Monitor Docker Image
+          name: Monitor Docker Image
           command: snyk container monitor ${DOCKER_USERNAME}/jcraft-userman:$VERSION
 
   package:
