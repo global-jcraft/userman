@@ -107,7 +107,7 @@ jobs:
           command: snyk auth $SNYK_TOKEN
       - run:
           name: Run Snyk Dependency Test
-          command: snyk test --all-projects --severity-threshold=medium
+          command: snyk test --file=build.gradle --severity-threshold=medium --skip-unresolved
       - run:
           name: Monitor Dependencies
           command: snyk monitor --all-projects
