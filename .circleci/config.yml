@@ -63,7 +63,7 @@ jobs:
       - checkout
       - run:
           name: Snyk Authenticate
-          command: snyk auth $SNYK_AUTH_TOKEN
+          command: snyk auth $SNYK_TOKEN
       - run:
           name: Snyk Dependency Test
           command: snyk test --all-projects --severity-threshold=medium
@@ -91,7 +91,7 @@ jobs:
             docker build --build-arg VERSION=$VERSION -t ${DOCKER_USERNAME}/jcraft-userman:$VERSION .
       - run:
           name: Snyk Authenticate
-          command: snyk auth $SNYK_AUTH_TOKEN
+          command: snyk auth $SNYK_TOKEN
       - run:
           name: Snyk Docker Image Test
           command: snyk container test ${DOCKER_USERNAME}/jcraft-userman:$VERSION --severity-threshold=medium
