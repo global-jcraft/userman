@@ -100,18 +100,23 @@ jobs:
             docker push ${DOCKER_USERNAME}/jcraft-userman:$VERSION
 
   snyk-dependency-test:
-    executor: snyk-cli-executor
+    executor: docker-executor
     steps:
       - checkout
       - run:
-          name: Authenticate with Snyk
-          command: snyk auth $SNYK_TOKEN
+          name: Set JAVA_HOME
+          command: |
+            export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+            export PATH=$JAVA_HOME/bin:$PATH
+            java -version  # Verify Java is correctly set up
+      - run:
+          name: Install Snyk CLI
+          command: |
+            curl -sL https://static.snyk.io/cli/latest/snyk-linux -o /usr/local/bin/snyk
+            chmod +x /usr/local/bin/snyk
       - run:
           name: Run Snyk Dependency Test
           command: snyk test --file=build.gradle --severity-threshold=medium --skip-unresolved
-      - run:
-          name: Monitor Dependencies
-          command: snyk monitor --all-projects
 
   deploy-develop:
     executor: base-executor
