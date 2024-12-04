@@ -1,5 +1,8 @@
 version: 2.1
 
+orbs:
+  snyk: snyk/snyk@2.2.0
+
 executors:
   java-docker:
     docker:
@@ -17,11 +20,6 @@ executors:
   base-executor:
     docker:
       - image: cimg/base:stable
-
-  snyk-cli-executor:
-    docker:
-      - image: snyk/snyk-cli:docker
-      - image: cimg/openjdk:17.0
 
 jobs:
   build:
@@ -99,24 +97,16 @@ jobs:
             echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin
             docker push ${DOCKER_USERNAME}/jcraft-userman:$VERSION
 
-  snyk-dependency-test:
+  snyk-scan:
     executor: docker-executor
     steps:
       - checkout
-      - run:
-          name: Set JAVA_HOME
-          command: |
-            export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
-            export PATH=$JAVA_HOME/bin:$PATH
-            java -version  # Verify Java is correctly set up
-      - run:
-          name: Install Snyk CLI
-          command: |
-            curl -sL https://static.snyk.io/cli/latest/snyk-linux -o /usr/local/bin/snyk
-            chmod +x /usr/local/bin/snyk
-      - run:
-          name: Run Snyk Dependency Test
-          command: snyk test --file=build.gradle --severity-threshold=medium --skip-unresolved
+      - setup_remote_docker:
+          docker_layer_caching: true
+      - snyk/scan:
+          token-variable: SNYK_TOKEN
+          docker-image-name: ${DOCKER_USERNAME}/jcraft-userman:$VERSION
+          target-file: "Dockerfile"
 
   deploy-develop:
     executor: base-executor
@@ -166,12 +156,13 @@ workflows:
             branches:
               only:
                 - develop
-      - snyk-dependency-test:
+      - snyk-scan:
           requires:
             - package
       - deploy-develop:
           requires:
             - docker-build
+            - snyk-scan
           filters:
             branches:
               only:
