@@ -123,6 +123,10 @@ jobs:
             source $BASH_ENV
             echo "Loaded version: $VERSION"
       - run:
+          name: Docker Login
+          command: |
+            echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin
+      - run:
           name: Pull Docker Image
           command: |
             docker pull ${DOCKER_USERNAME}/jcraft-userman:$VERSION
