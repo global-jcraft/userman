@@ -96,21 +96,32 @@ jobs:
             echo "Pushing image: ${DOCKER_USERNAME}/jcraft-userman:$VERSION"
             echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin
             docker push ${DOCKER_USERNAME}/jcraft-userman:$VERSION
+      - persist_to_workspace:
+          root: .
+          paths:
+            - version.env
 
   snyk-scan:
     executor: docker-executor
     steps:
       - checkout
+      - attach_workspace:
+          at: .
       - setup_remote_docker:
           docker_layer_caching: true
       - run:
-          name: Validate Docker Image
+          name: Load Version
           command: |
-            echo "Validating Docker image: ${DOCKER_USERNAME}/jcraft-userman:$VERSION"
+            source version.env
+            echo "VERSION=$VERSION" >> $BASH_ENV
+            source $BASH_ENV
+      - run:
+          name: Pull Docker Image
+          command: |
             docker pull ${DOCKER_USERNAME}/jcraft-userman:$VERSION
       - snyk/scan:
           token-variable: SNYK_TOKEN
-          docker-image-name: ${DOCKER_USERNAME}/jcraft-userman:$VERSION
+          docker-image-name: "${DOCKER_USERNAME}/jcraft-userman:$VERSION"
           target-file: "Dockerfile"
 
   deploy-develop:
