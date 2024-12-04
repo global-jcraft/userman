@@ -134,14 +134,27 @@ jobs:
           name: Create reports directory
           command: mkdir -p ~/reports/snyk
       - run:
-          name: Run Snyk Scan with Report
+          name: Generate Report Header
           command: |
             echo "Running Snyk security scan at $(date)" > ~/reports/snyk/security-report.txt
             echo "================================================" >> ~/reports/snyk/security-report.txt
             echo "Docker Image: ${DOCKER_USERNAME}/jcraft-userman:$VERSION" >> ~/reports/snyk/security-report.txt
             echo "================================================" >> ~/reports/snyk/security-report.txt
-            snyk container test ${DOCKER_USERNAME}/jcraft-userman:$VERSION \
-              --file=Dockerfile 2>&1 | tee -a ~/reports/snyk/security-report.txt || true
+      - snyk/scan:
+          token-variable: SNYK_TOKEN
+          docker-image-name: "${DOCKER_USERNAME}/jcraft-userman:$VERSION"
+          target-file: "Dockerfile"
+          additional-arguments: "--json-file-output=~/reports/snyk/scan.json || true"
+      - run:
+          name: Format Scan Results
+          command: |
+            if [ -f ~/reports/snyk/scan.json ]; then
+              echo -e "\nDetailed Scan Results:" >> ~/reports/snyk/security-report.txt
+              cat ~/reports/snyk/scan.json | jq -r '.vulnerabilities[] | "Vulnerability: \(.title)\nSeverity: \(.severity)\nPackage: \(.package)\nVersion: \(.version)\nFixed In: \(.fixedIn)\nDescription: \(.description)\n---"' >> ~/reports/snyk/security-report.txt 2>/dev/null || echo "No vulnerabilities found" >> ~/reports/snyk/security-report.txt
+            else
+              echo -e "\nNo scan results found" >> ~/reports/snyk/security-report.txt
+            fi
+            
             echo -e "\nScan completed at $(date)" >> ~/reports/snyk/security-report.txt
       - store_artifacts:
           path: ~/reports/snyk
