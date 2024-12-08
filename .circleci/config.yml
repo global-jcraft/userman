@@ -71,9 +71,15 @@ jobs:
     executor: java-docker
     steps:
       - checkout
+      - setup_remote_docker:
+          docker_layer_caching: true
       - run:
           name: Run SonarQube Analysis
-          command: gradle build sonarqube
+          command: |
+            export TESTCONTAINERS_RYUK_DISABLED=true
+            export TESTCONTAINERS_CHECKS_DISABLE=true
+            
+            gradle build sonarqube
 
   package:
     executor: java-docker
