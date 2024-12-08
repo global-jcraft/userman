@@ -28,7 +28,6 @@ jobs:
     steps:
       - checkout
       - setup_remote_docker:
-          version: 20.10.14
           docker_layer_caching: true
       - run:
           name: Build the Project
@@ -44,7 +43,6 @@ jobs:
     steps:
       - checkout
       - setup_remote_docker:
-          version: 20.10.14
           docker_layer_caching: true
       - run:
           name: Run Unit Tests
