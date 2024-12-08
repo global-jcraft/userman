@@ -7,6 +7,7 @@ executors:
   java-docker:
     docker:
       - image: cimg/openjdk:17.0
+    resource_class: medium+
 
   docker-executor:
     docker:
@@ -26,19 +27,36 @@ jobs:
     executor: java-docker
     steps:
       - checkout
+      - setup_remote_docker:
+          docker_layer_caching: true
       - run:
           name: Build the Project
-          command: ./gradlew build
+          command:  |
+            # Set testcontainers properties
+            export TESTCONTAINERS_RYUK_DISABLED=true
+            export TESTCONTAINERS_CHECKS_DISABLE=true
+            
+            ./gradlew build
 
   unit-tests:
     executor: java-docker
     steps:
       - checkout
+      - setup_remote_docker:
+          docker_layer_caching: true
       - run:
           name: Run Unit Tests
-          command: ./gradlew test
+          command:  |
+            # Set testcontainers properties
+            export TESTCONTAINERS_RYUK_DISABLED=true
+            export TESTCONTAINERS_CHECKS_DISABLE=true
+            
+            ./gradlew test --info
       - store_test_results:
           path: build/test-results/test
+      - store_artifacts:
+          path: build/reports/tests
+          destination: test-reports
 
   spotless:
     executor: java-docker
@@ -53,9 +71,15 @@ jobs:
     executor: java-docker
     steps:
       - checkout
+      - setup_remote_docker:
+          docker_layer_caching: true
       - run:
           name: Run SonarQube Analysis
-          command: gradle build sonarqube
+          command: |
+            export TESTCONTAINERS_RYUK_DISABLED=true
+            export TESTCONTAINERS_CHECKS_DISABLE=true
+            
+            gradle build sonarqube
 
   package:
     executor: java-docker

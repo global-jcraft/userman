@@ -6,8 +6,10 @@ import org.springframework.test.context.ActiveProfiles;
 
 @SpringBootTest
 @ActiveProfiles("test")
-class UsermanApplicationTests {
+class UsermanServiceTests extends UsermanTestConfig {
 
   @Test
-  void contextLoads() {}
+  void contextLoads() {
+    // Test the context loads
+  }
 }
