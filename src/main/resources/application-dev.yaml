@@ -26,5 +26,5 @@ app:
   security:
     jwt:
       secret: your-256-bit-secret-key
-      access-token-validity: 3600000  # 1 hour
-      refresh-token-validity: 86400000 # 24 hours
+      accessTokenValidity: 3600000  # 1 hour
+      refreshTokenValidity: 86400000 # 24 hours

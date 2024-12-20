@@ -7,6 +7,9 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import com.huddey.core.userman.data.dto.*;
+import com.huddey.core.userman.data.dto.response.LoginResponse;
+import com.huddey.core.userman.data.dto.response.UserRegistrationResponse;
+import com.huddey.core.userman.data.dto.token.TokenRefreshResponse;
 import com.huddey.core.userman.service.AuthService;
 
 import jakarta.validation.Valid;

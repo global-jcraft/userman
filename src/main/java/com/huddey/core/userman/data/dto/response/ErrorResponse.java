@@ -1,6 +1,5 @@
-package com.huddey.core.userman.data.dto;
+package com.huddey.core.userman.data.dto.response;
 
-import java.time.LocalDateTime;
 import java.util.Map;
 
 import lombok.AllArgsConstructor;
@@ -13,7 +12,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ErrorResponse {
-  private LocalDateTime timestamp;
+  private String timestamp;
   private int status;
   private String error;
   private String message;

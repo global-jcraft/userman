@@ -1,6 +1,7 @@
 package com.huddey.core.userman.exception;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -15,7 +16,7 @@ import org.springframework.web.context.request.ServletWebRequest;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
-import com.huddey.core.userman.data.dto.ErrorResponse;
+import com.huddey.core.userman.data.dto.response.ErrorResponse;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -29,7 +30,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     log.error("Authentication error: ", ex);
     ErrorResponse error =
         ErrorResponse.builder()
-            .timestamp(LocalDateTime.now())
+            .timestamp(LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME))
             .status(HttpStatus.UNAUTHORIZED.value())
             .error("Authentication Error")
             .message(ex.getMessage())
@@ -44,9 +45,9 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     log.error("User already exists: ", ex);
     ErrorResponse error =
         ErrorResponse.builder()
-            .timestamp(LocalDateTime.now())
+            .timestamp(LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME))
             .status(HttpStatus.CONFLICT.value())
-            .error("Registration Error")
+            .error(ex.getMessage())
             .message(ex.getMessage())
             .path(((ServletWebRequest) request).getRequest().getRequestURI())
             .build();
@@ -59,7 +60,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     log.error("User not found: ", ex);
     ErrorResponse error =
         ErrorResponse.builder()
-            .timestamp(LocalDateTime.now())
+            .timestamp(LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME))
             .status(HttpStatus.NOT_FOUND.value())
             .error("Not Found")
             .message(ex.getMessage())
@@ -74,7 +75,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     log.error("Validation error: ", ex);
     ErrorResponse error =
         ErrorResponse.builder()
-            .timestamp(LocalDateTime.now())
+            .timestamp(LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME))
             .status(HttpStatus.BAD_REQUEST.value())
             .error("Validation Error")
             .message(ex.getMessage())
@@ -97,7 +98,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     ErrorResponse errorResponse =
         ErrorResponse.builder()
-            .timestamp(LocalDateTime.now())
+            .timestamp(LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME))
             .status(HttpStatus.BAD_REQUEST.value())
             .error("Validation Error")
             .message("Invalid request parameters")
@@ -114,7 +115,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     log.error("Unexpected error occurred: ", ex);
     ErrorResponse error =
         ErrorResponse.builder()
-            .timestamp(LocalDateTime.now())
+            .timestamp(LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME))
             .status(HttpStatus.INTERNAL_SERVER_ERROR.value())
             .error("Internal Server Error")
             .message("An unexpected error occurred")

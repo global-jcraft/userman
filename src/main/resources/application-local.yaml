@@ -1,4 +1,3 @@
-# src/main/resources/application-local.yaml
 spring:
   application:
     name: userman
@@ -28,5 +27,5 @@ app:
   security:
     jwt:
       secret: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
-      access-token-validity: 3600000  # 1 hour
-      refresh-token-validity: 86400000 # 24 hours
+      accessTokenValidity: 3600000  # 1 hour
+      refreshTokenValidity: 86400000 # 24 hours

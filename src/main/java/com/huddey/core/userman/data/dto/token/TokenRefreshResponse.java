@@ -1,4 +1,4 @@
-package com.huddey.core.userman.data.dto;
+package com.huddey.core.userman.data.dto.token;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
