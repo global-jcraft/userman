@@ -21,3 +21,10 @@ spring:
 
 server:
   port: 8081
+
+app:
+  security:
+    jwt:
+      secret: your-256-bit-secret-key
+      accessTokenValidity: 3600000  # 1 hour
+      refreshTokenValidity: 86400000 # 24 hours
