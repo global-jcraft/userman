@@ -13,7 +13,7 @@ spring:
     properties:
       hibernate.dialect: org.hibernate.dialect.PostgreSQLDialect
   flyway:
-    enabled: true
+    enabled: false
     locations: classpath:db/migration
     url: jdbc:postgresql://localhost:5432/userman
     user: postgres
