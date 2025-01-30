@@ -1,19 +1,21 @@
 package com.huddey.core.userman.configuration;
 
+import static com.huddey.core.userman.utils.RequestUtil.determineClientType;
+
 import java.io.IOException;
 
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
-import com.huddey.core.userman.service.CustomUserDetailsService;
-
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -24,7 +26,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
   private final JwtTokenProvider jwtTokenProvider;
-  private final CustomUserDetailsService userDetailsService;
+  private final UserDetailsService userDetailsService;
 
   @Override
   protected void doFilterInternal(
@@ -32,7 +34,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
       throws ServletException, IOException {
 
     try {
-      String token = extractJwtFromRequest(request);
+      String clientType = determineClientType(request);
+      String token = extractJwtFromRequest(request, clientType);
       if (StringUtils.hasText(token) && jwtTokenProvider.validateToken(token)) {
         String username = jwtTokenProvider.getUsername(token);
         UserDetails userDetails = userDetailsService.loadUserByUsername(username);
@@ -51,7 +54,30 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     filterChain.doFilter(request, response);
   }
 
-  private String extractJwtFromRequest(HttpServletRequest request) {
+  private String extractJwtFromRequest(HttpServletRequest request, String clientType) {
+    if (clientType.equals("web")) {
+      return extractJwtFromCookie(request);
+    } else {
+      return extractJwtFromHeader(request);
+    }
+  }
+
+  private String extractJwtFromCookie(HttpServletRequest request) {
+    Cookie[] cookies = request.getCookies();
+    if (cookies != null) {
+      for (Cookie cookie : cookies) {
+        if (cookie.getName().equals("access_token")) {
+          if (cookie.getSecure() && cookie.isHttpOnly()) {
+            return cookie.getValue();
+          }
+          log.warn("Found access_token cookie without proper security flags");
+        }
+      }
+    }
+    return null;
+  }
+
+  private String extractJwtFromHeader(HttpServletRequest request) {
     String bearerToken = request.getHeader("Authorization");
     if (StringUtils.hasText(bearerToken) && bearerToken.startsWith("Bearer ")) {
       return bearerToken.substring(7);

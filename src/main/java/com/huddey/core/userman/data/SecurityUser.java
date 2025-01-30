@@ -10,9 +10,13 @@ import com.huddey.core.userman.data.entity.User;
 import com.huddey.core.userman.data.entity.UserCredential;
 import com.huddey.core.userman.data.entity.UserStatus;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 
 @Getter
+@Builder
+@AllArgsConstructor
 public class SecurityUser implements UserDetails {
   @Getter private final User user; // Our database entity
   private final Collection<? extends GrantedAuthority> authorities;

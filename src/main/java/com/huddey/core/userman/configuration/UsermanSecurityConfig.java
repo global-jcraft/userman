@@ -12,9 +12,8 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.annotation.web.configurers.HeadersConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
@@ -31,14 +30,26 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class UsermanSecurityConfig {
 
-  private final CustomUserDetailsService userDetailsService;
-  private final JwtAuthenticationFilter jwtAuthFilter;
   private final CustomAuthenticationEntryPoint authEntryPoint;
+  private final SecurityConfig securityConfig;
 
   @Bean
-  public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+  public SecurityFilterChain securityFilterChain(
+      HttpSecurity http,
+      JwtAuthenticationFilter jwtAuthFilter,
+      CustomUserDetailsService userDetailsService)
+      throws Exception {
     http.csrf(AbstractHttpConfigurer::disable)
         .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+        .headers(
+            headers ->
+                headers
+                    .frameOptions(HeadersConfigurer.FrameOptionsConfig::deny)
+                    .xssProtection(HeadersConfigurer.XXssConfig::disable)
+                    .contentSecurityPolicy(csp -> csp.policyDirectives("default-src 'self'"))
+                    .permissionsPolicy(
+                        permissions ->
+                            permissions.policy("camera=(), microphone=(), geolocation=()")))
         .exceptionHandling(exc -> exc.authenticationEntryPoint(authEntryPoint))
         .sessionManagement(
             session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -57,7 +68,7 @@ public class UsermanSecurityConfig {
               auth.requestMatchers("/api/v1/admin/**").hasRole("ADMIN");
               auth.anyRequest().authenticated();
             })
-        .authenticationProvider(authenticationProvider())
+        .authenticationProvider(authenticationProvider(userDetailsService))
         .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
     return http.build();
@@ -77,16 +88,12 @@ public class UsermanSecurityConfig {
   }
 
   @Bean
-  public AuthenticationProvider authenticationProvider() {
+  public AuthenticationProvider authenticationProvider(
+      CustomUserDetailsService userDetailsService) {
     DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
     authProvider.setUserDetailsService(userDetailsService);
-    authProvider.setPasswordEncoder(passwordEncoder());
+    authProvider.setPasswordEncoder(securityConfig.passwordEncoder());
     return authProvider;
-  }
-
-  @Bean
-  public PasswordEncoder passwordEncoder() {
-    return new BCryptPasswordEncoder();
   }
 
   @Bean
