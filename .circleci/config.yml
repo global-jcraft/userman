@@ -79,7 +79,15 @@ jobs:
             export TESTCONTAINERS_RYUK_DISABLED=true
             export TESTCONTAINERS_CHECKS_DISABLE=true
             
-            gradle build sonarqube
+            ./gradlew test jacocoTestReport
+      - run:
+          name: Run SonarQube Analysis
+          command: |
+            ./gradlew sonarqube \
+              -Dsonar.coverage.jacoco.xmlReportPaths=build/reports/jacoco/test/jacocoTestReport.xml \
+              -Dsonar.junit.reportPaths=build/test-results/test \
+              -Dsonar.tests=src/test/java \
+              -Dsonar.test.inclusions=**/*Test.java
 
   package:
     executor: java-docker
