@@ -1,4 +1,4 @@
-package com.huddey.core.userman;
+package com.huddey.core.userman.auth;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -19,7 +19,6 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import com.huddey.core.userman.config.TestConfig;
-import com.huddey.core.userman.configuration.JwtTokenProvider;
 import com.huddey.core.userman.data.SecurityUser;
 import com.huddey.core.userman.data.dto.UserRegistrationRequest;
 import com.huddey.core.userman.data.dto.response.UserRegistrationResponse;

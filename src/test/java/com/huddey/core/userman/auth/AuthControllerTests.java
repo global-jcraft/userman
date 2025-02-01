@@ -1,4 +1,4 @@
-package com.huddey.core.userman;
+package com.huddey.core.userman.auth;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -18,7 +18,6 @@ import org.springframework.test.web.servlet.ResultActions;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.huddey.core.userman.config.TestConfig;
-import com.huddey.core.userman.configuration.JwtTokenProvider;
 import com.huddey.core.userman.controller.AuthController;
 import com.huddey.core.userman.data.dto.LoginRequest;
 import com.huddey.core.userman.data.dto.TokenRefreshRequest;

@@ -1,4 +1,4 @@
-package com.huddey.core.userman.configuration;
+package com.huddey.core.userman.auth;
 
 import java.util.List;
 

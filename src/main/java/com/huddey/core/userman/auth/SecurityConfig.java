@@ -1,4 +1,4 @@
-package com.huddey.core.userman.configuration;
+package com.huddey.core.userman.auth;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

@@ -1,4 +1,4 @@
-package com.huddey.core.userman.configuration;
+package com.huddey.core.userman.auth;
 
 import static com.huddey.core.userman.utils.RequestUtil.determineClientType;
 

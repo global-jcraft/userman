@@ -2,7 +2,7 @@ package com.huddey.core.userman.security.token;
 
 import org.springframework.context.annotation.Configuration;
 
-import com.huddey.core.userman.configuration.JwtTokenProvider;
+import com.huddey.core.userman.auth.JwtTokenProvider;
 import com.huddey.core.userman.data.SecurityUser;
 
 import jakarta.servlet.http.HttpServletResponse;
