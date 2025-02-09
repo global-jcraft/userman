@@ -83,11 +83,25 @@ jobs:
       - run:
           name: Run SonarQube Analysis
           command: |
-            ./gradlew sonarqube \
-              -Dsonar.coverage.jacoco.xmlReportPaths=build/reports/jacoco/test/jacocoTestReport.xml \
-              -Dsonar.junit.reportPaths=build/test-results/test \
-              -Dsonar.tests=src/test/java \
-              -Dsonar.test.inclusions=**/*Test.java
+            if [[ -n "$CIRCLE_PULL_REQUEST" ]]; then
+              PR_NUMBER=$(echo $CIRCLE_PULL_REQUEST | awk -F'/' '{print $NF}')
+              ./gradlew sonarqube \
+                -Dsonar.coverage.jacoco.xmlReportPaths=build/reports/jacoco/test/jacocoTestReport.xml \
+                -Dsonar.junit.reportPaths=build/test-results/test \
+                -Dsonar.tests=src/test/java \
+                -Dsonar.test.inclusions=**/*Test.java \
+                -Dsonar.pullrequest.key=$PR_NUMBER \
+                -Dsonar.pullrequest.branch=$CIRCLE_BRANCH \
+                -Dsonar.pullrequest.base=$CIRCLE_TARGET_BRANCH \
+                -Dsonar.scm.provider=git
+            else
+              ./gradlew sonarqube \
+                -Dsonar.coverage.jacoco.xmlReportPaths=build/reports/jacoco/test/jacocoTestReport.xml \
+                -Dsonar.junit.reportPaths=build/test-results/test \
+                -Dsonar.tests=src/test/java \
+                -Dsonar.test.inclusions=**/*Test.java \
+                -Dsonar.branch.name=$CIRCLE_BRANCH
+            fi
 
   package:
     executor: java-docker
