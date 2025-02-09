@@ -33,9 +33,4 @@ public class TestConfig {
   public ObjectMapper objectMapper() {
     return new ObjectMapper();
   }
-
-  @Bean
-  public ObjectMapper objectMapper() {
-    return new ObjectMapper();
-  }
 }
