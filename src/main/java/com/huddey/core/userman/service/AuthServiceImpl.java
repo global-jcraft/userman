@@ -1,0 +1,159 @@
+package com.huddey.core.userman.service;
+
+import static com.huddey.core.userman.utils.RequestUtil.determineClientType;
+
+import java.time.OffsetDateTime;
+
+import javax.management.relation.RoleNotFoundException;
+
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+
+import com.huddey.core.userman.auth.JwtTokenProvider;
+import com.huddey.core.userman.data.SecurityUser;
+import com.huddey.core.userman.data.dto.*;
+import com.huddey.core.userman.data.dto.response.LoginResponse;
+import com.huddey.core.userman.data.dto.response.UserRegistrationResponse;
+import com.huddey.core.userman.data.dto.token.TokenData;
+import com.huddey.core.userman.data.dto.token.TokenRefreshResponse;
+import com.huddey.core.userman.data.entity.*;
+import com.huddey.core.userman.exception.*;
+import com.huddey.core.userman.mapper.UserMapper;
+import com.huddey.core.userman.repository.AuthProviderRepository;
+import com.huddey.core.userman.repository.RoleRepository;
+import com.huddey.core.userman.repository.UserRepository;
+import com.huddey.core.userman.security.token.MobileTokenGenerationStrategy;
+import com.huddey.core.userman.security.token.TokenGenerationStrategy;
+import com.huddey.core.userman.security.token.WebTokenGenerationStrategy;
+import com.huddey.core.userman.utils.RequestUtil;
+
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
+@Service
+@Transactional
+@RequiredArgsConstructor
+@Slf4j
+public class AuthServiceImpl implements AuthService {
+
+  private final UserRepository userRepository;
+  private final AuthProviderRepository authProviderRepository;
+  private final RoleRepository roleRepository;
+  private final PasswordEncoder passwordEncoder;
+  private final JwtTokenProvider jwtTokenProvider;
+  private final AuthenticationManager authenticationManager;
+  private final UserDetailsService userDetailsService;
+  private final CustomUserDetailsService customUserDetailsService;
+
+  @Override
+  public UserRegistrationResponse register(
+      UserRegistrationRequest request,
+      HttpServletRequest servletRequest,
+      HttpServletResponse servletResponse)
+      throws RoleNotFoundException, UserAlreadyExistsException {
+
+    TokenGenerationStrategy tokenGenerationStrategy;
+    SecurityUser securityUser = customUserDetailsService.createNewUser(request);
+    String clientType = determineClientType(servletRequest);
+
+    // emailService.sendVerificationEmail(user.getEmail(), user.getEmailVerificationToken());
+    if (clientType.equals("web")) {
+      log.debug("Client type is web");
+      tokenGenerationStrategy = new WebTokenGenerationStrategy(jwtTokenProvider);
+      tokenGenerationStrategy.generateAnsSetToken(servletResponse, securityUser);
+      return UserRegistrationResponse.builder()
+          .userId(securityUser.getUser().getId())
+          .email(securityUser.getUser().getEmail())
+          .firstName(securityUser.getUser().getFirstName())
+          .lastName(securityUser.getUser().getLastName())
+          .status(securityUser.getUser().getStatus().toString())
+          .message("Registration successful. Please verify your email.")
+          .build();
+    } else {
+      log.debug("Client type is mobile");
+      tokenGenerationStrategy = new MobileTokenGenerationStrategy(jwtTokenProvider);
+      tokenGenerationStrategy.generateAnsSetToken(servletResponse, securityUser);
+      return UserRegistrationResponse.builder()
+          .userId(securityUser.getUser().getId())
+          .email(securityUser.getUser().getEmail())
+          .firstName(securityUser.getUser().getFirstName())
+          .lastName(securityUser.getUser().getLastName())
+          .status(securityUser.getUser().getStatus().toString())
+          .message("Registration successful. Please verify your email.")
+          .tokenData(
+              TokenData.builder()
+                  .accessToken(tokenGenerationStrategy.getAccessToken())
+                  .refreshToken(tokenGenerationStrategy.getRefreshToken())
+                  .expiresIn(jwtTokenProvider.getAccessTokenValidity())
+                  .build())
+          .build();
+    }
+  }
+
+  @Override
+  public LoginResponse login(LoginRequest request) {
+    try {
+      Authentication authentication =
+          authenticationManager.authenticate(
+              new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword()));
+
+      SecurityUser securityUser = (SecurityUser) authentication.getPrincipal();
+      User user = securityUser.getUser();
+
+      /*if (!user.isEmailVerified()) {
+          throw new EmailNotVerifiedException("Please verify your email before logging in");
+      }*/
+
+      user.setLastLoginAt(OffsetDateTime.now());
+      user.setLastLoginIp(RequestUtil.getClientIp());
+      userRepository.save(user);
+
+      String accessToken = jwtTokenProvider.generateAccessToken(securityUser);
+      String refreshToken = jwtTokenProvider.generateRefreshToken(securityUser);
+
+      return LoginResponse.builder()
+          .accessToken(accessToken)
+          .refreshToken(refreshToken)
+          .tokenType("Bearer")
+          .expiresIn(jwtTokenProvider.getAccessTokenValidity())
+          .user(UserMapper.toDto(user))
+          .build();
+    } catch (BadCredentialsException ex) {
+      throw new AuthenticationException("Invalid email or password");
+    }
+  }
+
+  @Override
+  public TokenRefreshResponse refreshToken(TokenRefreshRequest request) {
+    if (!jwtTokenProvider.validateToken(request.getRefreshToken())) {
+      throw new InvalidTokenException("Invalid refresh token");
+    }
+
+    String email = jwtTokenProvider.getUsername(request.getRefreshToken());
+    UserDetails userDetails = userDetailsService.loadUserByUsername(email);
+    SecurityUser securityUser = (SecurityUser) userDetails;
+
+    if (!securityUser.isEnabled()) {
+      throw new AccountStatusException("User account is not active");
+    }
+
+    String newAccessToken = jwtTokenProvider.generateAccessToken(userDetails);
+    String newRefreshToken = jwtTokenProvider.generateRefreshToken(userDetails);
+
+    return TokenRefreshResponse.builder()
+        .accessToken(newAccessToken)
+        .refreshToken(newRefreshToken)
+        .tokenType("Bearer")
+        .expiresIn(jwtTokenProvider.getAccessTokenValidity())
+        .build();
+  }
+}

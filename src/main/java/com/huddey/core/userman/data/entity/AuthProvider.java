@@ -5,14 +5,14 @@ import java.io.Serializable;
 import java.time.OffsetDateTime;
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 @Entity
 @Table(name = "auth_providers", schema = "huddey_userman")
 @Getter
 @Setter
+@Builder
+@AllArgsConstructor
 @NoArgsConstructor
 public class AuthProvider implements Serializable {
 

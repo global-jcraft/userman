@@ -17,14 +17,17 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.huddey.core.userman.auth.JwtTokenProvider;
 import com.huddey.core.userman.config.TestConfig;
-import com.huddey.core.userman.configuration.JwtTokenProvider;
 import com.huddey.core.userman.controller.AuthController;
 import com.huddey.core.userman.data.dto.UserRegistrationRequest;
 import com.huddey.core.userman.data.dto.response.UserRegistrationResponse;
 import com.huddey.core.userman.data.dto.token.TokenData;
 import com.huddey.core.userman.service.AuthService;
 import com.huddey.core.userman.service.CustomUserDetailsService;
+
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 @WebMvcTest(AuthController.class)
 @Import(TestConfig.class)
@@ -66,7 +69,12 @@ class AuthControllerTests {
             .tokenData(tokenData)
             .build();
 
-    Mockito.when(authService.register(any(UserRegistrationRequest.class))).thenReturn(response);
+    Mockito.when(
+            authService.register(
+                any(UserRegistrationRequest.class),
+                any(HttpServletRequest.class),
+                any(HttpServletResponse.class)))
+        .thenReturn(response);
 
     ResultActions result =
         mockMvc.perform(

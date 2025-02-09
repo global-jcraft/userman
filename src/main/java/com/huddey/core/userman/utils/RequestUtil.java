@@ -27,4 +27,13 @@ public class RequestUtil {
     }
     return "unknown";
   }
+
+  public static String determineClientType(HttpServletRequest request) {
+    String userAgent = request.getHeader("User-Agent");
+    if (userAgent != null
+        && (userAgent.equalsIgnoreCase("Android") || userAgent.equalsIgnoreCase(("iOS")))) {
+      return "mobile";
+    }
+    return "web";
+  }
 }

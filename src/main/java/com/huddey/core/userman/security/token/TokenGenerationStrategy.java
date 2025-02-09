@@ -1,0 +1,13 @@
+package com.huddey.core.userman.security.token;
+
+import com.huddey.core.userman.data.SecurityUser;
+
+import jakarta.servlet.http.HttpServletResponse;
+
+public interface TokenGenerationStrategy {
+  void generateAnsSetToken(HttpServletResponse response, SecurityUser user);
+
+  String getAccessToken();
+
+  String getRefreshToken();
+}
