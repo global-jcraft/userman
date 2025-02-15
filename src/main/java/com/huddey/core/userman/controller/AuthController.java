@@ -48,8 +48,11 @@ public class AuthController {
   }
 
   @PostMapping("/login")
-  public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
-    return ResponseEntity.ok(authService.login(request));
+  public ResponseEntity<LoginResponse> login(
+      @Valid @RequestBody LoginRequest request,
+      HttpServletRequest servletRequest,
+      HttpServletResponse servletResponse) {
+    return ResponseEntity.ok(authService.login(request, servletRequest, servletResponse));
   }
 
   /*@GetMapping("/verify-email/{token}")

@@ -19,7 +19,8 @@ public interface AuthService {
       UserRegistrationRequest user, HttpServletRequest request, HttpServletResponse response)
       throws RoleNotFoundException, UserAlreadyExistsException;
 
-  LoginResponse login(LoginRequest request);
+  LoginResponse login(
+      LoginRequest request, HttpServletRequest servletRequest, HttpServletResponse servletResponse);
 
   TokenRefreshResponse refreshToken(TokenRefreshRequest request);
 }

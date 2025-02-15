@@ -183,7 +183,12 @@ class AuthControllerTests {
                     .build())
             .build();
 
-    Mockito.when(authService.login(any(LoginRequest.class))).thenReturn(response);
+    Mockito.when(
+            authService.login(
+                any(LoginRequest.class),
+                any(HttpServletRequest.class),
+                any(HttpServletResponse.class)))
+        .thenReturn(response);
 
     mockMvc
         .perform(
@@ -209,7 +214,11 @@ class AuthControllerTests {
     LoginRequest request =
         LoginRequest.builder().email("john.doe@example.com").password("wrong-password").build();
 
-    Mockito.when(authService.login(any(LoginRequest.class)))
+    Mockito.when(
+            authService.login(
+                any(LoginRequest.class),
+                any(HttpServletRequest.class),
+                any(HttpServletResponse.class)))
         .thenThrow(new AuthenticationException("Invalid credentials"));
 
     mockMvc
