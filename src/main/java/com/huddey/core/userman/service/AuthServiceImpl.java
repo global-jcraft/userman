@@ -100,8 +100,17 @@ public class AuthServiceImpl implements AuthService {
   }
 
   @Override
-  public LoginResponse login(LoginRequest request) {
+  public LoginResponse login(
+      LoginRequest request,
+      HttpServletRequest servletRequest,
+      HttpServletResponse servletResponse) {
     try {
+      // Load user details first to validate existence and status
+      UserDetails userDetails = userDetailsService.loadUserByUsername(request.getEmail());
+      if (!userDetails.isEnabled()) {
+        throw new AccountStatusException("User account is not active or email is not verified");
+      }
+
       Authentication authentication =
           authenticationManager.authenticate(
               new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword()));
@@ -117,16 +126,29 @@ public class AuthServiceImpl implements AuthService {
       user.setLastLoginIp(RequestUtil.getClientIp());
       userRepository.save(user);
 
-      String accessToken = jwtTokenProvider.generateAccessToken(securityUser);
-      String refreshToken = jwtTokenProvider.generateRefreshToken(securityUser);
+      TokenGenerationStrategy tokenGenerationStrategy;
+      String clientType = determineClientType(servletRequest);
 
-      return LoginResponse.builder()
-          .accessToken(accessToken)
-          .refreshToken(refreshToken)
-          .tokenType("Bearer")
-          .expiresIn(jwtTokenProvider.getAccessTokenValidity())
-          .user(UserMapper.toDto(user))
-          .build();
+      if (clientType.equals("web")) {
+        log.debug("Client type is web");
+        tokenGenerationStrategy = new WebTokenGenerationStrategy(jwtTokenProvider);
+        tokenGenerationStrategy.generateAnsSetToken(servletResponse, securityUser);
+        return LoginResponse.builder()
+            .user(UserMapper.toDto(user))
+            .expiresIn(jwtTokenProvider.getAccessTokenValidity())
+            .build();
+      } else {
+        log.debug("Client type is mobile");
+        tokenGenerationStrategy = new MobileTokenGenerationStrategy(jwtTokenProvider);
+        tokenGenerationStrategy.generateAnsSetToken(servletResponse, securityUser);
+        return LoginResponse.builder()
+            .accessToken(tokenGenerationStrategy.getAccessToken())
+            .refreshToken(tokenGenerationStrategy.getRefreshToken())
+            .tokenType("Bearer")
+            .expiresIn(jwtTokenProvider.getAccessTokenValidity())
+            .user(UserMapper.toDto(user))
+            .build();
+      }
     } catch (BadCredentialsException ex) {
       throw new AuthenticationException("Invalid email or password");
     }

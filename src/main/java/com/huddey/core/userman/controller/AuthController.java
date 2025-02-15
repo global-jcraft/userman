@@ -1,5 +1,8 @@
 package com.huddey.core.userman.controller;
 
+import java.time.OffsetDateTime;
+import java.time.format.DateTimeFormatter;
+
 import javax.management.relation.RoleNotFoundException;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -43,13 +46,21 @@ public class AuthController {
       HttpServletRequest request,
       HttpServletResponse response)
       throws RoleNotFoundException, UserAlreadyExistsException {
-
+    log.info(
+        "AuthController.register() -> Registering a new user - Start time: {}",
+        OffsetDateTime.now().format(DateTimeFormatter.ISO_OFFSET_DATE_TIME));
     return ResponseEntity.ok(authService.register(userRegistrationRequest, request, response));
   }
 
   @PostMapping("/login")
-  public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
-    return ResponseEntity.ok(authService.login(request));
+  public ResponseEntity<LoginResponse> login(
+      @Valid @RequestBody LoginRequest request,
+      HttpServletRequest servletRequest,
+      HttpServletResponse servletResponse) {
+    log.info(
+        "AuthController.login() -> Signing in - Start time: {}",
+        OffsetDateTime.now().format(DateTimeFormatter.ISO_OFFSET_DATE_TIME));
+    return ResponseEntity.ok(authService.login(request, servletRequest, servletResponse));
   }
 
   /*@GetMapping("/verify-email/{token}")
