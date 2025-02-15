@@ -21,6 +21,9 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 
+import java.time.OffsetDateTime;
+import java.time.format.DateTimeFormatter;
+
 @RestController
 @RequestMapping("/api/v1/auth")
 @Validated
@@ -43,7 +46,8 @@ public class AuthController {
       HttpServletRequest request,
       HttpServletResponse response)
       throws RoleNotFoundException, UserAlreadyExistsException {
-
+    log.info("AuthController.register() -> Registering a new user - Start time: {}",
+            OffsetDateTime.now().format(DateTimeFormatter.ISO_OFFSET_DATE_TIME));
     return ResponseEntity.ok(authService.register(userRegistrationRequest, request, response));
   }
 
@@ -52,6 +56,8 @@ public class AuthController {
       @Valid @RequestBody LoginRequest request,
       HttpServletRequest servletRequest,
       HttpServletResponse servletResponse) {
+    log.info("AuthController.login() -> Signing in - Start time: {}",
+            OffsetDateTime.now().format(DateTimeFormatter.ISO_OFFSET_DATE_TIME));
     return ResponseEntity.ok(authService.login(request, servletRequest, servletResponse));
   }
 
