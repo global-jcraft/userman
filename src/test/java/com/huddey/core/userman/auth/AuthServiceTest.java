@@ -6,7 +6,6 @@ import static org.mockito.Mockito.*;
 
 import java.util.HashSet;
 
-import org.junit.Ignore;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -16,7 +15,6 @@ import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.annotation.Import;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -26,12 +24,9 @@ import com.huddey.core.userman.config.TestConfig;
 import com.huddey.core.userman.data.SecurityUser;
 import com.huddey.core.userman.data.dto.LoginRequest;
 import com.huddey.core.userman.data.dto.UserRegistrationRequest;
-import com.huddey.core.userman.data.dto.response.LoginResponse;
 import com.huddey.core.userman.data.dto.response.UserRegistrationResponse;
 import com.huddey.core.userman.data.entity.User;
 import com.huddey.core.userman.data.entity.UserStatus;
-import com.huddey.core.userman.exception.AccountStatusException;
-import com.huddey.core.userman.exception.AuthenticationException;
 import com.huddey.core.userman.exception.RoleNotFoundException;
 import com.huddey.core.userman.exception.UserAlreadyExistsException;
 import com.huddey.core.userman.repository.AuthProviderRepository;

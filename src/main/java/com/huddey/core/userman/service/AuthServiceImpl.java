@@ -6,7 +6,6 @@ import java.time.OffsetDateTime;
 
 import javax.management.relation.RoleNotFoundException;
 
-import jakarta.servlet.http.Cookie;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -108,7 +107,7 @@ public class AuthServiceImpl implements AuthService {
     try {
       // Load user details first to validate existence and status
       UserDetails userDetails = userDetailsService.loadUserByUsername(request.getEmail());
-      //TODO: fix when notification service email send is done
+      // TODO: fix when notification service email send is done
       if (!userDetails.isEnabled()) {
         throw new AccountStatusException("User account is not active or email is not verified");
       }
@@ -157,7 +156,10 @@ public class AuthServiceImpl implements AuthService {
   }
 
   @Override
-  public TokenRefreshResponse refreshToken(TokenRefreshRequest request, HttpServletRequest servletRequest, HttpServletResponse response) {
+  public TokenRefreshResponse refreshToken(
+      TokenRefreshRequest request,
+      HttpServletRequest servletRequest,
+      HttpServletResponse response) {
     if (!jwtTokenProvider.validateToken(request.getRefreshToken())) {
       throw new InvalidTokenException("Invalid refresh token");
     }
@@ -175,7 +177,8 @@ public class AuthServiceImpl implements AuthService {
 
     // For web clients, set the tokens as secure HTTP-only cookies
     if (RequestUtil.determineClientType(servletRequest).equals("web")) {
-      WebTokenGenerationStrategy tokenGenerationStrategy = new WebTokenGenerationStrategy(jwtTokenProvider);
+      WebTokenGenerationStrategy tokenGenerationStrategy =
+          new WebTokenGenerationStrategy(jwtTokenProvider);
       tokenGenerationStrategy.generateAndSetToken(response, securityUser);
 
       response.addCookie(tokenGenerationStrategy.getAccessTokenCookie());

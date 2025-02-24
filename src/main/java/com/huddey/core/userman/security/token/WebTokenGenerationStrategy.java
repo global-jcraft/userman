@@ -1,6 +1,5 @@
 package com.huddey.core.userman.security.token;
 
-import lombok.Getter;
 import org.springframework.context.annotation.Configuration;
 
 import com.huddey.core.userman.auth.JwtTokenProvider;
@@ -8,16 +7,15 @@ import com.huddey.core.userman.data.SecurityUser;
 
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.Getter;
 
 @Configuration
 public class WebTokenGenerationStrategy implements TokenGenerationStrategy {
   private final JwtTokenProvider jwtTokenProvider;
   String accessToken;
   String refreshToken;
-  @Getter
-  Cookie accessTokenCookie;
-  @Getter
-  Cookie refreshTokenCookie;
+  @Getter Cookie accessTokenCookie;
+  @Getter Cookie refreshTokenCookie;
 
   public WebTokenGenerationStrategy(JwtTokenProvider jwtTokenProvider) {
     this.jwtTokenProvider = jwtTokenProvider;

@@ -56,7 +56,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
   private String extractJwtFromRequest(HttpServletRequest request, String clientType) {
     if (clientType.equals("web")) {
-        log.debug("Client type is web");
+      log.debug("Client type is web");
       return extractJwtFromCookie(request);
     } else {
       log.debug("Client type is mobile");
