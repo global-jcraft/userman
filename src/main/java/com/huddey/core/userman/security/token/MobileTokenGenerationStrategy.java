@@ -18,7 +18,7 @@ public class MobileTokenGenerationStrategy implements TokenGenerationStrategy {
   }
 
   @Override
-  public void generateAnsSetToken(HttpServletResponse response, SecurityUser user) {
+  public void generateAndSetToken(HttpServletResponse response, SecurityUser user) {
     this.accessToken = jwtTokenProvider.generateAccessToken(user);
     this.refreshToken = jwtTokenProvider.generateRefreshToken(user);
 

@@ -70,7 +70,6 @@ public class SecurityUser implements UserDetails {
   @Override
   public boolean isEnabled() {
     // Check if user is active and email verified
-    // return UserStatus.ACTIVE.equals(user.getStatus()) && user.isEmailVerified();
-    return true;
+    return UserStatus.PENDING.equals(user.getStatus()) || user.isEmailVerified();
   }
 }

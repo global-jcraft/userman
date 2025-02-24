@@ -6,6 +6,7 @@ import static org.mockito.Mockito.*;
 
 import java.util.HashSet;
 
+import org.junit.Ignore;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -15,15 +16,22 @@ import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.annotation.Import;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import com.huddey.core.userman.config.TestConfig;
 import com.huddey.core.userman.data.SecurityUser;
+import com.huddey.core.userman.data.dto.LoginRequest;
 import com.huddey.core.userman.data.dto.UserRegistrationRequest;
+import com.huddey.core.userman.data.dto.response.LoginResponse;
 import com.huddey.core.userman.data.dto.response.UserRegistrationResponse;
 import com.huddey.core.userman.data.entity.User;
 import com.huddey.core.userman.data.entity.UserStatus;
+import com.huddey.core.userman.exception.AccountStatusException;
+import com.huddey.core.userman.exception.AuthenticationException;
 import com.huddey.core.userman.exception.RoleNotFoundException;
 import com.huddey.core.userman.exception.UserAlreadyExistsException;
 import com.huddey.core.userman.repository.AuthProviderRepository;
@@ -51,6 +59,9 @@ class AuthServiceTest {
   @Mock private HttpServletResponse servletResponse;
 
   @InjectMocks private AuthServiceImpl authService;
+  private Authentication authentication;
+  private User testUser;
+  private LoginRequest loginRequest;
 
   private UserRegistrationRequest registrationRequest;
   private SecurityUser securityUser;
@@ -79,6 +90,21 @@ class AuthServiceTest {
             .build();
 
     securityUser = new SecurityUser(user);
+    authentication = new UsernamePasswordAuthenticationToken(securityUser, null);
+
+    // Initialize loginRequest and testUser
+    loginRequest =
+        LoginRequest.builder().email("test@example.com").password("Password123!").build();
+
+    testUser =
+        User.builder()
+            .id(1L)
+            .email("test@example.com")
+            .firstName("John")
+            .lastName("Doe")
+            .status(UserStatus.ACTIVE)
+            .roles(new HashSet<>())
+            .build();
   }
 
   @Nested
