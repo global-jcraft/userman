@@ -69,7 +69,7 @@ public class AuthServiceImpl implements AuthService {
     if (clientType.equals("web")) {
       log.debug("Client type is web");
       tokenGenerationStrategy = new WebTokenGenerationStrategy(jwtTokenProvider);
-      tokenGenerationStrategy.generateAnsSetToken(servletResponse, securityUser);
+      tokenGenerationStrategy.generateAndSetToken(servletResponse, securityUser);
       return UserRegistrationResponse.builder()
           .userId(securityUser.getUser().getId())
           .email(securityUser.getUser().getEmail())
@@ -81,7 +81,7 @@ public class AuthServiceImpl implements AuthService {
     } else {
       log.debug("Client type is mobile");
       tokenGenerationStrategy = new MobileTokenGenerationStrategy(jwtTokenProvider);
-      tokenGenerationStrategy.generateAnsSetToken(servletResponse, securityUser);
+      tokenGenerationStrategy.generateAndSetToken(servletResponse, securityUser);
       return UserRegistrationResponse.builder()
           .userId(securityUser.getUser().getId())
           .email(securityUser.getUser().getEmail())
@@ -107,6 +107,7 @@ public class AuthServiceImpl implements AuthService {
     try {
       // Load user details first to validate existence and status
       UserDetails userDetails = userDetailsService.loadUserByUsername(request.getEmail());
+      // TODO: fix when notification service email send is done
       if (!userDetails.isEnabled()) {
         throw new AccountStatusException("User account is not active or email is not verified");
       }
@@ -132,7 +133,7 @@ public class AuthServiceImpl implements AuthService {
       if (clientType.equals("web")) {
         log.debug("Client type is web");
         tokenGenerationStrategy = new WebTokenGenerationStrategy(jwtTokenProvider);
-        tokenGenerationStrategy.generateAnsSetToken(servletResponse, securityUser);
+        tokenGenerationStrategy.generateAndSetToken(servletResponse, securityUser);
         return LoginResponse.builder()
             .user(UserMapper.toDto(user))
             .expiresIn(jwtTokenProvider.getAccessTokenValidity())
@@ -140,7 +141,7 @@ public class AuthServiceImpl implements AuthService {
       } else {
         log.debug("Client type is mobile");
         tokenGenerationStrategy = new MobileTokenGenerationStrategy(jwtTokenProvider);
-        tokenGenerationStrategy.generateAnsSetToken(servletResponse, securityUser);
+        tokenGenerationStrategy.generateAndSetToken(servletResponse, securityUser);
         return LoginResponse.builder()
             .accessToken(tokenGenerationStrategy.getAccessToken())
             .refreshToken(tokenGenerationStrategy.getRefreshToken())
@@ -155,7 +156,10 @@ public class AuthServiceImpl implements AuthService {
   }
 
   @Override
-  public TokenRefreshResponse refreshToken(TokenRefreshRequest request) {
+  public TokenRefreshResponse refreshToken(
+      TokenRefreshRequest request,
+      HttpServletRequest servletRequest,
+      HttpServletResponse response) {
     if (!jwtTokenProvider.validateToken(request.getRefreshToken())) {
       throw new InvalidTokenException("Invalid refresh token");
     }
@@ -171,6 +175,22 @@ public class AuthServiceImpl implements AuthService {
     String newAccessToken = jwtTokenProvider.generateAccessToken(userDetails);
     String newRefreshToken = jwtTokenProvider.generateRefreshToken(userDetails);
 
+    // For web clients, set the tokens as secure HTTP-only cookies
+    if (RequestUtil.determineClientType(servletRequest).equals("web")) {
+      WebTokenGenerationStrategy tokenGenerationStrategy =
+          new WebTokenGenerationStrategy(jwtTokenProvider);
+      tokenGenerationStrategy.generateAndSetToken(response, securityUser);
+
+      response.addCookie(tokenGenerationStrategy.getAccessTokenCookie());
+      response.addCookie(tokenGenerationStrategy.getRefreshTokenCookie());
+
+      return TokenRefreshResponse.builder()
+          .tokenType("Bearer")
+          .expiresIn(jwtTokenProvider.getAccessTokenValidity())
+          .build();
+    }
+
+    // For mobile clients, return tokens in the response body
     return TokenRefreshResponse.builder()
         .accessToken(newAccessToken)
         .refreshToken(newRefreshToken)

@@ -61,6 +61,7 @@ public class CustomUserDetailsService implements UserDetailsService {
    * @throws UsernameNotFoundException if the user is not found
    */
   @Override
+  @Transactional
   public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
     User user =
         userRepository

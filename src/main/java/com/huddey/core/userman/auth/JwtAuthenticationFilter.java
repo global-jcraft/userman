@@ -56,8 +56,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
   private String extractJwtFromRequest(HttpServletRequest request, String clientType) {
     if (clientType.equals("web")) {
+      log.debug("Client type is web");
       return extractJwtFromCookie(request);
     } else {
+      log.debug("Client type is mobile");
       return extractJwtFromHeader(request);
     }
   }
@@ -67,10 +69,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     if (cookies != null) {
       for (Cookie cookie : cookies) {
         if (cookie.getName().equals("access_token")) {
-          if (cookie.getSecure() && cookie.isHttpOnly()) {
+          return cookie.getValue();
+          /*if (cookie.getSecure() && cookie.isHttpOnly()) {
             return cookie.getValue();
           }
-          log.warn("Found access_token cookie without proper security flags");
+          log.warn("Found access_token cookie without proper security flags");*/
         }
       }
     }
@@ -80,6 +83,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
   private String extractJwtFromHeader(HttpServletRequest request) {
     String bearerToken = request.getHeader("Authorization");
     if (StringUtils.hasText(bearerToken) && bearerToken.startsWith("Bearer ")) {
+      log.debug("Found Bearer token in Authorization header");
       return bearerToken.substring(7);
     }
     return null;

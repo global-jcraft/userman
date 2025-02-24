@@ -15,11 +15,14 @@ import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.annotation.Import;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import com.huddey.core.userman.config.TestConfig;
 import com.huddey.core.userman.data.SecurityUser;
+import com.huddey.core.userman.data.dto.LoginRequest;
 import com.huddey.core.userman.data.dto.UserRegistrationRequest;
 import com.huddey.core.userman.data.dto.response.UserRegistrationResponse;
 import com.huddey.core.userman.data.entity.User;
@@ -51,6 +54,9 @@ class AuthServiceTest {
   @Mock private HttpServletResponse servletResponse;
 
   @InjectMocks private AuthServiceImpl authService;
+  private Authentication authentication;
+  private User testUser;
+  private LoginRequest loginRequest;
 
   private UserRegistrationRequest registrationRequest;
   private SecurityUser securityUser;
@@ -79,6 +85,21 @@ class AuthServiceTest {
             .build();
 
     securityUser = new SecurityUser(user);
+    authentication = new UsernamePasswordAuthenticationToken(securityUser, null);
+
+    // Initialize loginRequest and testUser
+    loginRequest =
+        LoginRequest.builder().email("test@example.com").password("Password123!").build();
+
+    testUser =
+        User.builder()
+            .id(1L)
+            .email("test@example.com")
+            .firstName("John")
+            .lastName("Doe")
+            .status(UserStatus.ACTIVE)
+            .roles(new HashSet<>())
+            .build();
   }
 
   @Nested
