@@ -258,7 +258,12 @@ class AuthControllerTests {
             .expiresIn(3600)
             .build();
 
-    Mockito.when(authService.refreshToken(any(TokenRefreshRequest.class))).thenReturn(response);
+    Mockito.when(
+            authService.refreshToken(
+                any(TokenRefreshRequest.class),
+                any(HttpServletRequest.class),
+                any(HttpServletResponse.class)))
+        .thenReturn(response);
 
     mockMvc
         .perform(
@@ -280,7 +285,11 @@ class AuthControllerTests {
     TokenRefreshRequest request =
         TokenRefreshRequest.builder().refreshToken("invalid-refresh-token").build();
 
-    Mockito.when(authService.refreshToken(any(TokenRefreshRequest.class)))
+    Mockito.when(
+            authService.refreshToken(
+                any(TokenRefreshRequest.class),
+                any(HttpServletRequest.class),
+                any(HttpServletResponse.class)))
         .thenThrow(new AuthenticationException("Invalid refresh token"));
 
     mockMvc
