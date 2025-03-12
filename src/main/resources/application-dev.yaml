@@ -1,5 +1,24 @@
 # src/main/resources/application-dev.yaml
 spring:
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: ${GOOGLE_CLIENT_ID}
+            client-secret: ${GOOGLE_CLIENT_SECRET}
+            redirect-uri: "{baseUrl}/login/oauth2/code/google"
+            scope:
+              - openid
+              - email
+              - profile
+          facebook:
+            client-id: your-facebook-client-id
+            client-secret: your-facebook-client-secret
+            redirect-uri: "{baseUrl}/oauth2/callback/facebook"
+            scope:
+              - email
+              - public_profile
   application:
     name: userman
   datasource:
@@ -20,11 +39,13 @@ spring:
     default-schema: huddey_userman
 
 server:
-  port: 8081
+  port: 8080
+  servlet:
+    context-path: /userman
 
 app:
   security:
     jwt:
-      secret: your-256-bit-secret-key
+      secret: ${JWT_SECRET}
       accessTokenValidity: 3600000  # 1 hour
       refreshTokenValidity: 86400000 # 24 hours

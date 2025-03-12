@@ -1,4 +1,4 @@
-package com.huddey.core.userman.auth;
+package com.huddey.core.userman.config;
 
 import java.util.List;
 
@@ -20,6 +20,11 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import com.huddey.core.userman.auth.CustomAuthenticationEntryPoint;
+import com.huddey.core.userman.auth.JwtAuthenticationFilter;
+import com.huddey.core.userman.auth.oauth2.OAuth2AuthenticationFailureHandler;
+import com.huddey.core.userman.auth.oauth2.OAuth2AuthenticationSuccessHandler;
+import com.huddey.core.userman.service.CustomOAuth2UserService;
 import com.huddey.core.userman.service.CustomUserDetailsService;
 
 import lombok.RequiredArgsConstructor;
@@ -32,6 +37,10 @@ public class UsermanSecurityConfig {
 
   private final CustomAuthenticationEntryPoint authEntryPoint;
   private final SecurityConfig securityConfig;
+
+  private final CustomOAuth2UserService customOAuth2UserService;
+  private final OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler;
+  private final OAuth2AuthenticationFailureHandler oAuth2AuthenticationFailureHandler;
 
   @Bean
   public SecurityFilterChain securityFilterChain(
@@ -56,6 +65,10 @@ public class UsermanSecurityConfig {
         .authorizeHttpRequests(
             auth -> {
               auth.requestMatchers(
+                      "/api/v1/auth/**",
+                      "/oauth2/**",
+                      "/login/oauth2/code/*",
+                      "/oauth2/authorization/**",
                       "/api/v1/auth/register",
                       "/api/v1/auth/login",
                       "/api/v1/auth/verify-email/**",
@@ -68,6 +81,15 @@ public class UsermanSecurityConfig {
               auth.requestMatchers("/api/v1/admin/**").hasRole("ADMIN");
               auth.anyRequest().authenticated();
             })
+        .oauth2Login(
+            oauth2 ->
+                oauth2
+                    .loginPage("/login")
+                    .authorizationEndpoint(endpoint -> endpoint.baseUri("/oauth2/authorize"))
+                    .redirectionEndpoint(endpoint -> endpoint.baseUri("/login/oauth2/code/*"))
+                    .userInfoEndpoint(endpoint -> endpoint.userService(customOAuth2UserService))
+                    .successHandler(oAuth2AuthenticationSuccessHandler)
+                    .failureHandler(oAuth2AuthenticationFailureHandler))
         .authenticationProvider(authenticationProvider(userDetailsService))
         .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
@@ -79,7 +101,7 @@ public class UsermanSecurityConfig {
     CorsConfiguration configuration = new CorsConfiguration();
     configuration.setAllowedOrigins(List.of("*")); // Configure appropriately for production
     configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-    configuration.setAllowedHeaders(List.of("Authorization", "Content-Type"));
+    configuration.setAllowedHeaders(List.of("*"));
     configuration.setExposedHeaders(List.of("Authorization"));
 
     UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();

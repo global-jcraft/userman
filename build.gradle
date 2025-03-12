@@ -46,6 +46,7 @@ dependencies {
     implementation "com.github.ben-manes.caffeine:caffeine:${caffeinVersion}"
     implementation 'org.apache.commons:commons-compress:1.26.0'
     implementation "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:${jacksonDatatypeVersion}"
+    implementation "me.paulschwarz:spring-dotenv:${dotenvVersion}"
     runtimeOnly "io.jsonwebtoken:jjwt-impl:${jwtVersion}"
     runtimeOnly "io.jsonwebtoken:jjwt-jackson:${jwtVersion}"
     compileOnly 'org.projectlombok:lombok'
