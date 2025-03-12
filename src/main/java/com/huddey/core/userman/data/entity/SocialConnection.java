@@ -5,15 +5,14 @@ import java.io.Serializable;
 import java.time.OffsetDateTime;
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 @Entity
 @Table(name = "social_connections", schema = "huddey_userman")
-@Getter
-@Setter
+@Builder
+@Data
 @NoArgsConstructor
+@AllArgsConstructor
 public class SocialConnection implements Serializable {
 
   @Serial private static final long serialVersionUID = 1L;

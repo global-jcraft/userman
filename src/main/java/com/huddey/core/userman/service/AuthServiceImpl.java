@@ -1,6 +1,7 @@
 package com.huddey.core.userman.service;
 
 import static com.huddey.core.userman.utils.RequestUtil.determineClientType;
+import static com.huddey.core.userman.utils.RequestUtil.getLoginResponse;
 
 import java.time.OffsetDateTime;
 
@@ -24,7 +25,6 @@ import com.huddey.core.userman.data.dto.token.TokenData;
 import com.huddey.core.userman.data.dto.token.TokenRefreshResponse;
 import com.huddey.core.userman.data.entity.*;
 import com.huddey.core.userman.exception.*;
-import com.huddey.core.userman.mapper.UserMapper;
 import com.huddey.core.userman.repository.AuthProviderRepository;
 import com.huddey.core.userman.repository.RoleRepository;
 import com.huddey.core.userman.repository.UserRepository;
@@ -66,6 +66,7 @@ public class AuthServiceImpl implements AuthService {
     String clientType = determineClientType(servletRequest);
 
     // emailService.sendVerificationEmail(user.getEmail(), user.getEmailVerificationToken());
+
     if (clientType.equals("web")) {
       log.debug("Client type is web");
       tokenGenerationStrategy = new WebTokenGenerationStrategy(jwtTokenProvider);
@@ -130,26 +131,7 @@ public class AuthServiceImpl implements AuthService {
       TokenGenerationStrategy tokenGenerationStrategy;
       String clientType = determineClientType(servletRequest);
 
-      if (clientType.equals("web")) {
-        log.debug("Client type is web");
-        tokenGenerationStrategy = new WebTokenGenerationStrategy(jwtTokenProvider);
-        tokenGenerationStrategy.generateAndSetToken(servletResponse, securityUser);
-        return LoginResponse.builder()
-            .user(UserMapper.toDto(user))
-            .expiresIn(jwtTokenProvider.getAccessTokenValidity())
-            .build();
-      } else {
-        log.debug("Client type is mobile");
-        tokenGenerationStrategy = new MobileTokenGenerationStrategy(jwtTokenProvider);
-        tokenGenerationStrategy.generateAndSetToken(servletResponse, securityUser);
-        return LoginResponse.builder()
-            .accessToken(tokenGenerationStrategy.getAccessToken())
-            .refreshToken(tokenGenerationStrategy.getRefreshToken())
-            .tokenType("Bearer")
-            .expiresIn(jwtTokenProvider.getAccessTokenValidity())
-            .user(UserMapper.toDto(user))
-            .build();
-      }
+      return getLoginResponse(servletResponse, clientType, securityUser, user, jwtTokenProvider);
     } catch (BadCredentialsException ex) {
       throw new AuthenticationException("Invalid email or password");
     }

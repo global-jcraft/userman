@@ -1,8 +1,52 @@
 spring:
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: 152514877199-9472icpomqfbnokakhbukj745ds7229i.apps.googleusercontent.com
+            client-secret: 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
+            redirect-uri: "{baseUrl}/login/oauth2/code/google"
+            scope:
+              - openid
+              - email
+              - profile
+          facebook:
+            client-id: your-facebook-client-id
+            client-secret: your-facebook-client-secret
+            redirect-uri: "{baseUrl}/oauth2/callback/facebook"
+            scope:
+              - email
+              - public_profile
   application:
     name: userman
+  datasource:
+    url: jdbc:postgresql://localhost:5432/userman
+    username: postgres
+    password: dev_password
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: true
+    properties:
+      hibernate.dialect: org.hibernate.dialect.PostgreSQLDialect
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    url: jdbc:postgresql://localhost:5432/userman
+    user: postgres
+    password: dev_password
+    default-schema: huddey_userman
 
 server:
+  port: 8080
+  ssl:
+    enabled: true
+    key-store: classpath:keystore.p12
+    key-store-password: jcraft
+    key-alias: jcraft-local
+    key-store-type: PKCS12
   servlet:
     context-path: /userman
 
