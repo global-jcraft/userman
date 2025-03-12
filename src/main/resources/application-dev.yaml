@@ -5,8 +5,8 @@ spring:
       client:
         registration:
           google:
-            client-id: 9<YOUR_GoogleOAuthClientID_HERE>
-            client-secret: XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+            client-id: ${GOOGLE_CLIENT_ID}
+            client-secret: ${GOOGLE_CLIENT_SECRET}
             redirect-uri: "{baseUrl}/login/oauth2/code/google"
             scope:
               - openid
@@ -46,6 +46,6 @@ server:
 app:
   security:
     jwt:
-      secret: your-256-bit-secret-key
+      secret: ${JWT_SECRET}
       accessTokenValidity: 3600000  # 1 hour
       refreshTokenValidity: 86400000 # 24 hours

@@ -4,8 +4,8 @@ spring:
       client:
         registration:
           google:
-            client-id: 152514877199-9472icpomqfbnokakhbukj745ds7229i.apps.googleusercontent.com
-            client-secret: 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
+            client-id: ${GOOGLE_CLIENT_ID}
+            client-secret: ${GOOGLE_CLIENT_SECRET}
             redirect-uri: "{baseUrl}/login/oauth2/code/google"
             scope:
               - openid
@@ -58,6 +58,6 @@ server:
 app:
   security:
     jwt:
-      secret: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
+      secret: ${JWT_SECRET}
       accessTokenValidity: 3600000  # 1 hour
       refreshTokenValidity: 86400000 # 24 hours
