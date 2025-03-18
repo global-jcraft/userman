@@ -3,6 +3,10 @@ package com.huddey.core.userman.data.entity;
 import java.io.Serial;
 import java.io.Serializable;
 import java.time.OffsetDateTime;
+import java.util.Map;
+
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import jakarta.persistence.*;
 import lombok.*;
@@ -48,7 +52,8 @@ public class SocialConnection implements Serializable {
   private OffsetDateTime tokenExpiresAt;
 
   @Column(name = "provider_raw_data", columnDefinition = "jsonb")
-  private String providerRawData;
+  @JdbcTypeCode(SqlTypes.JSON)
+  private Map<String, Object> providerRawData;
 
   @Column(name = "created_at", nullable = false, updatable = false)
   private OffsetDateTime createdAt;

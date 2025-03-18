@@ -56,10 +56,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
     SecurityUser userPrincipal;
     User user;
 
-    if (principal instanceof SecurityUser securityuser) {
-      userPrincipal = securityuser;
-      user = userPrincipal.getUser();
-    } else if (principal instanceof OAuth2User oauth2UserInstance) {
+    if (principal instanceof OAuth2User oauth2UserInstance) {
       String email = oauth2UserInstance.getAttribute("email");
       Optional<User> userOptional = userRepository.findByEmail(email);
 
@@ -74,11 +71,11 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
         user =
             User.builder()
                 .email(email)
-                .firstName(oauth2UserInstance.getAttribute("given_name"))
-                .lastName(oauth2UserInstance.getAttribute("family_name"))
+                .firstName(oauth2UserInstance.getAttribute("name"))
                 .status(UserStatus.ACTIVE)
                 .roles(new HashSet<>())
                 .credentials(new HashSet<>())
+                .socialConnections(new HashSet<>())
                 .emailVerified(true)
                 .profilePictureUrl(oauth2UserInstance.getAttribute("picture"))
                 .registrationIp(RequestUtil.getClientIp())
@@ -91,12 +88,15 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
                 .findByName(ROLE_USER)
                 .orElseThrow(() -> new IllegalStateException("Default role not found"));
         user.getRoles().add(userRole);
-
+        // add social connection check
         user = userRepository.save(user);
       }
 
       userPrincipal =
           SecurityUser.createOauthSecurityUser(user, oauth2UserInstance.getAttributes());
+    } else if (principal instanceof SecurityUser securityUser) {
+      userPrincipal = securityUser;
+      user = userPrincipal.getUser();
     } else {
       throw new IllegalArgumentException("Unsupported principal type: " + principal.getClass());
     }

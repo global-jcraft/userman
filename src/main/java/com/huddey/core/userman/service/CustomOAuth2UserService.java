@@ -3,6 +3,8 @@ package com.huddey.core.userman.service;
 import static com.huddey.core.userman.constants.UsermanConstants.*;
 
 import java.time.OffsetDateTime;
+import java.time.ZoneId;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
 
@@ -14,7 +16,6 @@ import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 import org.springframework.util.ObjectUtils;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.huddey.core.userman.data.SecurityUser;
 import com.huddey.core.userman.data.entity.*;
@@ -46,9 +47,17 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
     OAuth2User oAuth2User = super.loadUser(oAuth2UserRequest);
     try {
       return processOAuth2User(oAuth2UserRequest, oAuth2User);
+    } catch (OAuth2AuthenticationException ex) {
+      log.error("OAuth2 authentication error: {}", ex.getMessage());
+      throw ex;
     } catch (Exception ex) {
-      log.error("Error processing OAuth2 user", ex);
-      throw new OAuth2AuthenticationException(new OAuth2Error("processing_error"), ex.getMessage());
+      String errorMessage =
+          String.format(
+              "Error processing OAuth2 user from provider %s: %s",
+              oAuth2UserRequest.getClientRegistration().getRegistrationId(), ex.getMessage());
+      log.error(errorMessage, ex);
+      throw new OAuth2AuthenticationException(
+          new OAuth2Error("processing_error"), errorMessage, ex);
     }
   }
 
@@ -115,6 +124,8 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
             .firstName(oAuth2UserInfo.getName())
             .profilePictureUrl(oAuth2UserInfo.getImageUrl())
             .status(UserStatus.ACTIVE)
+            .roles(new HashSet<>())
+            .socialConnections(new HashSet<>())
             .emailVerified(true)
             .build();
 
@@ -159,16 +170,12 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
     // Set expiration if available
     if (oAuth2UserRequest.getAccessToken().getExpiresAt() != null) {
       socialConnection.setTokenExpiresAt(
-          OffsetDateTime.from(oAuth2UserRequest.getAccessToken().getExpiresAt()));
+          OffsetDateTime.ofInstant(
+              oAuth2UserRequest.getAccessToken().getExpiresAt(), ZoneId.systemDefault()));
     }
 
-    // Store OAuth attributes as JSON
-    try {
-      socialConnection.setProviderRawData(
-          objectMapper.writeValueAsString(oAuth2UserInfo.getAttributes()));
-    } catch (JsonProcessingException e) {
-      log.error("Error converting OAuth attributes to JSON", e);
-    }
+    // Store OAuth attributes directly
+    socialConnection.setProviderRawData(oAuth2UserInfo.getAttributes());
 
     user.getSocialConnections().add(socialConnection);
   }
@@ -190,16 +197,12 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
               // Update expiration if available
               if (oAuth2UserRequest.getAccessToken().getExpiresAt() != null) {
                 conn.setTokenExpiresAt(
-                    OffsetDateTime.from(oAuth2UserRequest.getAccessToken().getExpiresAt()));
+                    OffsetDateTime.ofInstant(
+                        oAuth2UserRequest.getAccessToken().getExpiresAt(), ZoneId.systemDefault()));
               }
 
               // Update provider data
-              try {
-                conn.setProviderRawData(
-                    objectMapper.writeValueAsString(oAuth2UserInfo.getAttributes()));
-              } catch (JsonProcessingException e) {
-                log.error("Error converting OAuth attributes to JSON", e);
-              }
+              conn.setProviderRawData(oAuth2UserInfo.getAttributes());
             });
   }
 }
