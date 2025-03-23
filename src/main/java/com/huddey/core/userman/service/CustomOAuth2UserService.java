@@ -2,8 +2,6 @@ package com.huddey.core.userman.service;
 
 import static com.huddey.core.userman.constants.UsermanConstants.*;
 
-import java.time.OffsetDateTime;
-import java.time.ZoneId;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
@@ -16,7 +14,7 @@ import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 import org.springframework.util.ObjectUtils;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.huddey.core.userman.auth.oauth2.OAuthUtils;
 import com.huddey.core.userman.data.SecurityUser;
 import com.huddey.core.userman.data.entity.*;
 import com.huddey.core.userman.data.oAuth2.FacebookOAuth2UserInfo;
@@ -38,7 +36,6 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
   private final UserRepository userRepository;
   private final AuthProviderRepository authProviderRepository;
   private final RoleRepository roleRepository;
-  private final ObjectMapper objectMapper;
 
   @Override
   @Transactional
@@ -77,18 +74,20 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
     if (userOptional.isPresent()) {
       user = userOptional.get();
 
-      // Check if user has connected with this social provider before
-      boolean hasConnection =
-          user.getSocialConnections().stream()
-              .anyMatch(conn -> conn.getAuthProvider().getName().equals(providerName));
+      AuthProvider authProvider =
+          authProviderRepository
+              .findByName(providerName)
+              .orElseGet(
+                  () -> {
+                    AuthProvider newProvider = new AuthProvider();
+                    newProvider.setName(providerName);
+                    newProvider.setActive(true);
+                    newProvider.setConfig("{\"type\": \"oauth2\"}");
+                    return authProviderRepository.save(newProvider);
+                  });
 
-      if (hasConnection) {
-        // Update existing connection
-        updateSocialConnection(user, providerName, oAuth2UserRequest, oAuth2UserInfo);
-      } else {
-        // Add new social connection for existing user
-        addSocialConnection(user, providerName, oAuth2UserRequest, oAuth2UserInfo);
-      }
+      // Check if user has connected with this social provider before
+      OAuthUtils.socialConnectionCheck(user, authProvider, oAuth2UserRequest, oAuth2UserInfo);
 
       // Update user profile data
       user.setFirstName(oAuth2UserInfo.getName());
@@ -115,6 +114,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
   @Transactional
   protected User registerNewUser(
       OAuth2UserRequest oAuth2UserRequest, OAuth2UserInfo oAuth2UserInfo) {
+    log.debug("Registering new user from OAuth2 provider");
     String providerName = oAuth2UserRequest.getClientRegistration().getRegistrationId();
 
     // Create new user
@@ -139,70 +139,21 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
     // Save user first to generate ID
     user = userRepository.save(user);
 
-    // Add social connection
-    addSocialConnection(user, providerName, oAuth2UserRequest, oAuth2UserInfo);
-
-    return userRepository.save(user);
-  }
-
-  @Transactional
-  protected void addSocialConnection(
-      User user,
-      String providerName,
-      OAuth2UserRequest oAuth2UserRequest,
-      OAuth2UserInfo oAuth2UserInfo) {
-    // Get the auth provider
     AuthProvider authProvider =
         authProviderRepository
             .findByName(providerName)
-            .orElseThrow(() -> new OAuth2AuthenticationException("Auth provider not found"));
+            .orElseGet(
+                () -> {
+                  AuthProvider newProvider = new AuthProvider();
+                  newProvider.setName(providerName);
+                  newProvider.setActive(true);
+                  newProvider.setConfig("{\"type\": \"oauth2\"}");
+                  return authProviderRepository.save(newProvider);
+                });
 
-    // Create social connection
-    SocialConnection socialConnection =
-        SocialConnection.builder()
-            .user(user)
-            .authProvider(authProvider)
-            .providerUserId(oAuth2UserInfo.getId())
-            .providerEmail(oAuth2UserInfo.getEmail())
-            .accessToken(oAuth2UserRequest.getAccessToken().getTokenValue())
-            .build();
+    // Add social connection
+    OAuthUtils.addSocialConnection(user, authProvider, oAuth2UserRequest, oAuth2UserInfo);
 
-    // Set expiration if available
-    if (oAuth2UserRequest.getAccessToken().getExpiresAt() != null) {
-      socialConnection.setTokenExpiresAt(
-          OffsetDateTime.ofInstant(
-              oAuth2UserRequest.getAccessToken().getExpiresAt(), ZoneId.systemDefault()));
-    }
-
-    // Store OAuth attributes directly
-    socialConnection.setProviderRawData(oAuth2UserInfo.getAttributes());
-
-    user.getSocialConnections().add(socialConnection);
-  }
-
-  @Transactional
-  protected void updateSocialConnection(
-      User user,
-      String providerName,
-      OAuth2UserRequest oAuth2UserRequest,
-      OAuth2UserInfo oAuth2UserInfo) {
-    user.getSocialConnections().stream()
-        .filter(conn -> conn.getAuthProvider().getName().equals(providerName))
-        .findFirst()
-        .ifPresent(
-            conn -> {
-              // Update token information
-              conn.setAccessToken(oAuth2UserRequest.getAccessToken().getTokenValue());
-
-              // Update expiration if available
-              if (oAuth2UserRequest.getAccessToken().getExpiresAt() != null) {
-                conn.setTokenExpiresAt(
-                    OffsetDateTime.ofInstant(
-                        oAuth2UserRequest.getAccessToken().getExpiresAt(), ZoneId.systemDefault()));
-              }
-
-              // Update provider data
-              conn.setProviderRawData(oAuth2UserInfo.getAttributes());
-            });
+    return userRepository.save(user);
   }
 }
