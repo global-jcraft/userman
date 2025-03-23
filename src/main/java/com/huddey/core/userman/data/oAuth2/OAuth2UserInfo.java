@@ -17,4 +17,8 @@ public class OAuth2UserInfo {
   protected String name;
   protected String email;
   protected String imageUrl;
+
+  public OAuth2UserInfo(Map<String, Object> attributes) {
+    this.attributes = attributes;
+  }
 }
