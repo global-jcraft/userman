@@ -12,12 +12,18 @@ spring:
               - email
               - profile
           facebook:
-            client-id: your-facebook-client-id
-            client-secret: your-facebook-client-secret
-            redirect-uri: "{baseUrl}/oauth2/code/facebook"
+            client-id: ${FACEBOOK_CLIENT_ID}
+            client-secret: ${FACEBOOK_CLIENT_SECRET}
+            redirect-uri: "{baseUrl}/login/oauth2/code/facebook"
             scope:
               - email
               - public_profile
+        provider:
+          facebook:
+            authorization-uri: https://www.facebook.com/v16.0/dialog/oauth
+            token-uri: https://graph.facebook.com/v16.0/oauth/access_token
+            user-info-uri: https://graph.facebook.com/v16.0/me?fields=id,name,email,picture.type(large)
+            user-name-attribute: id
   application:
     name: userman
   datasource:
