@@ -40,16 +40,30 @@ public class AuthController {
     this.authService = authService;
   }
 
-  @PostMapping("/register")
-  public ResponseEntity<UserRegistrationResponse> register(
+  @PostMapping("/basic-auth")
+  public ResponseEntity<UserRegistrationResponse> registerBasicFlow(
+      @Valid @RequestBody UserRegistrationBasicFlowRequest userRegistrationBasicFlowRequest,
+      HttpServletRequest request,
+      HttpServletResponse response)
+      throws RoleNotFoundException, UserAlreadyExistsException {
+    log.info(
+        "AuthController.registerBasicFlow() -> Registering a new user - Start time: {}",
+        OffsetDateTime.now().format(DateTimeFormatter.ISO_OFFSET_DATE_TIME));
+    return ResponseEntity.ok(
+        authService.registerBasicFlow(userRegistrationBasicFlowRequest, request, response));
+  }
+
+  @PostMapping("/basic-auth-complete")
+  public ResponseEntity<UserRegistrationResponse> registerBasicFlowComplete(
       @Valid @RequestBody UserRegistrationRequest userRegistrationRequest,
       HttpServletRequest request,
       HttpServletResponse response)
       throws RoleNotFoundException, UserAlreadyExistsException {
     log.info(
-        "AuthController.register() -> Registering a new user - Start time: {}",
+        "AuthController.registerBasicFlowComplete() -> Update user missing info - Start time: {}",
         OffsetDateTime.now().format(DateTimeFormatter.ISO_OFFSET_DATE_TIME));
-    return ResponseEntity.ok(authService.register(userRegistrationRequest, request, response));
+    return ResponseEntity.ok(
+        authService.completeRegistration(userRegistrationRequest, request, response));
   }
 
   @PostMapping("/login")
