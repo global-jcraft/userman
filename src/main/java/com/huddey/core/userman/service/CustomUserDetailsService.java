@@ -2,6 +2,7 @@ package com.huddey.core.userman.service;
 
 import java.time.OffsetDateTime;
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.UUID;
 
 import javax.management.relation.RoleNotFoundException;
@@ -14,10 +15,12 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.huddey.core.userman.data.SecurityUser;
+import com.huddey.core.userman.data.dto.UserRegistrationBasicFlowRequest;
 import com.huddey.core.userman.data.dto.UserRegistrationRequest;
 import com.huddey.core.userman.data.entity.*;
 import com.huddey.core.userman.exception.AuthProviderNotFoundException;
 import com.huddey.core.userman.exception.UserAlreadyExistsException;
+import com.huddey.core.userman.exception.UserNotFoundException;
 import com.huddey.core.userman.repository.AuthProviderRepository;
 import com.huddey.core.userman.repository.RoleRepository;
 import com.huddey.core.userman.repository.UserCredentialRepository;
@@ -80,13 +83,47 @@ public class CustomUserDetailsService implements UserDetailsService {
    * @throws RoleNotFoundException if the default role is not found
    */
   @Transactional
-  public SecurityUser createNewUser(UserRegistrationRequest request) throws RoleNotFoundException {
-    checkIfUserExists(request.getEmail());
-    User user = buildUser(request);
-    assignDefaultRole(user);
-    userRepository.save(user);
-    saveUserCredentials(user, request.getPassword());
-    return new SecurityUser(user);
+  public SecurityUser createNewUserBasicFlow(UserRegistrationBasicFlowRequest request)
+      throws RoleNotFoundException {
+    Optional<User> user = checkIfUserExists(request.getEmail());
+    if (user.isPresent()) {
+      throw new UserAlreadyExistsException("User already exists with email: " + request.getEmail());
+    }
+    var newUser = buildUserBasicFlow(request);
+    assignDefaultRole(newUser);
+    userRepository.save(newUser);
+    saveUserCredentials(newUser, request.getPassword());
+    return new SecurityUser(newUser);
+  }
+
+  /**
+   * Complete user info
+   *
+   * @param request the user registration request
+   * @return the security user
+   * @throws RoleNotFoundException if the default role is not found
+   */
+  @Transactional
+  public SecurityUser updateUserInfo(UserRegistrationRequest request) throws RoleNotFoundException {
+    User existingUser =
+        checkIfUserExists(request.getEmail())
+            .orElseThrow(
+                () ->
+                    new UserNotFoundException(
+                        "User with email: " + request.getEmail() + " not found"));
+
+    existingUser.setFirstName(request.getFirstName());
+    existingUser.setLastName(request.getLastName());
+    existingUser.setCompanyName(request.getCompanyName());
+    existingUser.setPhoneNumber(request.getPhoneNumber());
+    existingUser.setUpdatedAt(OffsetDateTime.now());
+    existingUser.setRegistrationIp(RequestUtil.getClientIp());
+    existingUser.setEmailVerificationToken(generateVerificationToken());
+    existingUser.setEmailVerificationTokenExpiresAt(
+        OffsetDateTime.now().plusHours(verificationTokenExpiryHours));
+    userRepository.save(existingUser);
+
+    return new SecurityUser(existingUser);
   }
 
   /**
@@ -94,13 +131,28 @@ public class CustomUserDetailsService implements UserDetailsService {
    *
    * @param email the email
    */
-  private void checkIfUserExists(String email) {
-    userRepository
-        .findByEmail(email)
-        .ifPresent(
-            user -> {
-              throw new UserAlreadyExistsException("User with email " + email + " already exists");
-            });
+  private Optional<User> checkIfUserExists(String email) {
+    return userRepository.findByEmail(email);
+  }
+
+  /**
+   * Build a new user from the registration request.
+   *
+   * @param request the user registration request
+   * @return the user
+   */
+  private User buildUserBasicFlow(UserRegistrationBasicFlowRequest request) {
+    return User.builder()
+        .email(request.getEmail())
+        .roles(new HashSet<>())
+        .credentials(new HashSet<>())
+        .status(UserStatus.PENDING)
+        .registrationIp(RequestUtil.getClientIp())
+        .createdAt(OffsetDateTime.now())
+        .emailVerificationToken(generateVerificationToken())
+        .emailVerificationTokenExpiresAt(
+            OffsetDateTime.now().plusHours(verificationTokenExpiryHours))
+        .build();
   }
 
   /**

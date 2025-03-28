@@ -24,6 +24,7 @@ import com.huddey.core.userman.auth.CustomAuthenticationEntryPoint;
 import com.huddey.core.userman.auth.JwtAuthenticationFilter;
 import com.huddey.core.userman.auth.oauth2.OAuth2AuthenticationFailureHandler;
 import com.huddey.core.userman.auth.oauth2.OAuth2AuthenticationSuccessHandler;
+import com.huddey.core.userman.service.CustomOAuth2UserService;
 import com.huddey.core.userman.service.CustomUserDetailsService;
 
 import lombok.RequiredArgsConstructor;
@@ -37,7 +38,7 @@ public class UsermanSecurityConfig {
   private final CustomAuthenticationEntryPoint authEntryPoint;
   private final SecurityConfig securityConfig;
 
-  // private final CustomOAuth2UserService customOAuth2UserService;
+  private final CustomOAuth2UserService customOAuth2UserService;
   private final OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler;
   private final OAuth2AuthenticationFailureHandler oAuth2AuthenticationFailureHandler;
 
@@ -83,10 +84,9 @@ public class UsermanSecurityConfig {
         .oauth2Login(
             oauth2 ->
                 oauth2
-                    .loginPage("/login")
                     .authorizationEndpoint(endpoint -> endpoint.baseUri("/oauth2/authorize"))
                     .redirectionEndpoint(endpoint -> endpoint.baseUri("/login/oauth2/code/*"))
-                    // .userInfoEndpoint(endpoint -> endpoint.userService(customOAuth2UserService))
+                    .userInfoEndpoint(endpoint -> endpoint.userService(customOAuth2UserService))
                     .successHandler(oAuth2AuthenticationSuccessHandler)
                     .failureHandler(oAuth2AuthenticationFailureHandler))
         .authenticationProvider(authenticationProvider(userDetailsService))

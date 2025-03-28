@@ -4,6 +4,7 @@ import javax.management.relation.RoleNotFoundException;
 
 import com.huddey.core.userman.data.dto.LoginRequest;
 import com.huddey.core.userman.data.dto.TokenRefreshRequest;
+import com.huddey.core.userman.data.dto.UserRegistrationBasicFlowRequest;
 import com.huddey.core.userman.data.dto.UserRegistrationRequest;
 import com.huddey.core.userman.data.dto.response.LoginResponse;
 import com.huddey.core.userman.data.dto.response.UserRegistrationResponse;
@@ -15,7 +16,13 @@ import jakarta.servlet.http.HttpServletResponse;
 
 public interface AuthService {
 
-  UserRegistrationResponse register(
+  UserRegistrationResponse registerBasicFlow(
+      UserRegistrationBasicFlowRequest user,
+      HttpServletRequest request,
+      HttpServletResponse response)
+      throws RoleNotFoundException, UserAlreadyExistsException;
+
+  UserRegistrationResponse completeRegistration(
       UserRegistrationRequest user, HttpServletRequest request, HttpServletResponse response)
       throws RoleNotFoundException, UserAlreadyExistsException;
 

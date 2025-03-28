@@ -55,14 +55,60 @@ public class AuthServiceImpl implements AuthService {
   private final CustomUserDetailsService customUserDetailsService;
 
   @Override
-  public UserRegistrationResponse register(
+  public UserRegistrationResponse registerBasicFlow(
+      UserRegistrationBasicFlowRequest user,
+      HttpServletRequest servletRequest,
+      HttpServletResponse servletResponse)
+      throws RoleNotFoundException, UserAlreadyExistsException {
+
+    TokenGenerationStrategy tokenGenerationStrategy;
+    SecurityUser securityUser = customUserDetailsService.createNewUserBasicFlow(user);
+    String clientType = determineClientType(servletRequest);
+
+    // emailService.sendVerificationEmail(user.getEmail(), user.getEmailVerificationToken());
+
+    if (clientType.equals("web")) {
+      log.debug("Client type is web");
+      tokenGenerationStrategy = new WebTokenGenerationStrategy(jwtTokenProvider);
+      tokenGenerationStrategy.generateAndSetToken(servletResponse, securityUser);
+      return UserRegistrationResponse.builder()
+          .userId(securityUser.getUser().getId())
+          .email(securityUser.getUser().getEmail())
+          .firstName(securityUser.getUser().getFirstName())
+          .lastName(securityUser.getUser().getLastName())
+          .status(securityUser.getUser().getStatus().toString())
+          .message("Registration successful. Please verify your email.")
+          .build();
+    } else {
+      log.debug("Client type is mobile");
+      tokenGenerationStrategy = new MobileTokenGenerationStrategy(jwtTokenProvider);
+      tokenGenerationStrategy.generateAndSetToken(servletResponse, securityUser);
+      return UserRegistrationResponse.builder()
+          .userId(securityUser.getUser().getId())
+          .email(securityUser.getUser().getEmail())
+          .firstName(securityUser.getUser().getFirstName())
+          .lastName(securityUser.getUser().getLastName())
+          .status(securityUser.getUser().getStatus().toString())
+          .message("Registration successful. Please verify your email.")
+          .tokenData(
+              TokenData.builder()
+                  .accessToken(tokenGenerationStrategy.getAccessToken())
+                  .refreshToken(tokenGenerationStrategy.getRefreshToken())
+                  .expiresIn(jwtTokenProvider.getAccessTokenValidity())
+                  .build())
+          .build();
+    }
+  }
+
+  @Override
+  public UserRegistrationResponse completeRegistration(
       UserRegistrationRequest request,
       HttpServletRequest servletRequest,
       HttpServletResponse servletResponse)
       throws RoleNotFoundException, UserAlreadyExistsException {
 
     TokenGenerationStrategy tokenGenerationStrategy;
-    SecurityUser securityUser = customUserDetailsService.createNewUser(request);
+    SecurityUser securityUser = customUserDetailsService.updateUserInfo(request);
     String clientType = determineClientType(servletRequest);
 
     // emailService.sendVerificationEmail(user.getEmail(), user.getEmailVerificationToken());
