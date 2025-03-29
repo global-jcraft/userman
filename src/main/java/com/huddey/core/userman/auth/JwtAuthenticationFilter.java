@@ -33,6 +33,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
       HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
       throws ServletException, IOException {
 
+    logout(request, response, filterChain);
+
     try {
       String clientType = determineClientType(request);
       String token = extractJwtFromRequest(request, clientType);
@@ -52,6 +54,33 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     }
     log.debug("Completed processing request: {}", request.getRequestURI());
     filterChain.doFilter(request, response);
+  }
+
+  private static void logout(
+      HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+      throws IOException, ServletException {
+    if (request.getParameter("off") != null) {
+      log.debug("Processing logout request");
+      String clientType = determineClientType(request);
+      if (clientType.equals("web")) {
+        log.debug("Client type is web");
+        Cookie accessCookie = new Cookie("access_token", null);
+        accessCookie.setMaxAge(0);
+        accessCookie.setPath("/");
+        response.addCookie(accessCookie);
+
+        Cookie refreshCookie = new Cookie("refresh_token", null);
+        refreshCookie.setMaxAge(0);
+        refreshCookie.setPath("/");
+        response.addCookie(refreshCookie);
+
+        filterChain.doFilter(request, response);
+      } else {
+        log.debug("Client type is mobile");
+        response.setHeader("Authorization", null);
+        filterChain.doFilter(request, response);
+      }
+    }
   }
 
   private String extractJwtFromRequest(HttpServletRequest request, String clientType) {
