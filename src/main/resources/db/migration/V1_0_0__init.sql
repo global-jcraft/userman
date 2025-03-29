@@ -39,6 +39,7 @@ CREATE TABLE huddey_userman.users
     registration_ip                     VARCHAR(45),
     last_login_ip                       VARCHAR(45),
     last_login_at                       TIMESTAMP WITH TIME ZONE,
+    last_logout_at                      TIMESTAMP WITH TIME ZONE,
     created_at                          TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at                          TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );

@@ -64,6 +64,9 @@ public class User implements Serializable {
   @Column(name = "last_login_at")
   private OffsetDateTime lastLoginAt;
 
+  @Column(name = "last_logout_at")
+  private OffsetDateTime lastLogoutAt;
+
   @Column(name = "created_at", nullable = false, updatable = false)
   private OffsetDateTime createdAt;
 

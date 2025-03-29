@@ -7,6 +7,7 @@ import javax.management.relation.RoleNotFoundException;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -89,5 +90,11 @@ public class AuthController {
       HttpServletRequest servletRequest,
       HttpServletResponse response) {
     return ResponseEntity.ok(authService.refreshToken(request, servletRequest, response));
+  }
+
+  @PostMapping("/logout")
+  public ResponseEntity<?> logout(HttpServletRequest request, HttpServletResponse response) {
+    new SecurityContextLogoutHandler().logout(request, response, null);
+    return ResponseEntity.ok().build();
   }
 }

@@ -16,6 +16,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import com.huddey.core.userman.auth.JwtAuthenticationFilter;
 import com.huddey.core.userman.auth.JwtTokenProvider;
 import com.huddey.core.userman.data.SecurityUser;
 import com.huddey.core.userman.data.dto.*;
@@ -53,6 +54,7 @@ public class AuthServiceImpl implements AuthService {
   private final AuthenticationManager authenticationManager;
   private final UserDetailsService userDetailsService;
   private final CustomUserDetailsService customUserDetailsService;
+  private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
   @Override
   public UserRegistrationResponse registerBasicFlow(
