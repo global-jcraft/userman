@@ -1,10 +1,9 @@
 package com.huddey.core.userman.controller;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -15,9 +14,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
 import com.huddey.core.userman.auth.JwtTokenProvider;
-import com.huddey.core.userman.data.dto.LoginRequest;
-import com.huddey.core.userman.data.dto.UserRegistrationBasicFlowRequest;
-import com.huddey.core.userman.data.dto.UserRegistrationRequest;
+import com.huddey.core.userman.data.ApiResponse;
+import com.huddey.core.userman.data.dto.*;
 import com.huddey.core.userman.data.dto.response.LoginResponse;
 import com.huddey.core.userman.data.dto.response.UserRegistrationResponse;
 import com.huddey.core.userman.exception.RoleNotFoundException;
@@ -156,5 +154,97 @@ class AuthControllerTest {
     assertThat(responseEntity.getBody().getAccessToken()).isEqualTo("access-token");
     assertThat(responseEntity.getBody().getRefreshToken()).isEqualTo("refresh-token");
     assertThat(responseEntity.getBody().getTokenType()).isEqualTo("Bearer");
+  }
+
+  @Test
+  void resetPasswordRequest_ShouldReturnSuccessResponse() {
+    // Arrange
+    ResetPasswordRequest resetPasswordRequest = new ResetPasswordRequest();
+    resetPasswordRequest.setEmail("test@example.com");
+
+    ResetPasswordResponse resetPasswordResponse =
+        new ResetPasswordResponse(); // Replace with your actual success object type
+
+    when(authService.resetPasswordRequest(
+            any(ResetPasswordRequest.class),
+            any(HttpServletRequest.class),
+            any(HttpServletResponse.class)))
+        .thenReturn(resetPasswordResponse);
+
+    // Act
+    ResponseEntity<ApiResponse> responseEntity =
+        authController.resetPasswordRequest(resetPasswordRequest, request, response);
+
+    // Assert
+    assertThat(responseEntity.getStatusCode()).isEqualTo(HttpStatus.OK);
+    assertThat(responseEntity.getBody()).isNotNull();
+    assertThat(responseEntity.getBody().isSuccess()).isTrue();
+    assertThat(responseEntity.getBody().getMessage())
+        .isEqualTo("Password reset request sent successfully");
+    assertThat(responseEntity.getBody().getData()).isEqualTo(resetPasswordResponse);
+    assertThat(responseEntity.getBody().getTimestamp()).isNotNull();
+
+    verify(authService).resetPasswordRequest(resetPasswordRequest, request, response);
+  }
+
+  @Test
+  void resetPasswordRequest_WhenServiceThrowsException_ShouldPropagateException() {
+    // Arrange
+    ResetPasswordRequest resetPasswordRequest = new ResetPasswordRequest();
+    resetPasswordRequest.setEmail("test@example.com");
+
+    when(authService.resetPasswordRequest(
+            any(ResetPasswordRequest.class),
+            any(HttpServletRequest.class),
+            any(HttpServletResponse.class)))
+        .thenThrow(new RuntimeException("Failed to process reset request"));
+
+    // Act & Assert
+    assertThrows(
+        RuntimeException.class,
+        () -> authController.resetPasswordRequest(resetPasswordRequest, request, response));
+  }
+
+  @Test
+  void resetPasswordComplete_ShouldReturnSuccessResponse() {
+    // Arrange
+    ResetPasswordCompleteRequest resetPasswordCompleteRequest = new ResetPasswordCompleteRequest();
+    resetPasswordCompleteRequest.setToken("reset-token");
+    resetPasswordCompleteRequest.setNewPassword("newPassword123");
+
+    // Act
+    ResponseEntity<ApiResponse> responseEntity =
+        authController.resetPasswordComplete(resetPasswordCompleteRequest, request, response);
+
+    // Assert
+    assertThat(responseEntity.getStatusCode()).isEqualTo(HttpStatus.OK);
+    assertThat(responseEntity.getBody()).isNotNull();
+    assertThat(responseEntity.getBody().isSuccess()).isTrue();
+    assertThat(responseEntity.getBody().getMessage())
+        .isEqualTo("Password has been reset successfully");
+    assertThat(responseEntity.getBody().getTimestamp()).isNotNull();
+
+    verify(authService).resetPasswordComplete(resetPasswordCompleteRequest, request, response);
+  }
+
+  @Test
+  void resetPasswordComplete_WhenServiceThrowsException_ShouldPropagateException() {
+    // Arrange
+    ResetPasswordCompleteRequest resetPasswordCompleteRequest = new ResetPasswordCompleteRequest();
+    resetPasswordCompleteRequest.setToken("reset-token");
+    resetPasswordCompleteRequest.setNewPassword("newPassword123");
+
+    doThrow(new RuntimeException("Failed to reset password"))
+        .when(authService)
+        .resetPasswordComplete(
+            any(ResetPasswordCompleteRequest.class),
+            any(HttpServletRequest.class),
+            any(HttpServletResponse.class));
+
+    // Act & Assert
+    assertThrows(
+        RuntimeException.class,
+        () ->
+            authController.resetPasswordComplete(resetPasswordCompleteRequest, request, response));
   }
 }

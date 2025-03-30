@@ -12,6 +12,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import com.huddey.core.userman.auth.JwtTokenProvider;
+import com.huddey.core.userman.data.ApiResponse;
 import com.huddey.core.userman.data.dto.*;
 import com.huddey.core.userman.data.dto.response.LoginResponse;
 import com.huddey.core.userman.data.dto.response.UserRegistrationResponse;
@@ -86,10 +87,42 @@ public class AuthController {
 
   @PostMapping("/refresh-token")
   public ResponseEntity<TokenRefreshResponse> refreshToken(
-      @Valid @RequestBody TokenRefreshRequest request,
+      @Valid @RequestBody RefreshTokenRequest request,
       HttpServletRequest servletRequest,
       HttpServletResponse response) {
     return ResponseEntity.ok(authService.refreshToken(request, servletRequest, response));
+  }
+
+  @PostMapping("/reset-password-request")
+  public ResponseEntity<ApiResponse> resetPasswordRequest(
+      @Valid @RequestBody ResetPasswordRequest request,
+      HttpServletRequest servletRequest,
+      HttpServletResponse servletResponse) {
+    var resetSuccessObject =
+        authService.resetPasswordRequest(request, servletRequest, servletResponse);
+    ApiResponse response =
+        ApiResponse.builder()
+            .success(true)
+            .data(resetSuccessObject)
+            .message("Password reset request sent successfully")
+            .timestamp(OffsetDateTime.now())
+            .build();
+    return ResponseEntity.ok().body(response);
+  }
+
+  @PostMapping("/reset-password-complete")
+  public ResponseEntity<ApiResponse> resetPasswordComplete(
+      @Valid @RequestBody ResetPasswordCompleteRequest request,
+      HttpServletRequest servletRequest,
+      HttpServletResponse servletResponse) {
+    authService.resetPasswordComplete(request, servletRequest, servletResponse);
+    ApiResponse response =
+        ApiResponse.builder()
+            .success(true)
+            .message("Password has been reset successfully")
+            .timestamp(OffsetDateTime.now())
+            .build();
+    return ResponseEntity.ok(response);
   }
 
   @PostMapping("/logout")
