@@ -57,12 +57,13 @@ public class RequestUtil {
       String clientType,
       SecurityUser securityUser,
       User user,
-      JwtTokenProvider jwtTokenProvider) {
+      JwtTokenProvider jwtTokenProvider,
+      boolean rememberMe) {
     TokenGenerationStrategy tokenGenerationStrategy;
     if (clientType.equals(WEB_CLIENT_TYPE)) {
       log.debug("Client type is web");
       tokenGenerationStrategy = new WebTokenGenerationStrategy(jwtTokenProvider);
-      tokenGenerationStrategy.generateAndSetToken(servletResponse, securityUser);
+      tokenGenerationStrategy.generateAndSetToken(servletResponse, securityUser, rememberMe);
       return LoginResponse.builder()
           .user(UserMapper.toDto(user))
           .expiresIn(jwtTokenProvider.getAccessTokenValidity())
@@ -70,7 +71,7 @@ public class RequestUtil {
     } else {
       log.debug("Client type is mobile");
       tokenGenerationStrategy = new MobileTokenGenerationStrategy(jwtTokenProvider);
-      tokenGenerationStrategy.generateAndSetToken(servletResponse, securityUser);
+      tokenGenerationStrategy.generateAndSetToken(servletResponse, securityUser, rememberMe);
       return LoginResponse.builder()
           .accessToken(tokenGenerationStrategy.getAccessToken())
           .refreshToken(tokenGenerationStrategy.getRefreshToken())
