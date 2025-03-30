@@ -22,23 +22,32 @@ public class WebTokenGenerationStrategy implements TokenGenerationStrategy {
   }
 
   @Override
-  public void generateAndSetToken(HttpServletResponse response, SecurityUser user) {
-    this.accessToken = jwtTokenProvider.generateAccessToken(user);
-    this.refreshToken = jwtTokenProvider.generateRefreshToken(user);
+  public void generateAndSetToken(
+      HttpServletResponse response, SecurityUser user, boolean rememberMe) {
+    this.accessToken = jwtTokenProvider.generateAccessToken(user, rememberMe);
+    this.refreshToken = jwtTokenProvider.generateRefreshToken(user, rememberMe);
 
     // Set the access token as a secure HTTP-only cookie
     accessTokenCookie = new Cookie("access_token", accessToken);
     accessTokenCookie.setHttpOnly(true);
     accessTokenCookie.setSecure(true);
     accessTokenCookie.setPath("/");
-    accessTokenCookie.setMaxAge(3600); // Set the cookie expiration time
+    accessTokenCookie.setMaxAge(
+        (int)
+            (rememberMe
+                ? jwtTokenProvider.getRememberMeAccessTokenValidity() / 1000
+                : jwtTokenProvider.getAccessTokenValidity() / 1000));
 
     // Set the refresh token as a secure HTTP-only cookie
     refreshTokenCookie = new Cookie("refresh_token", refreshToken);
     refreshTokenCookie.setHttpOnly(true);
     refreshTokenCookie.setSecure(true);
     refreshTokenCookie.setPath("/");
-    refreshTokenCookie.setMaxAge(86400); // Set the cookie expiration time
+    refreshTokenCookie.setMaxAge(
+        (int)
+            (rememberMe
+                ? jwtTokenProvider.getRememberMeRefreshTokenValidity() / 1000
+                : jwtTokenProvider.getRefreshTokenValidity() / 1000));
 
     response.addCookie(accessTokenCookie);
     response.addCookie(refreshTokenCookie);

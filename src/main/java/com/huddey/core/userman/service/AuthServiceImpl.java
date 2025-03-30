@@ -73,7 +73,7 @@ public class AuthServiceImpl implements AuthService {
     if (clientType.equals("web")) {
       log.debug("Client type is web");
       tokenGenerationStrategy = new WebTokenGenerationStrategy(jwtTokenProvider);
-      tokenGenerationStrategy.generateAndSetToken(servletResponse, securityUser);
+      tokenGenerationStrategy.generateAndSetToken(servletResponse, securityUser, false);
       return UserRegistrationResponse.builder()
           .userId(securityUser.getUser().getId())
           .email(securityUser.getUser().getEmail())
@@ -85,7 +85,7 @@ public class AuthServiceImpl implements AuthService {
     } else {
       log.debug("Client type is mobile");
       tokenGenerationStrategy = new MobileTokenGenerationStrategy(jwtTokenProvider);
-      tokenGenerationStrategy.generateAndSetToken(servletResponse, securityUser);
+      tokenGenerationStrategy.generateAndSetToken(servletResponse, securityUser, false);
       return UserRegistrationResponse.builder()
           .userId(securityUser.getUser().getId())
           .email(securityUser.getUser().getEmail())
@@ -119,7 +119,7 @@ public class AuthServiceImpl implements AuthService {
     if (clientType.equals("web")) {
       log.debug("Client type is web");
       tokenGenerationStrategy = new WebTokenGenerationStrategy(jwtTokenProvider);
-      tokenGenerationStrategy.generateAndSetToken(servletResponse, securityUser);
+      tokenGenerationStrategy.generateAndSetToken(servletResponse, securityUser, false);
       return UserRegistrationResponse.builder()
           .userId(securityUser.getUser().getId())
           .email(securityUser.getUser().getEmail())
@@ -131,7 +131,7 @@ public class AuthServiceImpl implements AuthService {
     } else {
       log.debug("Client type is mobile");
       tokenGenerationStrategy = new MobileTokenGenerationStrategy(jwtTokenProvider);
-      tokenGenerationStrategy.generateAndSetToken(servletResponse, securityUser);
+      tokenGenerationStrategy.generateAndSetToken(servletResponse, securityUser, false);
       return UserRegistrationResponse.builder()
           .userId(securityUser.getUser().getId())
           .email(securityUser.getUser().getEmail())
@@ -180,7 +180,13 @@ public class AuthServiceImpl implements AuthService {
       TokenGenerationStrategy tokenGenerationStrategy;
       String clientType = determineClientType(servletRequest);
 
-      return getLoginResponse(servletResponse, clientType, securityUser, user, jwtTokenProvider);
+      return getLoginResponse(
+          servletResponse,
+          clientType,
+          securityUser,
+          user,
+          jwtTokenProvider,
+          request.isRememberMe());
     } catch (BadCredentialsException ex) {
       throw new AuthenticationException("Invalid email or password");
     }
@@ -203,14 +209,16 @@ public class AuthServiceImpl implements AuthService {
       throw new AccountStatusException("User account is not active");
     }
 
-    String newAccessToken = jwtTokenProvider.generateAccessToken(userDetails);
-    String newRefreshToken = jwtTokenProvider.generateRefreshToken(userDetails);
+    String newAccessToken =
+        jwtTokenProvider.generateAccessToken(userDetails, request.isRememberMe());
+    String newRefreshToken =
+        jwtTokenProvider.generateRefreshToken(userDetails, request.isRememberMe());
 
     // For web clients, set the tokens as secure HTTP-only cookies
     if (RequestUtil.determineClientType(servletRequest).equals("web")) {
       WebTokenGenerationStrategy tokenGenerationStrategy =
           new WebTokenGenerationStrategy(jwtTokenProvider);
-      tokenGenerationStrategy.generateAndSetToken(response, securityUser);
+      tokenGenerationStrategy.generateAndSetToken(response, securityUser, request.isRememberMe());
 
       response.addCookie(tokenGenerationStrategy.getAccessTokenCookie());
       response.addCookie(tokenGenerationStrategy.getRefreshTokenCookie());

@@ -139,7 +139,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
     response.setContentType(MediaType.APPLICATION_JSON_VALUE);
     String clientType = determineClientType(request);
     LoginResponse loginResponse =
-        getLoginResponse(response, clientType, userPrincipal, user, tokenProvider);
+        getLoginResponse(response, clientType, userPrincipal, user, tokenProvider, false);
 
     new ObjectMapper().writeValue(response.getOutputStream(), loginResponse);
   }

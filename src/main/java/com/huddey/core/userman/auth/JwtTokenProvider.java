@@ -4,6 +4,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.util.Date;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.oauth2.jwt.JwtException;
@@ -13,7 +14,6 @@ import org.springframework.validation.annotation.Validated;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import jakarta.annotation.PostConstruct;
-import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.Setter;
@@ -26,11 +26,17 @@ import lombok.Setter;
 public class JwtTokenProvider {
   @NotBlank private String secret;
 
-  @Min(60000)
+  @Value("${app.security.jwt.accessTokenValidity}")
   private long accessTokenValidity;
 
-  @Min(60000)
+  @Value("${app.security.jwt.refreshTokenValidity}")
   private long refreshTokenValidity;
+
+  @Value("${app.security.jwt.rememberMeAccessTokenValidity}")
+  private long rememberMeAccessTokenValidity;
+
+  @Value("${app.security.jwt.rememberMeRefreshTokenValidity}")
+  private long rememberMeRefreshTokenValidity;
 
   private Key key;
 
@@ -39,12 +45,14 @@ public class JwtTokenProvider {
     this.key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
   }
 
-  public String generateAccessToken(UserDetails userDetails) {
-    return generateToken(userDetails, accessTokenValidity);
+  public String generateAccessToken(UserDetails userDetails, boolean rememberMe) {
+    long validity = rememberMe ? rememberMeAccessTokenValidity : accessTokenValidity;
+    return generateToken(userDetails, validity);
   }
 
-  public String generateRefreshToken(UserDetails userDetails) {
-    return generateToken(userDetails, refreshTokenValidity);
+  public String generateRefreshToken(UserDetails userDetails, boolean rememberMe) {
+    long validity = rememberMe ? rememberMeRefreshTokenValidity : refreshTokenValidity;
+    return generateToken(userDetails, validity);
   }
 
   private String generateToken(UserDetails userDetails, long validity) {
