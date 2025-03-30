@@ -4,6 +4,7 @@ import static com.huddey.core.userman.utils.RequestUtil.determineClientType;
 import static com.huddey.core.userman.utils.RequestUtil.getLoginResponse;
 
 import java.time.OffsetDateTime;
+import java.util.UUID;
 
 import javax.management.relation.RoleNotFoundException;
 
@@ -187,7 +188,7 @@ public class AuthServiceImpl implements AuthService {
 
   @Override
   public TokenRefreshResponse refreshToken(
-      TokenRefreshRequest request,
+      RefreshTokenRequest request,
       HttpServletRequest servletRequest,
       HttpServletResponse response) {
     if (!jwtTokenProvider.validateToken(request.getRefreshToken())) {
@@ -227,5 +228,69 @@ public class AuthServiceImpl implements AuthService {
         .tokenType("Bearer")
         .expiresIn(jwtTokenProvider.getAccessTokenValidity())
         .build();
+  }
+
+  @Override
+  public ResetPasswordResponse resetPasswordRequest(
+      ResetPasswordRequest request,
+      HttpServletRequest servletRequest,
+      HttpServletResponse servletResponse) {
+    User user =
+        userRepository
+            .findByEmail(request.getEmail())
+            .orElseThrow(() -> new UserNotFoundException("User not found"));
+
+    UserCredential localCredential =
+        user.getCredentials().stream()
+            .filter(credential -> "local".equals(credential.getAuthProvider().getName()))
+            .findFirst()
+            .orElseThrow(
+                () ->
+                    new UnsupportedOperationException(
+                        "Password reset not supported for oauth2 users"));
+
+    String resetToken = UUID.randomUUID().toString();
+    OffsetDateTime tokenExpiresAt = OffsetDateTime.now().plusMinutes(30);
+    localCredential.setPasswordResetToken(resetToken);
+    localCredential.setPasswordResetTokenExpiresAt(tokenExpiresAt);
+    userRepository.save(user);
+    // send email functionality
+    log.debug(
+        "Reset password token for user {}: {} (expires at: {})",
+        user.getEmail(),
+        resetToken,
+        tokenExpiresAt);
+    return ResetPasswordResponse.builder().token(resetToken).success(true).build();
+  }
+
+  @Override
+  public void resetPasswordComplete(
+      ResetPasswordCompleteRequest request,
+      HttpServletRequest servletRequest,
+      HttpServletResponse servletResponse) {
+    // Find the user credential that matches the provided token
+    UserCredential credential =
+        userRepository.findAll().stream()
+            .flatMap(user -> user.getCredentials().stream())
+            .filter(creds -> request.getToken().equals(creds.getPasswordResetToken()))
+            .findFirst()
+            .orElseThrow(() -> new InvalidTokenException("Invalid or expired reset token"));
+
+    // Check if token has expired
+    if (credential.getPasswordResetTokenExpiresAt() == null
+        || credential.getPasswordResetTokenExpiresAt().isBefore(OffsetDateTime.now())) {
+      throw new InvalidTokenException("Reset token expired");
+    }
+
+    // Update the password in the credential
+    credential.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
+
+    // Clear the reset token fields
+    credential.setPasswordResetToken(null);
+    credential.setPasswordResetTokenExpiresAt(null);
+
+    // Save changes via the user entity
+    userRepository.save(credential.getUser());
+    log.info("Password reset complete for user {}", credential.getUser().getEmail());
   }
 }

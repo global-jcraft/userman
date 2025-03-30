@@ -2,10 +2,7 @@ package com.huddey.core.userman.service;
 
 import javax.management.relation.RoleNotFoundException;
 
-import com.huddey.core.userman.data.dto.LoginRequest;
-import com.huddey.core.userman.data.dto.TokenRefreshRequest;
-import com.huddey.core.userman.data.dto.UserRegistrationBasicFlowRequest;
-import com.huddey.core.userman.data.dto.UserRegistrationRequest;
+import com.huddey.core.userman.data.dto.*;
 import com.huddey.core.userman.data.dto.response.LoginResponse;
 import com.huddey.core.userman.data.dto.response.UserRegistrationResponse;
 import com.huddey.core.userman.data.dto.token.TokenRefreshResponse;
@@ -30,5 +27,15 @@ public interface AuthService {
       LoginRequest request, HttpServletRequest servletRequest, HttpServletResponse servletResponse);
 
   TokenRefreshResponse refreshToken(
-      TokenRefreshRequest request, HttpServletRequest servletRequest, HttpServletResponse response);
+      RefreshTokenRequest request, HttpServletRequest servletRequest, HttpServletResponse response);
+
+  ResetPasswordResponse resetPasswordRequest(
+      ResetPasswordRequest request,
+      HttpServletRequest servletRequest,
+      HttpServletResponse servletResponse);
+
+  void resetPasswordComplete(
+      ResetPasswordCompleteRequest request,
+      HttpServletRequest servletRequest,
+      HttpServletResponse servletResponse);
 }

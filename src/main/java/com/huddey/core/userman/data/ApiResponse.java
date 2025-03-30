@@ -1,9 +1,8 @@
 package com.huddey.core.userman.data;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import java.time.OffsetDateTime;
+
+import lombok.*;
 
 @Data
 @Builder
@@ -14,4 +13,5 @@ public class ApiResponse {
   private String message;
   private Object data;
   private String error;
+  private OffsetDateTime timestamp;
 }
