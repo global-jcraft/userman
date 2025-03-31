@@ -14,12 +14,10 @@ import org.springframework.web.bind.annotation.*;
 import com.huddey.core.userman.auth.JwtTokenProvider;
 import com.huddey.core.userman.data.ApiResponse;
 import com.huddey.core.userman.data.dto.*;
-import com.huddey.core.userman.data.dto.response.LoginResponse;
-import com.huddey.core.userman.data.dto.response.UserRegistrationResponse;
-import com.huddey.core.userman.data.dto.token.TokenRefreshResponse;
 import com.huddey.core.userman.exception.UserAlreadyExistsException;
 import com.huddey.core.userman.service.AuthService;
 import com.huddey.core.userman.service.CustomUserDetailsService;
+import com.huddey.core.userman.utils.ApiUtils;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -43,7 +41,7 @@ public class AuthController {
   }
 
   @PostMapping("/basic-auth")
-  public ResponseEntity<UserRegistrationResponse> registerBasicFlow(
+  public ResponseEntity<ApiResponse> registerBasicFlow(
       @Valid @RequestBody UserRegistrationBasicFlowRequest userRegistrationBasicFlowRequest,
       HttpServletRequest request,
       HttpServletResponse response)
@@ -51,12 +49,17 @@ public class AuthController {
     log.info(
         "AuthController.registerBasicFlow() -> Registering a new user - Start time: {}",
         OffsetDateTime.now().format(DateTimeFormatter.ISO_OFFSET_DATE_TIME));
-    return ResponseEntity.ok(
-        authService.registerBasicFlow(userRegistrationBasicFlowRequest, request, response));
+    ApiResponse apiResponse =
+        ApiUtils.buildApiResponse(
+            true,
+            "User registered successfully",
+            authService.registerBasicFlow(userRegistrationBasicFlowRequest, request, response),
+            null);
+    return ResponseEntity.ok(apiResponse);
   }
 
   @PostMapping("/basic-auth-complete")
-  public ResponseEntity<UserRegistrationResponse> registerBasicFlowComplete(
+  public ResponseEntity<ApiResponse> registerBasicFlowComplete(
       @Valid @RequestBody UserRegistrationRequest userRegistrationRequest,
       HttpServletRequest request,
       HttpServletResponse response)
@@ -64,19 +67,30 @@ public class AuthController {
     log.info(
         "AuthController.registerBasicFlowComplete() -> Update user missing info - Start time: {}",
         OffsetDateTime.now().format(DateTimeFormatter.ISO_OFFSET_DATE_TIME));
-    return ResponseEntity.ok(
-        authService.completeRegistration(userRegistrationRequest, request, response));
+    ApiResponse apiResponse =
+        ApiUtils.buildApiResponse(
+            true,
+            "User registered completed successfully",
+            authService.completeRegistration(userRegistrationRequest, request, response),
+            null);
+    return ResponseEntity.ok(apiResponse);
   }
 
   @PostMapping("/login")
-  public ResponseEntity<LoginResponse> login(
+  public ResponseEntity<ApiResponse> login(
       @Valid @RequestBody LoginRequest request,
       HttpServletRequest servletRequest,
       HttpServletResponse servletResponse) {
     log.info(
         "AuthController.login() -> Signing in - Start time: {}",
         OffsetDateTime.now().format(DateTimeFormatter.ISO_OFFSET_DATE_TIME));
-    return ResponseEntity.ok(authService.login(request, servletRequest, servletResponse));
+    ApiResponse apiResponse =
+        ApiUtils.buildApiResponse(
+            true,
+            "Login successful",
+            authService.login(request, servletRequest, servletResponse),
+            null);
+    return ResponseEntity.ok(apiResponse);
   }
 
   /*@GetMapping("/verify-email/{token}")
@@ -86,11 +100,17 @@ public class AuthController {
   }*/
 
   @PostMapping("/refresh-token")
-  public ResponseEntity<TokenRefreshResponse> refreshToken(
+  public ResponseEntity<ApiResponse> refreshToken(
       @Valid @RequestBody RefreshTokenRequest request,
       HttpServletRequest servletRequest,
       HttpServletResponse response) {
-    return ResponseEntity.ok(authService.refreshToken(request, servletRequest, response));
+    ApiResponse apiResponse =
+        ApiUtils.buildApiResponse(
+            true,
+            "Token refreshed successfully",
+            authService.refreshToken(request, servletRequest, response),
+            null);
+    return ResponseEntity.ok(apiResponse);
   }
 
   @PostMapping("/reset-password-request")
@@ -98,15 +118,12 @@ public class AuthController {
       @Valid @RequestBody ResetPasswordRequest request,
       HttpServletRequest servletRequest,
       HttpServletResponse servletResponse) {
-    var resetSuccessObject =
-        authService.resetPasswordRequest(request, servletRequest, servletResponse);
     ApiResponse response =
-        ApiResponse.builder()
-            .success(true)
-            .data(resetSuccessObject)
-            .message("Password reset request sent successfully")
-            .timestamp(OffsetDateTime.now())
-            .build();
+        ApiUtils.buildApiResponse(
+            true,
+            "Password reset request sent successfully",
+            authService.resetPasswordRequest(request, servletRequest, servletResponse),
+            null);
     return ResponseEntity.ok().body(response);
   }
 
@@ -126,8 +143,9 @@ public class AuthController {
   }
 
   @PostMapping("/logout")
-  public ResponseEntity<?> logout(HttpServletRequest request, HttpServletResponse response) {
+  public ResponseEntity<ApiResponse> logout(
+      HttpServletRequest request, HttpServletResponse response) {
     new SecurityContextLogoutHandler().logout(request, response, null);
-    return ResponseEntity.ok().build();
+    return ResponseEntity.ok(ApiUtils.buildApiResponse(true, "Logout successful", null, null));
   }
 }
