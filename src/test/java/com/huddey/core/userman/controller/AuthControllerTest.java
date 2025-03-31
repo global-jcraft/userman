@@ -59,7 +59,7 @@ class AuthControllerTest {
         .thenReturn(expectedResponse);
 
     // Act
-    ResponseEntity<UserRegistrationResponse> responseEntity =
+    ResponseEntity<ApiResponse> responseEntity =
         authController.registerBasicFlow(registrationRequest, request, response);
 
     // Assert
@@ -81,7 +81,7 @@ class AuthControllerTest {
         .thenReturn(expectedResponse);
 
     // Act
-    ResponseEntity<UserRegistrationResponse> responseEntity =
+    ResponseEntity<ApiResponse> responseEntity =
         authController.registerBasicFlowComplete(registrationRequest, request, response);
 
     // Assert
@@ -145,15 +145,16 @@ class AuthControllerTest {
         .thenReturn(expectedResponse);
 
     // Act
-    ResponseEntity<LoginResponse> responseEntity =
+    ResponseEntity<ApiResponse> responseEntity =
         authController.login(loginRequest, request, response);
 
     // Assert
     assertThat(responseEntity.getStatusCode()).isEqualTo(HttpStatus.OK);
     assertThat(responseEntity.getBody()).isNotNull();
-    assertThat(responseEntity.getBody().getAccessToken()).isEqualTo("access-token");
-    assertThat(responseEntity.getBody().getRefreshToken()).isEqualTo("refresh-token");
-    assertThat(responseEntity.getBody().getTokenType()).isEqualTo("Bearer");
+    var login = (LoginResponse) responseEntity.getBody().getData();
+    assertThat(login.getAccessToken()).isEqualTo("access-token");
+    assertThat(login.getRefreshToken()).isEqualTo("refresh-token");
+    assertThat(login.getTokenType()).isEqualTo("Bearer");
   }
 
   @Test
