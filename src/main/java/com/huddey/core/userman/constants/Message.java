@@ -1,5 +1,6 @@
 package com.huddey.core.userman.constants;
 
+@SuppressWarnings("all")
 public class Message {
 
   // Error messages
