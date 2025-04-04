@@ -1,6 +1,6 @@
 package com.huddey.core.userman.auth;
 
-import static com.huddey.core.userman.utils.RequestUtil.determineClientType;
+import static com.huddey.core.userman.utils.RequestUtils.determineClientType;
 
 import java.io.IOException;
 

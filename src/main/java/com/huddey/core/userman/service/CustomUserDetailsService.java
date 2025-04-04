@@ -25,7 +25,7 @@ import com.huddey.core.userman.repository.AuthProviderRepository;
 import com.huddey.core.userman.repository.RoleRepository;
 import com.huddey.core.userman.repository.UserCredentialRepository;
 import com.huddey.core.userman.repository.UserRepository;
-import com.huddey.core.userman.utils.RequestUtil;
+import com.huddey.core.userman.utils.RequestUtils;
 
 import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
@@ -117,7 +117,7 @@ public class CustomUserDetailsService implements UserDetailsService {
     existingUser.setCompanyName(request.getCompanyName());
     existingUser.setPhoneNumber(request.getPhoneNumber());
     existingUser.setUpdatedAt(OffsetDateTime.now());
-    existingUser.setRegistrationIp(RequestUtil.getClientIp());
+    existingUser.setRegistrationIp(RequestUtils.getClientIp());
     existingUser.setEmailVerificationToken(generateVerificationToken());
     existingUser.setEmailVerificationTokenExpiresAt(
         OffsetDateTime.now().plusHours(verificationTokenExpiryHours));
@@ -147,7 +147,7 @@ public class CustomUserDetailsService implements UserDetailsService {
         .roles(new HashSet<>())
         .credentials(new HashSet<>())
         .status(UserStatus.PENDING)
-        .registrationIp(RequestUtil.getClientIp())
+        .registrationIp(RequestUtils.getClientIp())
         .createdAt(OffsetDateTime.now())
         .emailVerificationToken(generateVerificationToken())
         .emailVerificationTokenExpiresAt(
@@ -171,7 +171,7 @@ public class CustomUserDetailsService implements UserDetailsService {
         .roles(new HashSet<>())
         .credentials(new HashSet<>())
         .status(UserStatus.PENDING)
-        .registrationIp(RequestUtil.getClientIp())
+        .registrationIp(RequestUtils.getClientIp())
         .emailVerificationToken(generateVerificationToken())
         .emailVerificationTokenExpiresAt(
             OffsetDateTime.now().plusHours(verificationTokenExpiryHours))

@@ -84,6 +84,10 @@ tasks.named("build") {
     dependsOn("spotlessCheck")
 }
 
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+}
+
 jacocoTestReport {
     reports {
         xml.required = true

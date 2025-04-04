@@ -5,11 +5,14 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
+import java.util.Locale;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.MessageSource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
@@ -22,6 +25,7 @@ import com.huddey.core.userman.exception.RoleNotFoundException;
 import com.huddey.core.userman.exception.UserAlreadyExistsException;
 import com.huddey.core.userman.service.AuthService;
 import com.huddey.core.userman.service.CustomUserDetailsService;
+import com.huddey.core.userman.utils.LocaleUtils;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -39,11 +43,14 @@ class AuthControllerTest {
 
   @Mock private HttpServletResponse response;
 
+  @Mock private MessageSource messageSource;
+
   private AuthController authController;
 
   @BeforeEach
   void setUp() {
     authController = new AuthController(authService, jwtTokenProvider, customUserDetailsService);
+    LocaleUtils.instance = new LocaleUtils(messageSource);
   }
 
   @Test
@@ -163,14 +170,16 @@ class AuthControllerTest {
     ResetPasswordRequest resetPasswordRequest = new ResetPasswordRequest();
     resetPasswordRequest.setEmail("test@example.com");
 
-    ResetPasswordResponse resetPasswordResponse =
-        new ResetPasswordResponse(); // Replace with your actual success object type
+    ResetPasswordResponse resetPasswordResponse = new ResetPasswordResponse();
 
     when(authService.resetPasswordRequest(
             any(ResetPasswordRequest.class),
             any(HttpServletRequest.class),
             any(HttpServletResponse.class)))
         .thenReturn(resetPasswordResponse);
+
+    when(messageSource.getMessage(eq("password.reset.request"), any(), any(Locale.class)))
+        .thenReturn("Password reset request sent successfully");
 
     // Act
     ResponseEntity<ApiResponse> responseEntity =
@@ -212,6 +221,9 @@ class AuthControllerTest {
     ResetPasswordCompleteRequest resetPasswordCompleteRequest = new ResetPasswordCompleteRequest();
     resetPasswordCompleteRequest.setToken("reset-token");
     resetPasswordCompleteRequest.setNewPassword("newPassword123");
+
+    when(messageSource.getMessage(eq("password.reset.request.success"), any(), any(Locale.class)))
+        .thenReturn("Password has been reset successfully");
 
     // Act
     ResponseEntity<ApiResponse> responseEntity =

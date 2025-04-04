@@ -7,7 +7,7 @@ import static org.mockito.Mockito.when;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import com.huddey.core.userman.utils.RequestUtil;
+import com.huddey.core.userman.utils.RequestUtils;
 
 import jakarta.servlet.http.HttpServletRequest;
 
@@ -21,7 +21,7 @@ class RequestUtilTest {
     when(request.getHeader("User-Agent")).thenReturn("Android");
 
     // Act
-    String clientType = RequestUtil.determineClientType(request);
+    String clientType = RequestUtils.determineClientType(request);
 
     // Assert
     assertEquals("mobile", clientType);
@@ -35,7 +35,7 @@ class RequestUtilTest {
     when(request.getHeader("User-Agent")).thenReturn("iOS");
 
     // Act
-    String clientType = RequestUtil.determineClientType(request);
+    String clientType = RequestUtils.determineClientType(request);
 
     // Assert
     assertEquals("mobile", clientType);
@@ -49,7 +49,7 @@ class RequestUtilTest {
     when(request.getHeader("User-Agent")).thenReturn("Mozilla/5.0");
 
     // Act
-    String clientType = RequestUtil.determineClientType(request);
+    String clientType = RequestUtils.determineClientType(request);
 
     // Assert
     assertEquals("web", clientType);
@@ -63,7 +63,7 @@ class RequestUtilTest {
     when(request.getHeader("User-Agent")).thenReturn(null);
 
     // Act
-    String clientType = RequestUtil.determineClientType(request);
+    String clientType = RequestUtils.determineClientType(request);
 
     // Assert
     assertEquals("web", clientType);

@@ -1,8 +1,8 @@
 package com.huddey.core.userman.auth.oauth2;
 
 import static com.huddey.core.userman.constants.UsermanConstants.ROLE_USER;
-import static com.huddey.core.userman.utils.RequestUtil.determineClientType;
-import static com.huddey.core.userman.utils.RequestUtil.getLoginResponse;
+import static com.huddey.core.userman.utils.RequestUtils.determineClientType;
+import static com.huddey.core.userman.utils.RequestUtils.getLoginResponse;
 
 import java.io.IOException;
 import java.time.OffsetDateTime;
@@ -32,7 +32,7 @@ import com.huddey.core.userman.data.oAuth2.OAuth2UserInfo;
 import com.huddey.core.userman.repository.AuthProviderRepository;
 import com.huddey.core.userman.repository.RoleRepository;
 import com.huddey.core.userman.repository.UserRepository;
-import com.huddey.core.userman.utils.RequestUtil;
+import com.huddey.core.userman.utils.RequestUtils;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -73,7 +73,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
         user = userOptional.get();
         // Update last login information for existing users
         user.setLastLoginAt(OffsetDateTime.now());
-        user.setLastLoginIp(RequestUtil.getClientIp());
+        user.setLastLoginIp(RequestUtils.getClientIp());
         user = userRepository.save(user);
       } else {
         // Create new user for OAuth2 authentication
@@ -87,7 +87,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
                 .socialConnections(new HashSet<>())
                 .emailVerified(true)
                 .profilePictureUrl(oauth2UserInstance.getAttribute("picture"))
-                .registrationIp(RequestUtil.getClientIp())
+                .registrationIp(RequestUtils.getClientIp())
                 .lastLoginAt(OffsetDateTime.now())
                 .build();
 

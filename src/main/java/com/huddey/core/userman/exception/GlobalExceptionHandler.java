@@ -1,5 +1,7 @@
 package com.huddey.core.userman.exception;
 
+import static com.huddey.core.userman.constants.Message.*;
+
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
@@ -17,6 +19,7 @@ import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 import com.huddey.core.userman.data.dto.response.ErrorResponse;
+import com.huddey.core.userman.utils.LocaleUtils;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -32,7 +35,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         ErrorResponse.builder()
             .timestamp(LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME))
             .status(HttpStatus.UNAUTHORIZED.value())
-            .error("Authentication Error")
+            .error(LocaleUtils.getMessage(LocaleUtils.getMessage(GLOBAL_AUTH_ERROR)))
             .message(ex.getMessage())
             .path(((ServletWebRequest) request).getRequest().getRequestURI())
             .build();
@@ -77,7 +80,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         ErrorResponse.builder()
             .timestamp(LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME))
             .status(HttpStatus.BAD_REQUEST.value())
-            .error("Validation Error")
+            .error(LocaleUtils.getMessage(GLOBAL_VALIDATION_ERROR))
             .message(ex.getMessage())
             .path(((ServletWebRequest) request).getRequest().getRequestURI())
             .build();
@@ -100,8 +103,8 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         ErrorResponse.builder()
             .timestamp(LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME))
             .status(HttpStatus.BAD_REQUEST.value())
-            .error("Validation Error")
-            .message("Invalid request parameters")
+            .error(LocaleUtils.getMessage(GLOBAL_VALIDATION_ERROR))
+            .message(LocaleUtils.getMessage(GLOBAL_REQUEST_ERROR))
             .path(((ServletWebRequest) request).getRequest().getRequestURI())
             .errors(errors)
             .build();
@@ -117,8 +120,8 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         ErrorResponse.builder()
             .timestamp(LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME))
             .status(HttpStatus.INTERNAL_SERVER_ERROR.value())
-            .error("Internal Server Error")
-            .message("An unexpected error occurred")
+            .error(LocaleUtils.getMessage(GLOBAL_INTERNAL_ERROR))
+            .message(LocaleUtils.getMessage(GLOBAL_INTERNAL_UNEXPECTED_ERROR))
             .path(((ServletWebRequest) request).getRequest().getRequestURI())
             .build();
     return new ResponseEntity<>(error, HttpStatus.INTERNAL_SERVER_ERROR);
