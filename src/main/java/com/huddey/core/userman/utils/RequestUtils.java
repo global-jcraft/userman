@@ -60,7 +60,7 @@ public class RequestUtils {
       JwtTokenProvider jwtTokenProvider,
       boolean rememberMe) {
     TokenGenerationStrategy tokenGenerationStrategy;
-    if (clientType.equals(WEB_CLIENT_TYPE)) {
+    if (clientType.equalsIgnoreCase(WEB_CLIENT_TYPE)) {
       log.debug("Client type is web");
       tokenGenerationStrategy = new WebTokenGenerationStrategy(jwtTokenProvider);
       tokenGenerationStrategy.generateAndSetToken(servletResponse, securityUser, rememberMe);
