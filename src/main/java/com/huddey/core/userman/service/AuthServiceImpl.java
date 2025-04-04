@@ -1,7 +1,8 @@
 package com.huddey.core.userman.service;
 
-import static com.huddey.core.userman.utils.RequestUtil.determineClientType;
-import static com.huddey.core.userman.utils.RequestUtil.getLoginResponse;
+import static com.huddey.core.userman.constants.Message.*;
+import static com.huddey.core.userman.utils.RequestUtils.determineClientType;
+import static com.huddey.core.userman.utils.RequestUtils.getLoginResponse;
 
 import java.time.OffsetDateTime;
 import java.util.UUID;
@@ -33,7 +34,8 @@ import com.huddey.core.userman.repository.UserRepository;
 import com.huddey.core.userman.security.token.MobileTokenGenerationStrategy;
 import com.huddey.core.userman.security.token.TokenGenerationStrategy;
 import com.huddey.core.userman.security.token.WebTokenGenerationStrategy;
-import com.huddey.core.userman.utils.RequestUtil;
+import com.huddey.core.userman.utils.LocaleUtils;
+import com.huddey.core.userman.utils.RequestUtils;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -159,7 +161,7 @@ public class AuthServiceImpl implements AuthService {
       UserDetails userDetails = userDetailsService.loadUserByUsername(request.getEmail());
       // TODO: fix when notification service email send is done
       if (!userDetails.isEnabled()) {
-        throw new AccountStatusException("User account is not active or email is not verified");
+        throw new AccountStatusException(LocaleUtils.getMessage(USER_ACCOUNT_ACTIVE_ERROR));
       }
 
       Authentication authentication =
@@ -174,7 +176,7 @@ public class AuthServiceImpl implements AuthService {
       }*/
 
       user.setLastLoginAt(OffsetDateTime.now());
-      user.setLastLoginIp(RequestUtil.getClientIp());
+      user.setLastLoginIp(RequestUtils.getClientIp());
       userRepository.save(user);
 
       TokenGenerationStrategy tokenGenerationStrategy;
@@ -188,7 +190,7 @@ public class AuthServiceImpl implements AuthService {
           jwtTokenProvider,
           request.isRememberMe());
     } catch (BadCredentialsException ex) {
-      throw new AuthenticationException("Invalid email or password");
+      throw new AuthenticationException(LocaleUtils.getMessage(USER_INVALID_CREDENTIALS_ERROR));
     }
   }
 
@@ -198,7 +200,7 @@ public class AuthServiceImpl implements AuthService {
       HttpServletRequest servletRequest,
       HttpServletResponse response) {
     if (!jwtTokenProvider.validateToken(request.getRefreshToken())) {
-      throw new InvalidTokenException("Invalid refresh token");
+      throw new InvalidTokenException(LocaleUtils.getMessage(USER_INVALID_REFRESH_TOKEN));
     }
 
     String email = jwtTokenProvider.getUsername(request.getRefreshToken());
@@ -206,7 +208,7 @@ public class AuthServiceImpl implements AuthService {
     SecurityUser securityUser = (SecurityUser) userDetails;
 
     if (!securityUser.isEnabled()) {
-      throw new AccountStatusException("User account is not active");
+      throw new AccountStatusException(LocaleUtils.getMessage(USER_ACCOUNT_ACTIVE));
     }
 
     String newAccessToken =
@@ -215,7 +217,7 @@ public class AuthServiceImpl implements AuthService {
         jwtTokenProvider.generateRefreshToken(userDetails, request.isRememberMe());
 
     // For web clients, set the tokens as secure HTTP-only cookies
-    if (RequestUtil.determineClientType(servletRequest).equals("web")) {
+    if (RequestUtils.determineClientType(servletRequest).equals("web")) {
       WebTokenGenerationStrategy tokenGenerationStrategy =
           new WebTokenGenerationStrategy(jwtTokenProvider);
       tokenGenerationStrategy.generateAndSetToken(response, securityUser, request.isRememberMe());
@@ -282,12 +284,13 @@ public class AuthServiceImpl implements AuthService {
             .flatMap(user -> user.getCredentials().stream())
             .filter(creds -> request.getToken().equals(creds.getPasswordResetToken()))
             .findFirst()
-            .orElseThrow(() -> new InvalidTokenException("Invalid or expired reset token"));
+            .orElseThrow(
+                () -> new InvalidTokenException(LocaleUtils.getMessage(REFRESH_TOKEN_EXPIRED)));
 
     // Check if token has expired
     if (credential.getPasswordResetTokenExpiresAt() == null
         || credential.getPasswordResetTokenExpiresAt().isBefore(OffsetDateTime.now())) {
-      throw new InvalidTokenException("Reset token expired");
+      throw new InvalidTokenException(LocaleUtils.getMessage(REFRESH_TOKEN_EXPIRED));
     }
 
     // Update the password in the credential
@@ -299,6 +302,6 @@ public class AuthServiceImpl implements AuthService {
 
     // Save changes via the user entity
     userRepository.save(credential.getUser());
-    log.info("Password reset complete for user {}", credential.getUser().getEmail());
+    log.debug("Password reset complete for user {}", credential.getUser().getEmail());
   }
 }

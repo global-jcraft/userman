@@ -1,5 +1,8 @@
 package com.huddey.core.userman.auth.oauth2;
 
+import static com.huddey.core.userman.constants.Message.ERROR_AUTH_FAIL;
+import static com.huddey.core.userman.constants.Message.ERROR_OAUTH2_AUTH_FAIL;
+
 import java.io.IOException;
 import java.time.OffsetDateTime;
 
@@ -12,6 +15,7 @@ import org.springframework.security.web.authentication.SimpleUrlAuthenticationFa
 import org.springframework.stereotype.Component;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.huddey.core.userman.utils.LocaleUtils;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -30,7 +34,7 @@ public class OAuth2AuthenticationFailureHandler extends SimpleUrlAuthenticationF
       HttpServletRequest request, HttpServletResponse response, AuthenticationException exception)
       throws IOException {
 
-    log.error("OAuth2 authentication failed", exception);
+    log.error(LocaleUtils.getMessage(ERROR_OAUTH2_AUTH_FAIL, exception));
 
     response.setStatus(HttpStatus.UNAUTHORIZED.value());
     response.setContentType(MediaType.APPLICATION_JSON_VALUE);
@@ -39,7 +43,7 @@ public class OAuth2AuthenticationFailureHandler extends SimpleUrlAuthenticationF
         ApiError.builder()
             .timestamp(OffsetDateTime.now())
             .status(HttpStatus.UNAUTHORIZED.value())
-            .error("Authentication Failed")
+            .error(LocaleUtils.getMessage(ERROR_AUTH_FAIL))
             .path(request.getRequestURI())
             .build();
 

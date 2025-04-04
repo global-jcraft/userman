@@ -21,7 +21,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @UtilityClass
-public class RequestUtil {
+public class RequestUtils {
   public static String getClientIp() {
     ServletRequestAttributes attributes =
         (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
@@ -60,7 +60,7 @@ public class RequestUtil {
       JwtTokenProvider jwtTokenProvider,
       boolean rememberMe) {
     TokenGenerationStrategy tokenGenerationStrategy;
-    if (clientType.equals(WEB_CLIENT_TYPE)) {
+    if (clientType.equalsIgnoreCase(WEB_CLIENT_TYPE)) {
       log.debug("Client type is web");
       tokenGenerationStrategy = new WebTokenGenerationStrategy(jwtTokenProvider);
       tokenGenerationStrategy.generateAndSetToken(servletResponse, securityUser, rememberMe);

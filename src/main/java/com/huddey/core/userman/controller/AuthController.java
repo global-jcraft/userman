@@ -1,5 +1,7 @@
 package com.huddey.core.userman.controller;
 
+import static com.huddey.core.userman.constants.Message.*;
+
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
 
@@ -18,6 +20,7 @@ import com.huddey.core.userman.exception.UserAlreadyExistsException;
 import com.huddey.core.userman.service.AuthService;
 import com.huddey.core.userman.service.CustomUserDetailsService;
 import com.huddey.core.userman.utils.ApiUtils;
+import com.huddey.core.userman.utils.LocaleUtils;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -46,13 +49,13 @@ public class AuthController {
       HttpServletRequest request,
       HttpServletResponse response)
       throws RoleNotFoundException, UserAlreadyExistsException {
-    log.info(
+    log.debug(
         "AuthController.registerBasicFlow() -> Registering a new user - Start time: {}",
         OffsetDateTime.now().format(DateTimeFormatter.ISO_OFFSET_DATE_TIME));
     ApiResponse apiResponse =
         ApiUtils.buildApiResponse(
             true,
-            "User registered successfully",
+            LocaleUtils.getMessage(SIMPLE_AUTH_REG_SUCCESS),
             authService.registerBasicFlow(userRegistrationBasicFlowRequest, request, response),
             null);
     return ResponseEntity.ok(apiResponse);
@@ -64,13 +67,13 @@ public class AuthController {
       HttpServletRequest request,
       HttpServletResponse response)
       throws RoleNotFoundException, UserAlreadyExistsException {
-    log.info(
+    log.debug(
         "AuthController.registerBasicFlowComplete() -> Update user missing info - Start time: {}",
         OffsetDateTime.now().format(DateTimeFormatter.ISO_OFFSET_DATE_TIME));
     ApiResponse apiResponse =
         ApiUtils.buildApiResponse(
             true,
-            "User registered completed successfully",
+            LocaleUtils.getMessage(SIMPLE_FULL_AUTH_REG_SUCCESS),
             authService.completeRegistration(userRegistrationRequest, request, response),
             null);
     return ResponseEntity.ok(apiResponse);
@@ -81,13 +84,13 @@ public class AuthController {
       @Valid @RequestBody LoginRequest request,
       HttpServletRequest servletRequest,
       HttpServletResponse servletResponse) {
-    log.info(
+    log.debug(
         "AuthController.login() -> Signing in - Start time: {}",
         OffsetDateTime.now().format(DateTimeFormatter.ISO_OFFSET_DATE_TIME));
     ApiResponse apiResponse =
         ApiUtils.buildApiResponse(
             true,
-            "Login successful",
+            LocaleUtils.getMessage(SIMPLE_LOGIN_SUCCESS),
             authService.login(request, servletRequest, servletResponse),
             null);
     return ResponseEntity.ok(apiResponse);
@@ -107,7 +110,7 @@ public class AuthController {
     ApiResponse apiResponse =
         ApiUtils.buildApiResponse(
             true,
-            "Token refreshed successfully",
+            LocaleUtils.getMessage(REFRESH_TOKEN_SUCCESS),
             authService.refreshToken(request, servletRequest, response),
             null);
     return ResponseEntity.ok(apiResponse);
@@ -121,7 +124,7 @@ public class AuthController {
     ApiResponse response =
         ApiUtils.buildApiResponse(
             true,
-            "Password reset request sent successfully",
+            LocaleUtils.getMessage(PASSWORD_RESET_REQUEST),
             authService.resetPasswordRequest(request, servletRequest, servletResponse),
             null);
     return ResponseEntity.ok().body(response);
@@ -136,7 +139,7 @@ public class AuthController {
     ApiResponse response =
         ApiResponse.builder()
             .success(true)
-            .message("Password has been reset successfully")
+            .message(LocaleUtils.getMessage(PASSWORD_RESET_REQUEST_SUCCESS))
             .timestamp(OffsetDateTime.now())
             .build();
     return ResponseEntity.ok(response);
@@ -146,6 +149,7 @@ public class AuthController {
   public ResponseEntity<ApiResponse> logout(
       HttpServletRequest request, HttpServletResponse response) {
     new SecurityContextLogoutHandler().logout(request, response, null);
-    return ResponseEntity.ok(ApiUtils.buildApiResponse(true, "Logout successful", null, null));
+    return ResponseEntity.ok(
+        ApiUtils.buildApiResponse(true, LocaleUtils.getMessage(SIMPLE_AUTH_LOGOUT), null, null));
   }
 }
