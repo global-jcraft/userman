@@ -45,11 +45,32 @@ spring:
     user: postgres
     password: dev_password
     default-schema: huddey_userman
+  cloud:
+    aws:
+      sqs:
+        region: us-east-1
+        localstack:
+          endpoint: http://localhost:4566
+          queue:
+            name: userman-local-register-event.fifo
+            url: http://sqs.us-east-1.localhost.localstack.cloud:4566/000000000000/userman-local-register-event.fifo
+            fifo: true
+            group-id: default-group
+            content-based-deduplication: true
+        client:
+          timeout: 30
+          connect-timeout: 10000
+          read-timeout: 10000
+          write-timeout: 10000
+
 
 logging:
   level:
     org.springframework.security: DEBUG
     com.huddey.core.userman.auth.oauth2: DEBUG
+    io.awspring.cloud: DEBUG
+    software.amazon.awssdk: DEBUG
+    org.springframework.messaging: DEBUG
 
 server:
   port: 8080

@@ -1,6 +1,7 @@
 package com.huddey.core.userman.service;
 
 import static com.huddey.core.userman.constants.Message.*;
+import static com.huddey.core.userman.utils.EventUtils.eventBuilder;
 import static com.huddey.core.userman.utils.RequestUtils.determineClientType;
 import static com.huddey.core.userman.utils.RequestUtils.getLoginResponse;
 
@@ -27,6 +28,7 @@ import com.huddey.core.userman.data.dto.response.UserRegistrationResponse;
 import com.huddey.core.userman.data.dto.token.TokenData;
 import com.huddey.core.userman.data.dto.token.TokenRefreshResponse;
 import com.huddey.core.userman.data.entity.*;
+import com.huddey.core.userman.event.UserEventPublisher;
 import com.huddey.core.userman.exception.*;
 import com.huddey.core.userman.repository.AuthProviderRepository;
 import com.huddey.core.userman.repository.RoleRepository;
@@ -58,6 +60,7 @@ public class AuthServiceImpl implements AuthService {
   private final UserDetailsService userDetailsService;
   private final CustomUserDetailsService customUserDetailsService;
   private final JwtAuthenticationFilter jwtAuthenticationFilter;
+  private final UserEventPublisher userEventPublisher;
 
   @Override
   public UserRegistrationResponse registerBasicFlow(
@@ -116,7 +119,7 @@ public class AuthServiceImpl implements AuthService {
     SecurityUser securityUser = customUserDetailsService.updateUserInfo(request);
     String clientType = determineClientType(servletRequest);
 
-    // emailService.sendVerificationEmail(user.getEmail(), user.getEmailVerificationToken());
+    userEventPublisher.publishUserRegisteredEvent(eventBuilder(securityUser.getUser()));
 
     if (clientType.equals("web")) {
       log.debug("Client type is web");

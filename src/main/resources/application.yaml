@@ -46,6 +46,16 @@ spring:
     user: postgres
     password: dev_password
     default-schema: huddey_userman
+  cloud:
+    aws:
+      sqs:
+        region: us-east-1
+        enabled: true
+        client:
+          timeout: 10000
+          connect-timeout: 10000
+          read-timeout: 10000
+          write-timeout: 10000
 
 server:
   port: 8080
