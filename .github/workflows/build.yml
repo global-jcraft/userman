@@ -50,8 +50,12 @@ jobs:
     runs-on: ubuntu-latest
     needs: setup
     steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4.1.6
+
       - name: Build Project (compile)
         run: ./gradlew assemble
+
 
   # 3. SonarCloud scan
   sonar:
