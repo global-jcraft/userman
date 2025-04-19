@@ -13,7 +13,7 @@ RUN addgroup --system appuser && adduser --system --group appuser
 USER appuser
 
 # Copy only the built jar from the build stage
-COPY --from=builder /build/user-management-service/build/libs/userman-*.jar app.jar
+COPY --from=builder /build/build/libs/huddey-core-*.jar app.jar
 
 EXPOSE 8080
 
