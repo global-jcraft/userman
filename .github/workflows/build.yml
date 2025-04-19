@@ -4,11 +4,17 @@ name: Build, Test, Scan and Deploy Dev
 
 on:
   push:
-    branches: [ develop, master ]
+    branches:
+      - master
+      - develop
+      - '**' # Trigger on push to master, develop, AND any other branch (e.g., feature/xxx)
   pull_request:
-    branches: [ develop, master ]
+    # Trigger on PRs targeting master or develop
+    branches:
+      - master
+      - develop
 
-permissions: # Add permissions block for security best practices
+permissions:
   contents: read
   pull-requests: write # Needed for SonarCloud PR decoration
 
@@ -18,88 +24,94 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Harden Runner # Enhance runner security
-        uses: step-security/harden-runner@0d381219ddf674d61a7572ddd194796e7861a74c # v2.9.0
+      - name: Harden Runner
+        uses: step-security/harden-runner@v2.9.0
         with:
-          egress-policy: audit # TODO: change to 'egress-policy: block' after couple of runs
+          egress-policy: audit # Start with audit, then consider block
 
-      - name: Checkout Code # Checkout the repository code
-        uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6
+      - name: Checkout Code
+        uses: actions/checkout@v4.1.6
         with:
-          fetch-depth: 0 # Fetch all history for SonarCloud analysis
+          # Fetch depth 0 is important for SonarQube branch/PR analysis
+          fetch-depth: 0
 
-      - name: Set up JDK 17 # Set up Java environment
-        uses: actions/setup-java@99b8673ff64fbf99c8d32c30f60a6a26b1068173 # v4.2.1
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4.2.1
         with:
           java-version: '17'
-          distribution: 'temurin' # Eclipse Temurin is a good choice
-          cache: 'gradle' # Cache Gradle dependencies
+          distribution: 'temurin'
+          cache: 'gradle'
 
       - name: Grant execute permission for gradlew
         run: chmod +x ./gradlew
 
       # --- Build Steps ---
       - name: 1. Build Project (Compile sources)
-        run: ./gradlew assemble # Compiles sources for all modules
+        run: ./gradlew assemble
 
       - name: 2. SonarCloud Code Quality Scan
-        # Only run on pushes to main to avoid excessive scanning on PR branches
-        # SonarCloud automatically analyzes PRs if configured in SonarCloud project settings
-        if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
+        # Runs unconditionally whenever the job runs.
+        # SonarScanner detects PRs vs. branch pushes automatically.
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Needed for PR decoration
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }} # SonarCloud token from secrets
-        run: ./gradlew sonarqube --info # Run Sonar analysis
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}   # Token for SonarCloud
+        run: ./gradlew sonarqube --info
 
-      - name: 3. Spotless Check # Check code formatting
+      - name: 3. Spotless Check
         run: ./gradlew spotlessCheck
 
-      - name: 4. Unit Tests & Coverage # Run unit tests and generate Jacoco report
-        run: ./gradlew test # Runs tests; jacocoTestReport runs automatically due to finalizedBy
+      - name: 4. Unit Tests & Coverage
+        run: ./gradlew test # Jacoco report generated via finalizedBy
 
-      - name: 5. Package Application # Create the final JAR
-        run: ./gradlew bootJar # Creates the executable fat JAR in build/libs/
+      - name: 5. Package Application
+        run: ./gradlew bootJar
 
       # --- Docker Steps ---
-      - name: Set up Docker Buildx # Needed for enhanced Docker build capabilities
-        uses: docker/setup-buildx-action@d70bba72b1f3fd22344832f04baa16351d5cb2a7 # v3.3.0
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3.3.0
 
-      - name: 6. Docker Build # Build the Docker image
+      - name: 6. Docker Build
         id: docker_build
-        uses: docker/build-push-action@2cdde995de11925a030ce8070c3d77a52ffcf1c0 # v5.3.0
+        uses: docker/build-push-action@v5.3.0
         with:
-          context: . # Use the root directory as context
-          file: ./Dockerfile # Specify the Dockerfile location
-          push: false # Do not push the image yet
-          # Tag the image for later reference (e.g., by Snyk)
+          context: .
+          file: ./Dockerfile
+          push: false # Only build locally for scanning
+          # Using SHA for image tag uniqueness within the build
           tags: localbuild/huddey-core:${{ github.sha }}
-          load: true # Load the image into the local Docker daemon for scanning
+          load: true # Load image into runner's docker daemon for Snyk scan
 
       # --- Security Scan ---
       - name: 7.1 Snyk Scan - Application Dependencies
-        uses: snyk/actions/gradle@d949126886a9103a48101b3d870332a757214e83 # v0.8.0
+        uses: snyk/actions/gradle@v0.8.0
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         with:
-          args: --all-sub-projects # Ensure all Gradle submodules are scanned
-          command: monitor # Monitor project dependencies over time
+          args: --all-sub-projects
+          # Use 'monitor' to track dependencies or 'test' to fail the build on vulnerabilities
+          command: monitor
+          # You might want to add severity thresholds if using 'test', e.g., --severity-threshold=high
 
       - name: 7.2 Snyk Scan - Docker Image
-        uses: snyk/actions/docker@d949126886a9103a48101b3d870332a757214e83 # v0.8.0
+        uses: snyk/actions/docker@v0.8.0
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         with:
-          image: localbuild/huddey-core:${{ github.sha }} # Use the tag from the build step
-          args: --file=Dockerfile # Provide Dockerfile for context
+          image: localbuild/huddey-core:${{ github.sha }}
+          args: --file=Dockerfile
+          # Consider adding severity thresholds here too, e.g., --severity-threshold=high
 
       # --- Deployment Step ---
       - name: 8. Deploy to Dev Environment (Dummy)
-        # Only run on pushes to the main branch
-        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+        # ASSUMPTION: Deploying to Dev occurs on pushes to the 'develop' branch.
+        # PLEASE CONFIRM/ADJUST this condition based on your actual deployment strategy.
+        if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
         run: |
-          echo "Simulating deployment to Dev environment..."
+          echo "Simulating deployment to Dev environment from 'develop' branch..."
           echo "Artifact: build/libs/huddey-core-*.jar"
-          echo "Docker Image: localbuild/huddey-core:${{ github.sha }}"
-          # In a real scenario, you would have steps here to push the Docker image
-          # and trigger a deployment using kubectl, helm, aws cli, azure cli, gcloud cli, etc.
+          echo "Docker Image ID to potentially push: localbuild/huddey-core:${{ github.sha }}"
+          # In a real scenario:
+          # 1. Login to Docker registry
+          # 2. Push the image (e.g., docker push your-registry/huddey-core:some-tag)
+          # 3. Trigger deployment (kubectl apply, helm upgrade, etc.)
           echo "Deployment simulation complete."
