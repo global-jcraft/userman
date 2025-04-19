@@ -1,5 +1,3 @@
-# .github/workflows/build.yml
-
 name: Build, Test, Scan and Deploy Dev
 
 on:
@@ -7,101 +5,167 @@ on:
     branches:
       - master
       - develop
-      - '**' # Trigger on push to master, develop, AND any other branch
+      - '**'
   pull_request:
-    # Trigger on PRs targeting master or develop
     branches:
       - master
       - develop
 
 permissions:
   contents: read
-  pull-requests: write # Needed for SonarCloud PR decoration
+  pull-requests: write
 
 jobs:
-  build-scan-deploy: # This is the single JOB
-    name: Build, Scan & Deploy # Display name for the JOB
+  # 1. Harden & checkout & setup JDK (prep for build)
+  setup:
+    name: Prepare runner
     runs-on: ubuntu-latest
-
-    # STEPS run sequentially within the JOB
+    outputs:
+      gradle-cache-key: ${{ steps.cache-gradle.outputs.cache-hit }}
     steps:
-      - name: Harden Runner # STEP 1
+      - name: Harden Runner
         uses: step-security/harden-runner@v2.9.0
         with:
-          egress-policy: audit # Start with audit, then consider block
+          egress-policy: audit
 
-      - name: Checkout Code # STEP 2
+      - name: Checkout Code
         uses: actions/checkout@v4.1.6
         with:
-          fetch-depth: 0 # Important for SonarQube analysis
+          fetch-depth: 0
 
-      - name: Set up JDK 17 # STEP 3
+      - name: Set up JDK 17
+        id: setup-java
         uses: actions/setup-java@v4.2.1
         with:
           java-version: '17'
           distribution: 'temurin'
           cache: 'gradle'
 
-      - name: Grant execute permission for gradlew # STEP 4
+      - name: Grant execute permission for gradlew
         run: chmod +x ./gradlew
 
-      # --- Build Steps ---
-      - name: Build Project (Compile sources) # STEP 5 (Logical Group 1)
+  # 2. Build
+  build:
+    name: Build Project
+    runs-on: ubuntu-latest
+    needs: setup
+    steps:
+      - name: Build Project (compile)
         run: ./gradlew assemble
 
-      - name: SonarCloud Code Quality Scan # STEP 6 (Logical Group 2)
+  # 3. SonarCloud scan
+  sonar:
+    name: SonarCloud Code Quality Scan
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - uses: actions/checkout@v4.1.6
+        with:
+          fetch-depth: 0
+
+      - name: SonarCloud Scan
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: ./gradlew sonarqube --info
+        run: |
+          # run the new 'sonar' task instead of 'sonarqube'
+          ./gradlew sonar \
+            -Dsonar.host.url=https://sonarcloud.io \
+            -Dsonar.organization=your-org-key \
+            -Dsonar.projectKey=your-project-key \
+            -Dsonar.login=${{ secrets.SONAR_TOKEN }} \
+          --info
+  
 
-      - name: Spotless Check # STEP 7 (Logical Group 3)
+  # 4. Spotless (format) check
+  spotless:
+    name: Spotless Check
+    runs-on: ubuntu-latest
+    needs: sonar
+    steps:
+      - uses: actions/checkout@v4.1.6
+      - name: Spotless Check
         run: ./gradlew spotlessCheck
 
-      - name: Unit Tests & Coverage # STEP 8 (Logical Group 4)
+  # 5. Unit tests & coverage
+  test:
+    name: Unit Tests & Coverage
+    runs-on: ubuntu-latest
+    needs: spotless
+    steps:
+      - uses: actions/checkout@v4.1.6
+      - name: Run Tests
         run: ./gradlew test
 
-      - name: Package Application # STEP 9 (Logical Group 5)
+  # 6. Package (bootJar)
+  package:
+    name: Package Application
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v4.1.6
+      - name: Package JAR
         run: ./gradlew bootJar
+      - name: Archive Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: huddey-core-jar
+          path: build/libs/huddey-core-*.jar
 
-      # --- Docker Steps ---
-      - name: Set up Docker Buildx # STEP 10 (Logical Group 6)
-        uses: docker/setup-buildx-action@v3.3.0
-
-      - name: Docker Build # STEP 11 (Logical Group 6)
+  # 7. Docker build
+  docker:
+    name: Docker Build
+    runs-on: ubuntu-latest
+    needs: package
+    steps:
+      - uses: docker/setup-buildx-action@v3.3.0
+      - uses: actions/checkout@v4.1.6
+      - name: Build & Load Image
         id: docker_build
         uses: docker/build-push-action@v5.3.0
         with:
           context: .
           file: ./Dockerfile
-          push: false
           tags: localbuild/huddey-core:${{ github.sha }}
           load: true
 
-      # --- Security Scan ---
-      - name: Snyk Scan - Application Dependencies
-        uses: snyk/actions/gradle@master     # ← was v0.9.0
+  # 8a. Snyk: dependencies scan
+  snyk-deps:
+    name: Snyk Scan – Dependencies
+    runs-on: ubuntu-latest
+    needs: package
+    steps:
+      - uses: actions/checkout@v4.1.6
+      - name: Snyk Scan – Application Dependencies
+        uses: snyk/actions/gradle@master
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         with:
-          args: --all-sub-projects
           command: monitor
+          args: --all-sub-projects
 
-      - name: Snyk Scan - Docker Image
-        uses: snyk/actions/docker@master     # ← was v0.9.0
+  # 8b. Snyk: docker-image scan
+  snyk-docker:
+    name: Snyk Scan – Docker Image
+    runs-on: ubuntu-latest
+    needs: docker
+    steps:
+      - name: Snyk Scan – Docker Image
+        uses: snyk/actions/docker@master
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         with:
           image: localbuild/huddey-core:${{ github.sha }}
           args: --file=Dockerfile
 
-      # --- Deployment Step ---
-      - name: Deploy to Dev Environment (Dummy) # STEP 14 (Logical Group 8)
-        # Deploying from 'develop' branch - ADJUST IF NEEDED
-        if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
+  # 9. Deploy to Dev (only on develop)
+  deploy-dev:
+    name: Deploy to Dev Environment
+    runs-on: ubuntu-latest
+    needs: [snyk-deps, snyk-docker]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
+    steps:
+      - name: Simulate Deployment
         run: |
-          echo "Simulating deployment to Dev environment from 'develop' branch..."
-          echo "Artifact: build/libs/huddey-core-*.jar"
-          echo "Docker Image ID to potentially push: localbuild/huddey-core:${{ github.sha }}"
-          # Add real deployment steps here (docker login, push, kubectl/helm etc.)
-          echo "Deployment simulation complete."
+          echo "Deploying huddey-core:${{ github.sha }} to Dev environment…"
+          # real docker login/push or kubectl/helm steps here
