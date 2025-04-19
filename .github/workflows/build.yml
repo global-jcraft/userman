@@ -79,16 +79,16 @@ jobs:
           load: true
 
       # --- Security Scan ---
-      - name: Snyk Scan - Application Dependencies # STEP 12 (Logical Group 7)
-        uses: snyk/actions/gradle@v0.9.0 # Updated tag
+      - name: Snyk Scan - Application Dependencies
+        uses: snyk/actions/gradle@master     # ← was v0.9.0
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         with:
           args: --all-sub-projects
           command: monitor
 
-      - name: Snyk Scan - Docker Image # STEP 13 (Logical Group 7)
-        uses: snyk/actions/docker@v0.9.0 # Updated tag
+      - name: Snyk Scan - Docker Image
+        uses: snyk/actions/docker@master     # ← was v0.9.0
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         with:
