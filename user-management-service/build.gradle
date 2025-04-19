@@ -42,10 +42,10 @@ dependencies {
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
-bootJar {
+/*bootJar {
     archiveBaseName.set('userman')
     archiveVersion.set("${version}")
-}
+}*/
 
 tasks.register("prepareKotlinBuildScriptModel") {
     doLast {
