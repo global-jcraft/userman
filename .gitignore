@@ -43,3 +43,6 @@ out/
 .env.development
 .env.test
 .env.production
+
+.gitignore
+.gitattributes

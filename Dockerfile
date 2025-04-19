@@ -1,22 +1,24 @@
-# Use an official OpenJDK runtime as a parent image
-FROM openjdk:17.0
+# Build stage
+FROM openjdk:17.0-slim as builder
+WORKDIR /build
+COPY . .
+RUN ./gradlew clean bootJar
 
-# Set the working directory inside the container
-WORKDIR /jcraft-userman
+# Runtime stage
+FROM openjdk:17.0-slim
+WORKDIR /app
 
-# Define a build argument for the version
-ARG VERSION
-RUN echo "VERSION is ${VERSION}"
-# Copy the Spring Boot application JAR file into the container
-# Ensure the jar file is correctly named during the build process (e.g., jcraft-userman.jar)
-COPY build/libs/userman-${VERSION}.jar userman.jar
+# Create a non-root user
+RUN addgroup --system appuser && adduser --system --group appuser
+USER appuser
 
-# Expose the port your application runs on (default is 8080 for Spring Boot)
+# Copy only the built jar from the build stage
+COPY --from=builder /build/user-management-service/build/libs/userman-*.jar app.jar
+
 EXPOSE 8080
 
-# Set environment variables (optional)
-# Uncomment and set if needed, e.g., active Spring profiles
-# ENV SPRING_PROFILES_ACTIVE=prod
+HEALTHCHECK --interval=30s --timeout=3s --retries=3 \
+  CMD wget -q --spider http://localhost:8080/userman/actuator/health || exit 1
 
-# Command to run the application
-CMD ["java", "-jar", "userman.jar"]
+# Set memory limits and enable GC logging
+ENTRYPOINT ["java", "-Xms512m", "-Xmx1g", "-XX:+UseG1GC", "-jar", "app.jar"]
