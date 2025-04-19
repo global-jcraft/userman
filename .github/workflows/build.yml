@@ -75,8 +75,8 @@ jobs:
           # run the new 'sonar' task instead of 'sonarqube'
           ./gradlew sonar \
             -Dsonar.host.url=https://sonarcloud.io \
-            -Dsonar.organization=your-org-key \
-            -Dsonar.projectKey=your-project-key \
+            -Dsonar.organization=global-jcraft \
+            -Dsonar.projectKey=global-jcraft_userman \
             -Dsonar.login=${{ secrets.SONAR_TOKEN }} \
           --info
   
