@@ -109,7 +109,9 @@ jobs:
       - checkout
       - run:
           name: Package the Application
-          command: ./gradlew clean bootJar
+          command: |
+            ./gradlew clean bootJar
+            ls -la build/libs  # List the contents of build/libs to ensure it's created
       - persist_to_workspace:
           root: .
           paths:
