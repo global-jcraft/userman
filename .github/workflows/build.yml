@@ -117,20 +117,31 @@ jobs:
 
   # 7. Docker build
   docker:
-    name: Docker Build
+    name: Build, Load & Scan Docker Image
     runs-on: ubuntu-latest
     needs: package
     steps:
-      - uses: docker/setup-buildx-action@v3.3.0
       - uses: actions/checkout@v4.1.6
-      - name: Build & Load Image
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3.3.0
+
+      - name: Build & load image
         id: docker_build
         uses: docker/build-push-action@v5.3.0
         with:
           context: .
           file: ./Dockerfile
-          tags: localbuild/huddey-core:${{ github.sha }}
           load: true
+          tags: localbuild/huddey-core:${{ github.sha }}
+
+      - name: Snyk Docker scan
+        uses: snyk/actions/docker@master
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          image: localbuild/huddey-core:${{ github.sha }}
+          args: --file=Dockerfile
 
   # 8a. Snyk: dependencies scan
   snyk-deps:
