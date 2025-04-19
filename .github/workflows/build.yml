@@ -140,12 +140,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4.1.6
       - name: Snyk Scan – Application Dependencies
-        uses: snyk/actions/gradle@master
-        env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        uses: snyk/actions/gradle-jdk17@master
         with:
           command: monitor
           args: --all-sub-projects
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
 
   # 8b. Snyk: docker-image scan
   snyk-docker:
