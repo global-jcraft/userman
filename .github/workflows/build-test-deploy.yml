@@ -83,7 +83,7 @@ jobs:
               -Dsonar.pullrequest.base=${{ github.base_ref }} \
               -Dsonar.scm.provider=git
           else
-            ./gradlew sonarqube \
+            ./gradlew sonar \
               -Dsonar.coverage.jacoco.xmlReportPaths=build/reports/jacoco/test/jacocoTestReport.xml \
               -Dsonar.junit.reportPaths=build/test-results/test \
               -Dsonar.tests=src/test/java \
