@@ -153,13 +153,17 @@ jobs:
     runs-on: ubuntu-latest
     needs: docker
     steps:
-      - name: Snyk Scan – Docker Image
+      - name: Checkout code
+        uses: actions/checkout@v4.1.6
+
+      - name: Run Snyk to check Docker image for vulnerabilities
         uses: snyk/actions/docker@master
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         with:
           image: localbuild/huddey-core:${{ github.sha }}
           args: --file=Dockerfile
+
 
   # 9. Deploy to Dev (only on develop)
   deploy-dev:
