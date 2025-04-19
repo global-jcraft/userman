@@ -111,9 +111,9 @@ jobs:
           name: Package the Application
           command: ./gradlew clean bootJar
       - persist_to_workspace:
-          root: build/libs/
+          root: .
           paths:
-            - '*.jar'
+            - build/libs
 
   docker-build:
     executor: docker-executor
