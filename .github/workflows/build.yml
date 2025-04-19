@@ -72,7 +72,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: |
-          # run the new 'sonar' task instead of 'sonarqube'
           ./gradlew sonar \
             -Dsonar.host.url=https://sonarcloud.io \
             -Dsonar.organization=global-jcraft \
@@ -111,7 +110,7 @@ jobs:
       - name: Package JAR
         run: ./gradlew bootJar
       - name: Archive Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: huddey-core-jar
           path: build/libs/huddey-core-*.jar
