@@ -147,9 +147,7 @@ jobs:
           distribution: 'temurin'
 
       - name: Install Snyk CLI
-        uses: snyk/actions/setup@v1
-        with:
-          version: 'latest'
+        uses: snyk/actions/setup@master
 
       - name: Snyk Monitor
         run: snyk monitor --all-sub-projects
