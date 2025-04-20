@@ -1,11 +1,11 @@
 # Build stage
-FROM openjdk:17.0-slim as builder
+FROM openjdk:21-slim AS builder
 WORKDIR /build
 COPY . .
 RUN ./gradlew clean bootJar
 
 # Runtime stage
-FROM openjdk:17.0-slim
+FROM openjdk:21-slim
 WORKDIR /app
 
 # Create a non-root user

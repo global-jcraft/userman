@@ -33,11 +33,11 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Set up JDK 17
+      - name: Set up JDK 21
         id: setup-java
         uses: actions/setup-java@v4.2.1
         with:
-          java-version: '17'
+          java-version: '21'
           distribution: 'temurin'
           cache: 'gradle'
 
@@ -140,7 +140,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4.1.6
       - name: Snyk Scan – Application Dependencies
-        uses: snyk/actions/gradle-jdk17@master
+        uses: snyk/actions/gradle-jdk21@master
         with:
           command: monitor
           args: --all-sub-projects
