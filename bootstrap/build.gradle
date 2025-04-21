@@ -1,0 +1,21 @@
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '3.4.4'
+}
+
+dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+
+    implementation project(':user-management-service')
+}
+
+bootJar {
+    enabled = true
+    mainClass.set('com.huddey.main.bootstrap.BootstrapApplication')
+}
+
+jar {
+    enabled = false
+}
