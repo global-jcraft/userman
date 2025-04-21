@@ -1,5 +1,3 @@
 rootProject.name = 'huddey-core'
+include 'bootstrap' // main module
 include 'user-management-service'
-
-// Configure project names for better readability
-project(':user-management-service').name = 'user-management-service'
