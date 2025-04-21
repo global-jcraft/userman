@@ -7,11 +7,6 @@ plugins {
     id 'jacoco'
 }
 
-ext {
-    springBootVersion = '3.4.4'
-    springDependencyManagementVersion = '1.1.7'
-}
-
 allprojects {
     group = 'com.huddey.core'
     version = '0.0.1-SNAPSHOT'
@@ -29,8 +24,6 @@ bootJar {
     from {
         subprojects.collect { it.sourceSets.main.output }
     }
-
-    mainClass.set('com.huddey.userman.UserManagementService')
 }
 
 subprojects {

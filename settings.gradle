@@ -1,5 +1,2 @@
 rootProject.name = 'huddey-core'
 include 'user-management-service'
-
-// Configure project names for better readability
-project(':user-management-service').name = 'user-management-service'
