@@ -56,7 +56,7 @@ public class UsermanSecurityConfig {
                     .frameOptions(HeadersConfigurer.FrameOptionsConfig::deny)
                     .xssProtection(HeadersConfigurer.XXssConfig::disable)
                     .contentSecurityPolicy(csp -> csp.policyDirectives("default-src 'self'"))
-                    .permissionsPolicy(
+                    .permissionsPolicyHeader(
                         permissions ->
                             permissions.policy("camera=(), microphone=(), geolocation=()")))
         .exceptionHandling(exc -> exc.authenticationEntryPoint(authEntryPoint))

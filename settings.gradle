@@ -1,3 +1,4 @@
 rootProject.name = 'huddey-core'
 include 'bootstrap' // main module
 include 'user-management-service'
+//include 'notification-service'

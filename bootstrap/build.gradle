@@ -22,6 +22,7 @@ dependencies {
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 
     implementation project(':user-management-service')
+    //implementation project(':notification-service')
 }
 
 bootJar {

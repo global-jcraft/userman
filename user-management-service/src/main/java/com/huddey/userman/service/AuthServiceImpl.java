@@ -60,6 +60,8 @@ public class AuthServiceImpl implements AuthService {
   private final CustomUserDetailsService customUserDetailsService;
   private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
+  // private final NotificationHandler notificationHandler;
+
   @Override
   public UserRegistrationResponse registerBasicFlow(
       UserRegistrationBasicFlowRequest user,
@@ -71,7 +73,10 @@ public class AuthServiceImpl implements AuthService {
     SecurityUser securityUser = customUserDetailsService.createNewUserBasicFlow(user);
     String clientType = determineClientType(servletRequest);
 
-    // emailService.sendVerificationEmail(user.getEmail(), user.getEmailVerificationToken());
+    /*notificationHandler.notify(
+    "email",
+    securityUser.getUser().getEmail(),
+    securityUser.getUser().getEmailVerificationToken());*/
 
     if (clientType.equals("web")) {
       log.debug("Client type is web");
