@@ -3,7 +3,7 @@ FROM openjdk:21-slim AS builder
 WORKDIR /build
 COPY . .
 # This command builds the bootJar for the 'bootstrap' module
-RUN ./gradlew :bootstrap:clean :bootstrap:bootJar --no-daemon
+RUN ./gradlew clean bootJar --no-daemon
 
 # Runtime stage
 FROM openjdk:21-slim
