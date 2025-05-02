@@ -7,7 +7,8 @@ import java.time.OffsetDateTime;
 import jakarta.persistence.*;
 import lombok.*;
 
-@Data
+@Getter
+@Setter
 @Entity
 @Table(name = "user_credentials", schema = "huddey_core")
 public class UserCredential implements Serializable {

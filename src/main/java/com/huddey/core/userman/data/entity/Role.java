@@ -9,7 +9,8 @@ import java.util.Set;
 import jakarta.persistence.*;
 import lombok.*;
 
-@Data
+@Getter
+@Setter
 @Entity
 @Table(name = "roles", schema = "huddey_core")
 public class Role implements Serializable {

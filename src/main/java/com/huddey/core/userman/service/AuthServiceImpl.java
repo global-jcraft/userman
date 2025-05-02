@@ -1,5 +1,6 @@
 package com.huddey.core.userman.service;
 
+import static com.huddey.core.notification.data.constants.NotificationConstants.EMAIL_NOTIFICATION;
 import static com.huddey.core.userman.constants.Message.*;
 import static com.huddey.core.userman.utils.RequestUtils.determineClientType;
 import static com.huddey.core.userman.utils.RequestUtils.getLoginResponse;
@@ -9,6 +10,7 @@ import java.util.UUID;
 
 import javax.management.relation.RoleNotFoundException;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -18,6 +20,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import com.huddey.core.notification.service.NotificationHandler;
 import com.huddey.core.userman.auth.JwtAuthenticationFilter;
 import com.huddey.core.userman.auth.JwtTokenProvider;
 import com.huddey.core.userman.data.SecurityUser;
@@ -59,8 +62,10 @@ public class AuthServiceImpl implements AuthService {
   private final UserDetailsService userDetailsService;
   private final CustomUserDetailsService customUserDetailsService;
   private final JwtAuthenticationFilter jwtAuthenticationFilter;
+  private final NotificationHandler notificationHandler;
 
-  // private final NotificationHandler notificationHandler;
+  @Value("${app.confirmation.baseUrl}")
+  private String baseUrl;
 
   @Override
   public UserRegistrationResponse registerBasicFlow(
@@ -73,11 +78,6 @@ public class AuthServiceImpl implements AuthService {
     SecurityUser securityUser = customUserDetailsService.createNewUserBasicFlow(user);
     String clientType = determineClientType(servletRequest);
 
-    /*notificationHandler.notify(
-    "email",
-    securityUser.getUser().getEmail(),
-    securityUser.getUser().getEmailVerificationToken());*/
-
     if (clientType.equals("web")) {
       log.debug("Client type is web");
       tokenGenerationStrategy = new WebTokenGenerationStrategy(jwtTokenProvider);
@@ -88,7 +88,7 @@ public class AuthServiceImpl implements AuthService {
           .firstName(securityUser.getUser().getFirstName())
           .lastName(securityUser.getUser().getLastName())
           .status(securityUser.getUser().getStatus().toString())
-          .message("Registration successful. Please verify your email.")
+          .message(GLOBAL_AUTH_SUCCESS)
           .build();
     } else {
       log.debug("Client type is mobile");
@@ -100,7 +100,7 @@ public class AuthServiceImpl implements AuthService {
           .firstName(securityUser.getUser().getFirstName())
           .lastName(securityUser.getUser().getLastName())
           .status(securityUser.getUser().getStatus().toString())
-          .message("Registration successful. Please verify your email.")
+          .message(GLOBAL_AUTH_SUCCESS)
           .tokenData(
               TokenData.builder()
                   .accessToken(tokenGenerationStrategy.getAccessToken())
@@ -122,7 +122,15 @@ public class AuthServiceImpl implements AuthService {
     SecurityUser securityUser = customUserDetailsService.updateUserInfo(request);
     String clientType = determineClientType(servletRequest);
 
-    // emailService.sendVerificationEmail(user.getEmail(), user.getEmailVerificationToken());
+    String confirmationLink =
+        baseUrl + "/confirm?token=" + securityUser.getUser().getEmailVerificationToken();
+
+    notificationHandler.notify(
+        EMAIL_NOTIFICATION,
+        securityUser.getUser().getEmail(),
+        securityUser.getUser().getEmailVerificationToken(),
+        securityUser.getUsername(),
+        confirmationLink);
 
     if (clientType.equals("web")) {
       log.debug("Client type is web");
@@ -134,7 +142,7 @@ public class AuthServiceImpl implements AuthService {
           .firstName(securityUser.getUser().getFirstName())
           .lastName(securityUser.getUser().getLastName())
           .status(securityUser.getUser().getStatus().toString())
-          .message("Registration successful. Please verify your email.")
+          .message(GLOBAL_AUTH_SUCCESS)
           .build();
     } else {
       log.debug("Client type is mobile");
@@ -146,7 +154,7 @@ public class AuthServiceImpl implements AuthService {
           .firstName(securityUser.getUser().getFirstName())
           .lastName(securityUser.getUser().getLastName())
           .status(securityUser.getUser().getStatus().toString())
-          .message("Registration successful. Please verify your email.")
+          .message(GLOBAL_AUTH_SUCCESS)
           .tokenData(
               TokenData.builder()
                   .accessToken(tokenGenerationStrategy.getAccessToken())
@@ -162,6 +170,7 @@ public class AuthServiceImpl implements AuthService {
       LoginRequest request,
       HttpServletRequest servletRequest,
       HttpServletResponse servletResponse) {
+    User user = null;
     try {
       // Load user details first to validate existence and status
       UserDetails userDetails = userDetailsService.loadUserByUsername(request.getEmail());
@@ -175,7 +184,7 @@ public class AuthServiceImpl implements AuthService {
               new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword()));
 
       SecurityUser securityUser = (SecurityUser) authentication.getPrincipal();
-      User user = securityUser.getUser();
+      user = securityUser.getUser();
 
       /*if (!user.isEmailVerified()) {
           throw new EmailNotVerifiedException("Please verify your email before logging in");
@@ -196,6 +205,8 @@ public class AuthServiceImpl implements AuthService {
           jwtTokenProvider,
           request.isRememberMe());
     } catch (BadCredentialsException ex) {
+      assert user != null;
+      log.error("Username or password is wrong for the user: {}", user.getEmail());
       throw new AuthenticationException(LocaleUtils.getMessage(USER_INVALID_CREDENTIALS_ERROR));
     }
   }

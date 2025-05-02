@@ -11,7 +11,8 @@ import org.hibernate.type.SqlTypes;
 import jakarta.persistence.*;
 import lombok.*;
 
-@Data
+@Getter
+@Setter
 @Entity
 @Table(name = "social_connections", schema = "huddey_core")
 public class SocialConnection implements Serializable {

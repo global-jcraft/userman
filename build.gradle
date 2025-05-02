@@ -36,6 +36,7 @@ configurations {
 }
 
 dependencies {
+    // Spring Boot Dependencies
     implementation 'org.springframework.boot:spring-boot-starter'
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
@@ -43,22 +44,31 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
     implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
+    implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
+
+    // AWS Dependencies
+    implementation "software.amazon.awssdk:ses:${awsSdkVersion}"
+    implementation "software.amazon.awssdk:core:${awsSdkVersion}"
+
+    // Micrometer Dependencies
     implementation 'io.micrometer:micrometer-tracing-bridge-brave'
     implementation "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:${jacksonDatatypeVersion}"
-    implementation "org.flywaydb:flyway-core:${flywayVersion}"
+
+    // JWT Dependencies
     implementation "me.paulschwarz:spring-dotenv:${dotenvVersion}"
     implementation "io.jsonwebtoken:jjwt-api:${jwtVersion}"
     runtimeOnly "io.jsonwebtoken:jjwt-impl:${jwtVersion}"
     runtimeOnly "io.jsonwebtoken:jjwt-jackson:${jwtVersion}"
+    implementation "org.flywaydb:flyway-core:${flywayVersion}"
     implementation 'org.postgresql:postgresql'
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
     annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
-    testImplementation 'org.testcontainers:testcontainers:1.19.3'
-    testImplementation 'org.testcontainers:junit-jupiter:1.19.3'
-    testImplementation 'org.testcontainers:postgresql:1.19.3'
+    testImplementation "org.testcontainers:testcontainers:${testContainersVersion}"
+    testImplementation "org.testcontainers:junit-jupiter:${testContainersVersion}"
+    testImplementation "org.testcontainers:postgresql:${testContainersVersion}"
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
