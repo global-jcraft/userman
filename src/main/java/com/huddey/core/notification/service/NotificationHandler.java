@@ -3,13 +3,14 @@ package com.huddey.core.notification.service;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.stereotype.Service;
+
 import com.huddey.core.notification.data.entity.Notification;
 import com.huddey.core.notification.data.entity.NotificationStatus;
 import com.huddey.core.notification.data.entity.NotificationType;
 import com.huddey.core.notification.repository.NotificationRepository;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.scheduling.annotation.Async;
-import org.springframework.stereotype.Service;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -21,9 +22,10 @@ public class NotificationHandler {
   private final NotificationRepository notificationRepository;
 
   @Autowired
-  public NotificationHandler(NotificationFactory notificationFactory, NotificationRepository notificationRepository) {
+  public NotificationHandler(
+      NotificationFactory notificationFactory, NotificationRepository notificationRepository) {
     this.notificationFactory = notificationFactory;
-      this.notificationRepository = notificationRepository;
+    this.notificationRepository = notificationRepository;
   }
 
   @Async

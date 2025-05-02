@@ -27,7 +27,6 @@ public class EmailNotificationService implements NotificationService {
   @Value("${aws.ses.from}")
   private String senderEmail;
 
-
   @Override
   public void sendNotification(
       String recipient, String message, String username, String confirmationLink) {

@@ -2,10 +2,11 @@ package com.huddey.core.notification.data.entity;
 
 import java.time.OffsetDateTime;
 
-import jakarta.persistence.*;
-import lombok.*;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
+
+import jakarta.persistence.*;
+import lombok.*;
 
 @Entity
 @Getter
