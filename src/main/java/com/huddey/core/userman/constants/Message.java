@@ -11,6 +11,7 @@ public class Message {
   public static final String GLOBAL_REQUEST_ERROR = "global.request.error";
   public static final String GLOBAL_INTERNAL_ERROR = "global.internal.error";
   public static final String GLOBAL_INTERNAL_UNEXPECTED_ERROR = "global.internal.unexpected.error";
+  public static final String GLOBAL_AUTH_SUCCESS = "global.auth.success";
   public static final String SIMPLE_AUTH_REG_SUCCESS = "simple.auth.reg.success";
   public static final String SIMPLE_FULL_AUTH_REG_SUCCESS = "simple.auth.full.reg.success";
   public static final String SIMPLE_LOGIN_SUCCESS = "simple.login.success";

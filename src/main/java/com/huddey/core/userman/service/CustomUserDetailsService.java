@@ -3,7 +3,6 @@ package com.huddey.core.userman.service;
 import java.time.OffsetDateTime;
 import java.util.HashSet;
 import java.util.Optional;
-import java.util.UUID;
 
 import javax.management.relation.RoleNotFoundException;
 
@@ -14,6 +13,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import com.huddey.core.notification.config.TokenService;
 import com.huddey.core.userman.data.SecurityUser;
 import com.huddey.core.userman.data.dto.UserRegistrationBasicFlowRequest;
 import com.huddey.core.userman.data.dto.UserRegistrationRequest;
@@ -39,6 +39,7 @@ public class CustomUserDetailsService implements UserDetailsService {
   private final RoleRepository roleRepository;
   private final AuthProviderRepository authProviderRepository;
   private final UserCredentialRepository userCredentialRepository;
+  private final TokenService tokenService;
 
   @Value("${user.verification.token.expiry.hours:24}")
   private int verificationTokenExpiryHours;
@@ -48,12 +49,14 @@ public class CustomUserDetailsService implements UserDetailsService {
       UserRepository userRepository,
       RoleRepository roleRepository,
       AuthProviderRepository authProviderRepository,
-      UserCredentialRepository userCredentialRepository) {
+      UserCredentialRepository userCredentialRepository,
+      TokenService tokenService) {
     this.passwordEncoder = passwordEncoder;
     this.userRepository = userRepository;
     this.roleRepository = roleRepository;
     this.authProviderRepository = authProviderRepository;
     this.userCredentialRepository = userCredentialRepository;
+    this.tokenService = tokenService;
   }
 
   /**
@@ -112,13 +115,15 @@ public class CustomUserDetailsService implements UserDetailsService {
                     new UserNotFoundException(
                         "User with email: " + request.getEmail() + " not found"));
 
+    var verificationToken = tokenService.generateEmailConfirmationLink(request.getEmail());
+
     existingUser.setFirstName(request.getFirstName());
     existingUser.setLastName(request.getLastName());
     existingUser.setCompanyName(request.getCompanyName());
     existingUser.setPhoneNumber(request.getPhoneNumber());
     existingUser.setUpdatedAt(OffsetDateTime.now());
     existingUser.setRegistrationIp(RequestUtils.getClientIp());
-    existingUser.setEmailVerificationToken(generateVerificationToken());
+    existingUser.setEmailVerificationToken(verificationToken);
     existingUser.setEmailVerificationTokenExpiresAt(
         OffsetDateTime.now().plusHours(verificationTokenExpiryHours));
     userRepository.save(existingUser);
@@ -149,9 +154,9 @@ public class CustomUserDetailsService implements UserDetailsService {
     user.setStatus(UserStatus.PENDING);
     user.setRegistrationIp(RequestUtils.getClientIp());
     user.setCreatedAt(OffsetDateTime.now());
-    user.setEmailVerificationToken(generateVerificationToken());
+    /*    user.setEmailVerificationToken(generateVerificationToken());
     user.setEmailVerificationTokenExpiresAt(
-        OffsetDateTime.now().plusHours(verificationTokenExpiryHours));
+        OffsetDateTime.now().plusHours(verificationTokenExpiryHours));*/
     return user;
   }
 
@@ -164,7 +169,6 @@ public class CustomUserDetailsService implements UserDetailsService {
   private User buildUser(UserRegistrationRequest request) {
     User user = new User();
     user.setEmail(request.getEmail());
-    ;
     user.setFirstName(request.getFirstName());
     user.setLastName(request.getLastName());
     user.setCompanyName(request.getCompanyName());
@@ -173,7 +177,7 @@ public class CustomUserDetailsService implements UserDetailsService {
     user.setCredentials(new HashSet<>());
     user.setStatus(UserStatus.PENDING);
     user.setRegistrationIp(RequestUtils.getClientIp());
-    user.setEmailVerificationToken(generateVerificationToken());
+    // user.setEmailVerificationToken(generateVerificationToken());
     user.setEmailVerificationTokenExpiresAt(
         OffsetDateTime.now().plusHours(verificationTokenExpiryHours));
     return user;
@@ -214,14 +218,5 @@ public class CustomUserDetailsService implements UserDetailsService {
     credentials.setPasswordHash(passwordEncoder.encode(password));
     user.getCredentials().add(credentials);
     userCredentialRepository.save(credentials);
-  }
-
-  /**
-   * Generate a verification token.
-   *
-   * @return the verification token
-   */
-  private String generateVerificationToken() {
-    return UUID.randomUUID().toString();
   }
 }

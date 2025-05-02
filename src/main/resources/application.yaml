@@ -1,4 +1,17 @@
 spring:
+  task:
+    execution:
+      pool:
+        core-size: 4
+        max-size: 8
+        queue-capacity: 100
+        keep-alive: 60s
+      thread-name-prefix: email-async-
+  thymeleaf:
+    cache: false
+    mode: HTML
+    encoding: UTF-8
+    prefix: classpath:/templates/
   messages:
     encoding: UTF-8
   security:
@@ -68,3 +81,8 @@ app:
       refreshTokenValidity: 86400000 # 24 hours
       rememberMeAccessTokenValidity: 432000000 # 5 days
       rememberMeRefreshTokenValidity: 604800000 # 7 days
+
+aws:
+  region: us-east-1
+  ses:
+    from: no-reply@yourdomain.com
