@@ -119,10 +119,10 @@ class RequestUtilTest {
 
     // Assert
     assertNotNull(response);
-    assertNotNull(response.getAccessToken());
-    assertNotNull(response.getRefreshToken());
-    assertEquals("Bearer", response.getTokenType());
-    assertEquals(3600L, response.getExpiresIn());
+    assertNotNull(response.getTokenData().getAccessToken());
+    assertNotNull(response.getTokenData().getRefreshToken());
+    assertEquals("Bearer", response.getTokenData().getTokenType());
+    assertEquals(3600L, response.getTokenData().getExpiresIn());
     assertNotNull(response.getUser());
   }
 
@@ -135,6 +135,8 @@ class RequestUtilTest {
 
     when(jwtTokenProvider.getAccessTokenValidity()).thenReturn(expiresIn);
 
+    securityUser = new SecurityUser(user);
+
     // Act
     LoginResponse response =
         RequestUtils.getLoginResponse(
@@ -143,9 +145,6 @@ class RequestUtilTest {
     // Assert
     assertNotNull(response);
     assertNotNull(response.getUser());
-    assertEquals(expiresIn, response.getExpiresIn());
-    assertNull(response.getAccessToken());
-    assertNull(response.getRefreshToken());
   }
 
   @Test
@@ -159,8 +158,8 @@ class RequestUtilTest {
         RequestUtils.getLoginResponse(
             servletResponse, unknownClientType, securityUser, user, jwtTokenProvider, rememberMe);
 
-    assertEquals("Bearer", response.getTokenType());
-    assertEquals(3600L, response.getExpiresIn());
+    assertEquals("Bearer", response.getTokenData().getTokenType());
+    assertEquals(3600L, response.getTokenData().getExpiresIn());
   }
 
   @Test

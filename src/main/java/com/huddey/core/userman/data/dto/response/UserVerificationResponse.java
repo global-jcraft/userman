@@ -1,6 +1,7 @@
 package com.huddey.core.userman.data.dto.response;
 
-import com.huddey.core.userman.data.dto.UserDTO;
+import java.util.Set;
+
 import com.huddey.core.userman.data.dto.token.TokenData;
 
 import lombok.AllArgsConstructor;
@@ -12,7 +13,13 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class LoginResponse {
-  private UserDTO user;
+public class UserVerificationResponse {
+  private Long userId;
+  private String email;
+  private String firstName;
+  private String lastName;
+  private String status;
+  private String message;
+  private Set<String> role;
   private TokenData tokenData;
 }

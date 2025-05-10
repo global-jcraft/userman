@@ -8,6 +8,8 @@ import java.util.regex.Pattern;
 
 import org.springframework.stereotype.Component;
 
+import com.huddey.core.notification.data.DecodedTokenData;
+
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -31,7 +33,7 @@ public class TokenService {
    * @param length The length of the random string to generate.
    * @return A random alphanumeric string of the specified length.
    */
-  private static String generateRandomAlphanumericString(int length) {
+  private String generateRandomAlphanumericString(int length) {
     StringBuilder builder = new StringBuilder(length);
     for (int i = 0; i < length; i++) {
       int randomIndex = RANDOM.nextInt(ALPHANUMERIC_CHARS.length());
@@ -46,7 +48,7 @@ public class TokenService {
    * @param userEmail The user email to encode.
    * @return A Base64 encoded string containing the user email, UUID, and random string.
    */
-  public static String generateAndEncodeData(String userEmail) {
+  private String generateAndEncodeData(String userEmail) {
     if (userEmail == null) {
       log.error("User email cannot be null");
       throw new IllegalArgumentException("User email cannot be null");
@@ -64,16 +66,18 @@ public class TokenService {
    * Decodes a Base64 encoded string into its original components.
    *
    * @param base64EncodedData The Base64 encoded string to decode.
-   * @return A DecodedResult object containing the decoded components.
+   * @return A DecodedTokenData object containing the decoded components.
    * @throws IllegalArgumentException If the input string is not valid Base64 data or has an invalid
    *     format.
    */
-  public static DecodedResult decodeData(String base64EncodedData) {
+  public DecodedTokenData decodeToken(String base64EncodedData) {
 
     byte[] decodedBytes;
     try {
       decodedBytes = Base64.getDecoder().decode(base64EncodedData);
     } catch (IllegalArgumentException e) {
+      log.error("Input string is not valid Base64 data: {}", base64EncodedData);
+      // FIXME: Add a more descriptive error message
       throw new IllegalArgumentException("Input string is not valid Base64 data", e);
     }
 
@@ -81,6 +85,11 @@ public class TokenService {
     String[] parts = SEPARATOR_PATTERN.split(decodedString);
 
     if (parts.length != 3) {
+      log.error(
+          "Invalid encoded data format: Expected 3 parts separated by '{}', but found: {}",
+          SEPARATOR,
+          parts.length);
+      // FIXME: Add a more descriptive error message
       throw new IllegalArgumentException(
           "Invalid encoded data format: Expected 3 parts separated by '"
               + SEPARATOR
@@ -95,12 +104,12 @@ public class TokenService {
     try {
       uuid = UUID.fromString(uuidString);
     } catch (IllegalArgumentException e) {
+      log.error("Invalid encoded data format: Second part is not a valid UUID ('{}')", uuidString);
+      // FIXME: Add a more descriptive error message
       throw new IllegalArgumentException(
           "Invalid encoded data format: Second part is not a valid UUID ('" + uuidString + "')", e);
     }
 
-    return new DecodedResult(email, uuid);
+    return new DecodedTokenData(email, uuid);
   }
-
-  public record DecodedResult(String email, UUID uuid) {}
 }

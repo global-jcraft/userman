@@ -12,6 +12,7 @@ public class Message {
   public static final String GLOBAL_INTERNAL_ERROR = "global.internal.error";
   public static final String GLOBAL_INTERNAL_UNEXPECTED_ERROR = "global.internal.unexpected.error";
   public static final String GLOBAL_AUTH_SUCCESS = "global.auth.success";
+  public static final String GLOBAL_USER_VERIFY_SUCCESS = "global.user.verify.success";
   public static final String SIMPLE_AUTH_REG_SUCCESS = "simple.auth.reg.success";
   public static final String SIMPLE_FULL_AUTH_REG_SUCCESS = "simple.auth.full.reg.success";
   public static final String SIMPLE_LOGIN_SUCCESS = "simple.login.success";
@@ -25,4 +26,6 @@ public class Message {
   public static final String USER_INVALID_CREDENTIALS_ERROR = "user.invalid.credentials.error";
   public static final String USER_INVALID_REFRESH_TOKEN = "user.invalid.refresh.token";
   public static final String USER_ACCOUNT_ACTIVE = "user.account.active";
+  public static final String USER_EXPIRED_VERIFY_TOKEN = "user.expired.verify.token";
+  public static final String USER_VERIFY_INVALID_TOKEN = "user.invalid.verify.token";
 }

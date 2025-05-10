@@ -11,10 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import com.huddey.core.userman.auth.JwtTokenProvider;
 import com.huddey.core.userman.data.ApiResponse;
@@ -82,6 +79,21 @@ public class AuthController {
     return ResponseEntity.ok(apiResponse);
   }
 
+  @GetMapping("/account-confirm")
+  public ResponseEntity<ApiResponse> confirmAccountRegistrations(
+      @RequestParam String token, HttpServletRequest request, HttpServletResponse response) {
+    log.debug(
+        "AuthController.confirmAccountRegistrations() -> Confirming account registrations - Start time: {}",
+        OffsetDateTime.now().format(DateTimeFormatter.ISO_OFFSET_DATE_TIME));
+    ApiResponse apiResponse =
+        ApiUtils.buildApiResponse(
+            true,
+            LocaleUtils.getMessage(GLOBAL_USER_VERIFY_SUCCESS),
+            authService.userAccountVerification(token, request, response),
+            null);
+    return ResponseEntity.ok(apiResponse);
+  }
+
   @PostMapping("/login")
   public ResponseEntity<ApiResponse> login(
       @Valid @RequestBody LoginRequest request,
@@ -98,12 +110,6 @@ public class AuthController {
             null);
     return ResponseEntity.ok(apiResponse);
   }
-
-  /*@GetMapping("/verify-email/{token}")
-  public ResponseEntity<ApiResponse> verifyEmail(@PathVariable String token) {
-      authService.verifyEmail(token);
-      return ResponseEntity.ok(new ApiResponse("Email verified successfully"));
-  }*/
 
   @PostMapping("/refresh-token")
   public ResponseEntity<ApiResponse> refreshToken(

@@ -5,6 +5,7 @@ import javax.management.relation.RoleNotFoundException;
 import com.huddey.core.userman.data.dto.*;
 import com.huddey.core.userman.data.dto.response.LoginResponse;
 import com.huddey.core.userman.data.dto.response.UserRegistrationResponse;
+import com.huddey.core.userman.data.dto.response.UserVerificationResponse;
 import com.huddey.core.userman.data.dto.token.TokenRefreshResponse;
 import com.huddey.core.userman.exception.UserAlreadyExistsException;
 
@@ -38,4 +39,7 @@ public interface AuthService {
       ResetPasswordCompleteRequest request,
       HttpServletRequest servletRequest,
       HttpServletResponse servletResponse);
+
+  UserVerificationResponse userAccountVerification(
+      String token, HttpServletRequest request, HttpServletResponse response);
 }
