@@ -12,6 +12,8 @@ spring:
     mode: HTML
     encoding: UTF-8
     prefix: classpath:/templates/
+  jackson:
+    default-property-inclusion: non_null
   security:
     oauth2:
       client:

@@ -2,11 +2,14 @@ package com.huddey.core.userman.service;
 
 import static com.huddey.core.notification.data.constants.NotificationConstants.EMAIL_NOTIFICATION;
 import static com.huddey.core.userman.constants.Message.*;
-import static com.huddey.core.userman.utils.RequestUtils.determineClientType;
-import static com.huddey.core.userman.utils.RequestUtils.getLoginResponse;
+import static com.huddey.core.userman.constants.UsermanConstants.WEB_CLIENT_TYPE;
+import static com.huddey.core.userman.utils.ApiUtils.buildTokenResponse;
+import static com.huddey.core.userman.utils.RequestUtils.*;
+import static com.huddey.core.userman.utils.RequestUtils.getUserRegistrationResponse;
 
 import java.time.OffsetDateTime;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import javax.management.relation.RoleNotFoundException;
 
@@ -20,23 +23,26 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import com.huddey.core.notification.config.TokenService;
+import com.huddey.core.notification.data.DecodedTokenData;
 import com.huddey.core.notification.service.NotificationHandler;
+import com.huddey.core.notification.utils.SecurityUtils;
 import com.huddey.core.userman.auth.JwtAuthenticationFilter;
 import com.huddey.core.userman.auth.JwtTokenProvider;
 import com.huddey.core.userman.data.SecurityUser;
 import com.huddey.core.userman.data.dto.*;
 import com.huddey.core.userman.data.dto.response.LoginResponse;
 import com.huddey.core.userman.data.dto.response.UserRegistrationResponse;
-import com.huddey.core.userman.data.dto.token.TokenData;
+import com.huddey.core.userman.data.dto.response.UserVerificationResponse;
 import com.huddey.core.userman.data.dto.token.TokenRefreshResponse;
+import com.huddey.core.userman.data.entity.Role;
 import com.huddey.core.userman.data.entity.User;
 import com.huddey.core.userman.data.entity.UserCredential;
+import com.huddey.core.userman.data.entity.UserStatus;
 import com.huddey.core.userman.exception.*;
 import com.huddey.core.userman.repository.AuthProviderRepository;
 import com.huddey.core.userman.repository.RoleRepository;
 import com.huddey.core.userman.repository.UserRepository;
-import com.huddey.core.userman.token.MobileTokenGenerationStrategy;
-import com.huddey.core.userman.token.TokenGenerationStrategy;
 import com.huddey.core.userman.token.WebTokenGenerationStrategy;
 import com.huddey.core.userman.utils.LocaleUtils;
 import com.huddey.core.userman.utils.RequestUtils;
@@ -63,6 +69,7 @@ public class AuthServiceImpl implements AuthService {
   private final CustomUserDetailsService customUserDetailsService;
   private final JwtAuthenticationFilter jwtAuthenticationFilter;
   private final NotificationHandler notificationHandler;
+  private final TokenService tokenService;
 
   @Value("${app.confirmation.baseUrl}")
   private String baseUrl;
@@ -74,41 +81,10 @@ public class AuthServiceImpl implements AuthService {
       HttpServletResponse servletResponse)
       throws RoleNotFoundException, UserAlreadyExistsException {
 
-    TokenGenerationStrategy tokenGenerationStrategy;
     SecurityUser securityUser = customUserDetailsService.createNewUserBasicFlow(user);
     String clientType = determineClientType(servletRequest);
 
-    if (clientType.equals("web")) {
-      log.debug("Client type is web");
-      tokenGenerationStrategy = new WebTokenGenerationStrategy(jwtTokenProvider);
-      tokenGenerationStrategy.generateAndSetToken(servletResponse, securityUser, false);
-      return UserRegistrationResponse.builder()
-          .userId(securityUser.getUser().getId())
-          .email(securityUser.getUser().getEmail())
-          .firstName(securityUser.getUser().getFirstName())
-          .lastName(securityUser.getUser().getLastName())
-          .status(securityUser.getUser().getStatus().toString())
-          .message(GLOBAL_AUTH_SUCCESS)
-          .build();
-    } else {
-      log.debug("Client type is mobile");
-      tokenGenerationStrategy = new MobileTokenGenerationStrategy(jwtTokenProvider);
-      tokenGenerationStrategy.generateAndSetToken(servletResponse, securityUser, false);
-      return UserRegistrationResponse.builder()
-          .userId(securityUser.getUser().getId())
-          .email(securityUser.getUser().getEmail())
-          .firstName(securityUser.getUser().getFirstName())
-          .lastName(securityUser.getUser().getLastName())
-          .status(securityUser.getUser().getStatus().toString())
-          .message(GLOBAL_AUTH_SUCCESS)
-          .tokenData(
-              TokenData.builder()
-                  .accessToken(tokenGenerationStrategy.getAccessToken())
-                  .refreshToken(tokenGenerationStrategy.getRefreshToken())
-                  .expiresIn(jwtTokenProvider.getAccessTokenValidity())
-                  .build())
-          .build();
-    }
+    return getUserRegistrationResponse(servletResponse, clientType, securityUser, jwtTokenProvider);
   }
 
   @Override
@@ -118,12 +94,11 @@ public class AuthServiceImpl implements AuthService {
       HttpServletResponse servletResponse)
       throws RoleNotFoundException, UserAlreadyExistsException {
 
-    TokenGenerationStrategy tokenGenerationStrategy;
     SecurityUser securityUser = customUserDetailsService.updateUserInfo(request);
     String clientType = determineClientType(servletRequest);
 
     String confirmationLink =
-        baseUrl + "/confirm?token=" + securityUser.getUser().getEmailVerificationToken();
+        baseUrl + "/account-confirm?token=" + securityUser.getUser().getEmailVerificationToken();
 
     notificationHandler.notify(
         EMAIL_NOTIFICATION,
@@ -132,37 +107,63 @@ public class AuthServiceImpl implements AuthService {
         securityUser.getUsername(),
         confirmationLink);
 
-    if (clientType.equals("web")) {
-      log.debug("Client type is web");
-      tokenGenerationStrategy = new WebTokenGenerationStrategy(jwtTokenProvider);
-      tokenGenerationStrategy.generateAndSetToken(servletResponse, securityUser, false);
-      return UserRegistrationResponse.builder()
-          .userId(securityUser.getUser().getId())
-          .email(securityUser.getUser().getEmail())
-          .firstName(securityUser.getUser().getFirstName())
-          .lastName(securityUser.getUser().getLastName())
-          .status(securityUser.getUser().getStatus().toString())
-          .message(GLOBAL_AUTH_SUCCESS)
-          .build();
-    } else {
-      log.debug("Client type is mobile");
-      tokenGenerationStrategy = new MobileTokenGenerationStrategy(jwtTokenProvider);
-      tokenGenerationStrategy.generateAndSetToken(servletResponse, securityUser, false);
-      return UserRegistrationResponse.builder()
-          .userId(securityUser.getUser().getId())
-          .email(securityUser.getUser().getEmail())
-          .firstName(securityUser.getUser().getFirstName())
-          .lastName(securityUser.getUser().getLastName())
-          .status(securityUser.getUser().getStatus().toString())
-          .message(GLOBAL_AUTH_SUCCESS)
-          .tokenData(
-              TokenData.builder()
-                  .accessToken(tokenGenerationStrategy.getAccessToken())
-                  .refreshToken(tokenGenerationStrategy.getRefreshToken())
-                  .expiresIn(jwtTokenProvider.getAccessTokenValidity())
-                  .build())
-          .build();
+    return getUserRegistrationResponse(servletResponse, clientType, securityUser, jwtTokenProvider);
+  }
+
+  @Override
+  public UserVerificationResponse userAccountVerification(
+      String token, HttpServletRequest request, HttpServletResponse response) {
+    log.debug("Verifying user by email with token: {}", token);
+    User user =
+        userRepository
+            .findByEmailVerificationToken(token)
+            .orElseThrow(() -> new UserNotFoundException("User not found with token: " + token));
+
+    if (user.getEmailVerificationTokenExpiresAt().isBefore(OffsetDateTime.now())) {
+      log.error("User verification token expired: {}", user.getEmail());
+      throw new InvalidTokenException(LocaleUtils.getMessage(USER_EXPIRED_VERIFY_TOKEN));
     }
+
+    if (!token.equals(user.getEmailVerificationToken()) || token == null) {
+      log.error("Invalid token for user: {}", user.getEmail());
+      throw new InvalidTokenException(LocaleUtils.getMessage(USER_VERIFY_INVALID_TOKEN));
+    }
+
+    if (!SecurityUtils.constantTimeEquals(token, user.getEmailVerificationToken())) {
+      log.error("Invalid token for user: {}", user.getEmail());
+      throw new InvalidTokenException(LocaleUtils.getMessage(USER_VERIFY_INVALID_TOKEN));
+    }
+
+    DecodedTokenData decodedTokenData = tokenService.decodeToken(token);
+    if (!decodedTokenData.getEmail().equals(user.getEmail())) {
+      log.error("Invalid token for user: {}", user.getEmail());
+      throw new InvalidTokenException(LocaleUtils.getMessage(USER_VERIFY_INVALID_TOKEN));
+    }
+    log.debug("User verified successfully: {}", user.getEmail());
+
+    user.setEmailVerificationToken(null);
+    user.setEmailVerified(true);
+    user.setEmailVerificationTokenExpiresAt(null);
+    user.setStatus(UserStatus.ACTIVE);
+    user.setUpdatedAt(OffsetDateTime.now());
+    userRepository.save(user);
+
+    log.debug("User status updated to ACTIVE: {}", user.getEmail());
+    var tokenGenerationStrategy = new WebTokenGenerationStrategy(jwtTokenProvider);
+
+    SecurityUser securityUser = new SecurityUser(user);
+    tokenGenerationStrategy.generateAndSetToken(response, securityUser, false);
+
+    return UserVerificationResponse.builder()
+        .userId(user.getId())
+        .email(user.getEmail())
+        .firstName(user.getFirstName())
+        .lastName(user.getLastName())
+        .status(user.getStatus().toString())
+        .message(LocaleUtils.getMessage(GLOBAL_USER_VERIFY_SUCCESS))
+        .role(user.getRoles().stream().map(Role::getName).collect(Collectors.toSet()))
+        .tokenData(buildTokenResponse(tokenGenerationStrategy, jwtTokenProvider))
+        .build();
   }
 
   @Override
@@ -174,7 +175,7 @@ public class AuthServiceImpl implements AuthService {
     try {
       // Load user details first to validate existence and status
       UserDetails userDetails = userDetailsService.loadUserByUsername(request.getEmail());
-      // TODO: fix when notification service email send is done
+
       if (!userDetails.isEnabled()) {
         throw new AccountStatusException(LocaleUtils.getMessage(USER_ACCOUNT_ACTIVE_ERROR));
       }
@@ -186,15 +187,15 @@ public class AuthServiceImpl implements AuthService {
       SecurityUser securityUser = (SecurityUser) authentication.getPrincipal();
       user = securityUser.getUser();
 
-      /*if (!user.isEmailVerified()) {
-          throw new EmailNotVerifiedException("Please verify your email before logging in");
-      }*/
+      if (!user.isEmailVerified()) {
+        // FIXME: This should be handled in the frontend
+        // throw new EmailNotVerifiedException("Please verify your email before logging in");
+      }
 
       user.setLastLoginAt(OffsetDateTime.now());
       user.setLastLoginIp(RequestUtils.getClientIp());
       userRepository.save(user);
 
-      TokenGenerationStrategy tokenGenerationStrategy;
       String clientType = determineClientType(servletRequest);
 
       return getLoginResponse(
@@ -234,7 +235,7 @@ public class AuthServiceImpl implements AuthService {
         jwtTokenProvider.generateRefreshToken(userDetails, request.isRememberMe());
 
     // For web clients, set the tokens as secure HTTP-only cookies
-    if (determineClientType(servletRequest).equals("web")) {
+    if (determineClientType(servletRequest).equals(WEB_CLIENT_TYPE)) {
       WebTokenGenerationStrategy tokenGenerationStrategy =
           new WebTokenGenerationStrategy(jwtTokenProvider);
       tokenGenerationStrategy.generateAndSetToken(response, securityUser, request.isRememberMe());

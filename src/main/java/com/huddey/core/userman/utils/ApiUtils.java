@@ -2,7 +2,10 @@ package com.huddey.core.userman.utils;
 
 import java.time.OffsetDateTime;
 
+import com.huddey.core.userman.auth.JwtTokenProvider;
 import com.huddey.core.userman.data.ApiResponse;
+import com.huddey.core.userman.data.dto.token.TokenData;
+import com.huddey.core.userman.token.TokenGenerationStrategy;
 
 public class ApiUtils {
 
@@ -16,6 +19,16 @@ public class ApiUtils {
         .error(errorMessage)
         .data(data)
         .timestamp(OffsetDateTime.now())
+        .build();
+  }
+
+  public static TokenData buildTokenResponse(
+      TokenGenerationStrategy tokenGenerationStrategy, JwtTokenProvider jwtTokenProvider) {
+    return TokenData.builder()
+        .accessToken(tokenGenerationStrategy.getAccessToken())
+        .refreshToken(tokenGenerationStrategy.getRefreshToken())
+        .expiresIn(jwtTokenProvider.getAccessTokenValidity())
+        .tokenType("Bearer")
         .build();
   }
 }

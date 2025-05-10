@@ -80,11 +80,12 @@ public class SecurityUser implements UserDetails, OAuth2User {
     return true;
   }
 
-  // TODO: fix after email verification is implemented
   @Override
   public boolean isEnabled() {
     // Check if user is active and email verified
-    return UserStatus.PENDING.equals(user.getStatus()) || user.isEmailVerified();
+    return UserStatus.PENDING.equals(user.getStatus())
+        || user.isEmailVerified()
+        || UserStatus.ACTIVE.equals(user.getStatus());
   }
 
   // Helper method for OAuth2 authentication

@@ -16,6 +16,7 @@ public class AppConfiguration {
     ObjectMapper mapper = new ObjectMapper();
     mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     mapper.setDefaultPropertyInclusion(JsonInclude.Include.ALWAYS);
+    mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
     mapper.registerModule(new JavaTimeModule());
     return mapper;
   }

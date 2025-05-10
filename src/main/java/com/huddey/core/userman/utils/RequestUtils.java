@@ -1,6 +1,8 @@
 package com.huddey.core.userman.utils;
 
+import static com.huddey.core.userman.constants.Message.GLOBAL_AUTH_SUCCESS;
 import static com.huddey.core.userman.constants.UsermanConstants.*;
+import static com.huddey.core.userman.utils.ApiUtils.buildTokenResponse;
 
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
@@ -8,6 +10,7 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 import com.huddey.core.userman.auth.JwtTokenProvider;
 import com.huddey.core.userman.data.SecurityUser;
 import com.huddey.core.userman.data.dto.response.LoginResponse;
+import com.huddey.core.userman.data.dto.response.UserRegistrationResponse;
 import com.huddey.core.userman.data.entity.User;
 import com.huddey.core.userman.mapper.UserMapper;
 import com.huddey.core.userman.token.MobileTokenGenerationStrategy;
@@ -64,20 +67,47 @@ public class RequestUtils {
       log.debug("Client type is web");
       tokenGenerationStrategy = new WebTokenGenerationStrategy(jwtTokenProvider);
       tokenGenerationStrategy.generateAndSetToken(servletResponse, securityUser, rememberMe);
-      return LoginResponse.builder()
-          .user(UserMapper.toDto(user))
-          .expiresIn(jwtTokenProvider.getAccessTokenValidity())
-          .build();
+      return LoginResponse.builder().user(UserMapper.toDto(user)).build();
     } else {
       log.debug("Client type is mobile");
       tokenGenerationStrategy = new MobileTokenGenerationStrategy(jwtTokenProvider);
       tokenGenerationStrategy.generateAndSetToken(servletResponse, securityUser, rememberMe);
       return LoginResponse.builder()
-          .accessToken(tokenGenerationStrategy.getAccessToken())
-          .refreshToken(tokenGenerationStrategy.getRefreshToken())
-          .tokenType("Bearer")
-          .expiresIn(jwtTokenProvider.getAccessTokenValidity())
           .user(UserMapper.toDto(user))
+          .tokenData(buildTokenResponse(tokenGenerationStrategy, jwtTokenProvider))
+          .build();
+    }
+  }
+
+  public static UserRegistrationResponse getUserRegistrationResponse(
+      HttpServletResponse servletResponse,
+      String clientType,
+      SecurityUser securityUser,
+      JwtTokenProvider jwtTokenProvider) {
+    if (clientType.equals("web")) {
+      log.debug("Client type is web");
+      var tokenGenerationStrategy = new WebTokenGenerationStrategy(jwtTokenProvider);
+      tokenGenerationStrategy.generateAndSetToken(servletResponse, securityUser, false);
+      return UserRegistrationResponse.builder()
+          .userId(securityUser.getUser().getId())
+          .email(securityUser.getUser().getEmail())
+          .firstName(securityUser.getUser().getFirstName())
+          .lastName(securityUser.getUser().getLastName())
+          .status(securityUser.getUser().getStatus().toString())
+          .message(LocaleUtils.getMessage(GLOBAL_AUTH_SUCCESS))
+          .build();
+    } else {
+      log.debug("Client type is mobile");
+      var tokenGenerationStrategy = new MobileTokenGenerationStrategy(jwtTokenProvider);
+      tokenGenerationStrategy.generateAndSetToken(servletResponse, securityUser, false);
+      return UserRegistrationResponse.builder()
+          .userId(securityUser.getUser().getId())
+          .email(securityUser.getUser().getEmail())
+          .firstName(securityUser.getUser().getFirstName())
+          .lastName(securityUser.getUser().getLastName())
+          .status(securityUser.getUser().getStatus().toString())
+          .message(LocaleUtils.getMessage(GLOBAL_AUTH_SUCCESS))
+          .tokenData(buildTokenResponse(tokenGenerationStrategy, jwtTokenProvider))
           .build();
     }
   }

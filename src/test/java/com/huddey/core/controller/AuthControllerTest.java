@@ -22,6 +22,7 @@ import com.huddey.core.userman.data.ApiResponse;
 import com.huddey.core.userman.data.dto.*;
 import com.huddey.core.userman.data.dto.response.LoginResponse;
 import com.huddey.core.userman.data.dto.response.UserRegistrationResponse;
+import com.huddey.core.userman.data.dto.token.TokenData;
 import com.huddey.core.userman.exception.RoleNotFoundException;
 import com.huddey.core.userman.exception.UserAlreadyExistsException;
 import com.huddey.core.userman.service.AuthService;
@@ -144,9 +145,13 @@ class AuthControllerTest {
     loginRequest.setPassword("password123");
 
     LoginResponse expectedResponse = new LoginResponse();
-    expectedResponse.setAccessToken("access-token");
-    expectedResponse.setRefreshToken("refresh-token");
-    expectedResponse.setTokenType("Bearer");
+    TokenData tokenData = new TokenData();
+    tokenData.setAccessToken("access-token");
+    tokenData.setRefreshToken("refresh-token");
+    expectedResponse.setTokenData(tokenData);
+    expectedResponse.getTokenData().setAccessToken("access-token");
+    expectedResponse.getTokenData().setRefreshToken("refresh-token");
+    expectedResponse.getTokenData().setTokenType("Bearer");
 
     when(authService.login(
             any(LoginRequest.class), any(HttpServletRequest.class), any(HttpServletResponse.class)))
@@ -160,9 +165,9 @@ class AuthControllerTest {
     assertThat(responseEntity.getStatusCode()).isEqualTo(HttpStatus.OK);
     assertThat(responseEntity.getBody()).isNotNull();
     var login = (LoginResponse) responseEntity.getBody().getData();
-    assertThat(login.getAccessToken()).isEqualTo("access-token");
-    assertThat(login.getRefreshToken()).isEqualTo("refresh-token");
-    assertThat(login.getTokenType()).isEqualTo("Bearer");
+    assertThat(login.getTokenData().getAccessToken()).isEqualTo("access-token");
+    assertThat(login.getTokenData().getRefreshToken()).isEqualTo("refresh-token");
+    assertThat(login.getTokenData().getTokenType()).isEqualTo("Bearer");
   }
 
   @Test
