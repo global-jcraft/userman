@@ -74,6 +74,9 @@ public class UsermanSecurityConfig {
                       "/api/v1/auth/verify-email/**",
                       "/api/v1/auth/forgot-password",
                       "/api/v1/auth/reset-password",
+                      "/api/v1/auth/request-phone-verification",
+                      "/api/v1/auth/verify-phone",
+                      "/api/v1/auth/refresh-token",
                       "/v3/api-docs/**",
                       "/swagger-ui/**",
                       "/actuator/health")

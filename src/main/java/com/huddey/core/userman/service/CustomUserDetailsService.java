@@ -126,6 +126,16 @@ public class CustomUserDetailsService implements UserDetailsService {
     existingUser.setEmailVerificationToken(verificationToken);
     existingUser.setEmailVerificationTokenExpiresAt(
         OffsetDateTime.now().plusHours(verificationTokenExpiryHours));
+    if (request.getPhoneNumber() != null
+        && !request.getPhoneNumber().isBlank()
+        && (existingUser.getPhoneNumber() == null
+            || !existingUser.getPhoneNumber().equals(request.getPhoneNumber())
+            || !existingUser.isPhoneNumberVerified())) {
+      existingUser.setPhoneNumberVerified(
+          false); // Reset verification if phone number changes or was not verified
+      existingUser.setPhoneNumberVerificationToken(null);
+      existingUser.setPhoneNumberVerificationTokenExpiresAt(null);
+    }
     userRepository.save(existingUser);
 
     return new SecurityUser(existingUser);
@@ -180,6 +190,9 @@ public class CustomUserDetailsService implements UserDetailsService {
     // user.setEmailVerificationToken(generateVerificationToken());
     user.setEmailVerificationTokenExpiresAt(
         OffsetDateTime.now().plusHours(verificationTokenExpiryHours));
+    if (request.getPhoneNumber() != null && !request.getPhoneNumber().isBlank()) {
+      user.setPhoneNumberVerified(false); // Initialize as not verified
+    }
     return user;
   }
 

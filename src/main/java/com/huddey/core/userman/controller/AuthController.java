@@ -9,6 +9,7 @@ import javax.management.relation.RoleNotFoundException;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -62,6 +63,8 @@ public class AuthController {
   }
 
   @PostMapping("/basic-auth-complete")
+  @PreAuthorize(
+      "isAuthenticated() and hasAnyRole('ROLE_USER', 'ROLE_CONTENT_CREATOR', 'ROLE_ADMIN')")
   public ResponseEntity<ApiResponse> registerBasicFlowComplete(
       @Valid @RequestBody UserRegistrationRequest userRegistrationRequest,
       HttpServletRequest request,
@@ -112,6 +115,8 @@ public class AuthController {
   }
 
   @PostMapping("/refresh-token")
+  @PreAuthorize(
+      "isAuthenticated() and hasAnyRole('ROLE_USER', 'ROLE_CONTENT_CREATOR', 'ROLE_ADMIN')")
   public ResponseEntity<ApiResponse> refreshToken(
       @Valid @RequestBody RefreshTokenRequest request,
       HttpServletRequest servletRequest,
@@ -126,6 +131,8 @@ public class AuthController {
   }
 
   @PostMapping("/reset-password-request")
+  @PreAuthorize(
+      "isAuthenticated() and hasAnyRole('ROLE_USER', 'ROLE_CONTENT_CREATOR', 'ROLE_ADMIN')")
   public ResponseEntity<ApiResponse> resetPasswordRequest(
       @Valid @RequestBody ResetPasswordRequest request,
       HttpServletRequest servletRequest,
@@ -140,6 +147,8 @@ public class AuthController {
   }
 
   @PostMapping("/reset-password-complete")
+  @PreAuthorize(
+      "isAuthenticated() and hasAnyRole('ROLE_USER', 'ROLE_CONTENT_CREATOR', 'ROLE_ADMIN')")
   public ResponseEntity<ApiResponse> resetPasswordComplete(
       @Valid @RequestBody ResetPasswordCompleteRequest request,
       HttpServletRequest servletRequest,
@@ -155,10 +164,50 @@ public class AuthController {
   }
 
   @PostMapping("/logout")
+  @PreAuthorize(
+      "isAuthenticated() and hasAnyRole('ROLE_USER', 'ROLE_CONTENT_CREATOR', 'ROLE_ADMIN')")
   public ResponseEntity<ApiResponse> logout(
       HttpServletRequest request, HttpServletResponse response) {
     new SecurityContextLogoutHandler().logout(request, response, null);
     return ResponseEntity.ok(
         ApiUtils.buildApiResponse(true, LocaleUtils.getMessage(SIMPLE_AUTH_LOGOUT), null, null));
+  }
+
+  @PostMapping("/request-phone-verification")
+  @PreAuthorize(
+      "isAuthenticated() and hasAnyRole('ROLE_USER', 'ROLE_CONTENT_CREATOR', 'ROLE_ADMIN')")
+  public ResponseEntity<ApiResponse> requestPhoneVerification(
+      @Valid @RequestBody PhoneNumberVerificationRequest verificationRequest,
+      HttpServletRequest servletRequest,
+      HttpServletResponse servletResponse) {
+    log.debug(
+        "Received request for phone number verification for email: {}",
+        verificationRequest.getEmail());
+    ApiResponse response =
+        ApiResponse.builder()
+            .success(true)
+            .message(LocaleUtils.getMessage(PASSWORD_RESET_REQUEST_SUCCESS))
+            .data(authService.requestPhoneNumberVerification(verificationRequest, servletRequest))
+            .timestamp(OffsetDateTime.now())
+            .build();
+    return ResponseEntity.ok(response);
+  }
+
+  @PostMapping("/verify-phone")
+  @PreAuthorize(
+      "isAuthenticated() and hasAnyRole('ROLE_USER', 'ROLE_CONTENT_CREATOR', 'ROLE_ADMIN')")
+  public ResponseEntity<ApiResponse> verifyPhoneNumber(
+      @Valid @RequestBody VerifyPhoneNumberRequest verifyRequest,
+      HttpServletRequest servletRequest,
+      HttpServletResponse servletResponse) {
+    log.debug("Received request to verify phone number for email: {}", verifyRequest.getEmail());
+    ApiResponse response =
+        ApiResponse.builder()
+            .success(true)
+            .message(LocaleUtils.getMessage(PASSWORD_RESET_REQUEST_SUCCESS))
+            .data(authService.verifyPhoneNumber(verifyRequest, servletRequest))
+            .timestamp(OffsetDateTime.now())
+            .build();
+    return ResponseEntity.ok(response);
   }
 }

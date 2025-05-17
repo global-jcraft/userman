@@ -75,7 +75,11 @@ app:
       refreshTokenValidity: 86400000 # 24 hours
       rememberMeAccessTokenValidity: 432000000 # 5 days
       rememberMeRefreshTokenValidity: 604800000 # 7 days
-
+  phone:
+    verification:
+      token:
+        expiry:
+          minutes: 10
 aws:
   region: us-east-1
   ses:

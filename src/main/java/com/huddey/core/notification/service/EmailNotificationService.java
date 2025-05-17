@@ -54,7 +54,7 @@ public class EmailNotificationService implements NotificationService {
 
     try {
       SendEmailResponse response = sesClient.sendEmail(sendEmailRequest);
-      log.info(
+      log.debug(
           "Successfully sent welcome email to: {}. Message ID: {}",
           recipient,
           response.messageId());

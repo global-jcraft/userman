@@ -3,9 +3,7 @@ package com.huddey.core.userman.service;
 import javax.management.relation.RoleNotFoundException;
 
 import com.huddey.core.userman.data.dto.*;
-import com.huddey.core.userman.data.dto.response.LoginResponse;
-import com.huddey.core.userman.data.dto.response.UserRegistrationResponse;
-import com.huddey.core.userman.data.dto.response.UserVerificationResponse;
+import com.huddey.core.userman.data.dto.response.*;
 import com.huddey.core.userman.data.dto.token.TokenRefreshResponse;
 import com.huddey.core.userman.exception.UserAlreadyExistsException;
 
@@ -42,4 +40,10 @@ public interface AuthService {
 
   UserVerificationResponse userAccountVerification(
       String token, HttpServletRequest request, HttpServletResponse response);
+
+  PhoneNumberVerificationResponse requestPhoneNumberVerification(
+      PhoneNumberVerificationRequest request, HttpServletRequest servletRequest);
+
+  VerifyPhoneNumberResponse verifyPhoneNumber(
+      VerifyPhoneNumberRequest request, HttpServletRequest servletRequest);
 }
