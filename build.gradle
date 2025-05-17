@@ -47,8 +47,10 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
 
     // AWS Dependencies
+    implementation platform('software.amazon.awssdk:bom:2.20.47')
     implementation "software.amazon.awssdk:ses:${awsSdkVersion}"
     implementation "software.amazon.awssdk:core:${awsSdkVersion}"
+    implementation 'software.amazon.awssdk:sns'
 
     // Micrometer Dependencies
     implementation 'io.micrometer:micrometer-tracing-bridge-brave'

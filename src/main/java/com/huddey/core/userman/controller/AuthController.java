@@ -186,7 +186,7 @@ public class AuthController {
     ApiResponse response =
         ApiResponse.builder()
             .success(true)
-            .message(LocaleUtils.getMessage(PASSWORD_RESET_REQUEST_SUCCESS))
+            .message(LocaleUtils.getMessage(PHONE_VERIFICATION_SENT_SUCCESS))
             .data(authService.requestPhoneNumberVerification(verificationRequest, servletRequest))
             .timestamp(OffsetDateTime.now())
             .build();
@@ -204,7 +204,7 @@ public class AuthController {
     ApiResponse response =
         ApiResponse.builder()
             .success(true)
-            .message(LocaleUtils.getMessage(PASSWORD_RESET_REQUEST_SUCCESS))
+            .message(LocaleUtils.getMessage(PHONE_VERIFICATION_SUCCESS))
             .data(authService.verifyPhoneNumber(verifyRequest, servletRequest))
             .timestamp(OffsetDateTime.now())
             .build();

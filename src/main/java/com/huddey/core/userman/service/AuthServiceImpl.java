@@ -330,6 +330,7 @@ public class AuthServiceImpl implements AuthService {
   @Override
   public PhoneNumberVerificationResponse requestPhoneNumberVerification(
       PhoneNumberVerificationRequest request, HttpServletRequest servletRequest) {
+    log.debug("Received request for phone number verification for email: {}", request.getEmail());
     User user =
         userRepository
             .findByEmail(request.getEmail())

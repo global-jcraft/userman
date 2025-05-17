@@ -92,3 +92,6 @@ aws:
   region: us-east-1
   ses:
     from: no-reply@yourdomain.com
+  sns:
+    localstack:
+      endpoint: http://localhost:4566

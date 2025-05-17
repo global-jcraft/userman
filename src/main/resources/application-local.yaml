@@ -100,3 +100,6 @@ aws:
     ses: http://localhost:4566
   ses:
     from: test@localstack.com
+  sns:
+    localstack:
+      endpoint: http://localhost:4566
