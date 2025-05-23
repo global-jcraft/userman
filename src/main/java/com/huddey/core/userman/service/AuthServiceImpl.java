@@ -286,7 +286,16 @@ public class AuthServiceImpl implements AuthService {
     localCredential.setPasswordResetToken(resetToken);
     localCredential.setPasswordResetTokenExpiresAt(tokenExpiresAt);
     userRepository.save(user);
-    // send email functionality
+
+    String resetLink = baseUrl + "/reset-password?token=" + resetToken;
+    var securityUser = new SecurityUser(user);
+    notificationHandler.notify(
+            EMAIL_NOTIFICATION,
+            securityUser.getUser().getEmail(),
+            securityUser.getUser().getEmailVerificationToken(),
+            securityUser.getUsername(),
+            resetLink);
+
     log.debug(
         "Reset password token for user {}: {} (expires at: {})",
         user.getEmail(),

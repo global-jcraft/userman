@@ -10,7 +10,6 @@ import javax.management.relation.RoleNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -147,8 +146,6 @@ public class AuthController {
   }
 
   @PostMapping("/reset-password-complete")
-  @PreAuthorize(
-      "isAuthenticated() and hasAnyRole('ROLE_USER', 'ROLE_CONTENT_CREATOR', 'ROLE_ADMIN')")
   public ResponseEntity<ApiResponse> resetPasswordComplete(
       @Valid @RequestBody ResetPasswordCompleteRequest request,
       HttpServletRequest servletRequest,
@@ -163,15 +160,13 @@ public class AuthController {
     return ResponseEntity.ok(response);
   }
 
-  @PostMapping("/logout")
-  @PreAuthorize(
-      "isAuthenticated() and hasAnyRole('ROLE_USER', 'ROLE_CONTENT_CREATOR', 'ROLE_ADMIN')")
+  /*  @PostMapping("/logout")
   public ResponseEntity<ApiResponse> logout(
       HttpServletRequest request, HttpServletResponse response) {
     new SecurityContextLogoutHandler().logout(request, response, null);
     return ResponseEntity.ok(
         ApiUtils.buildApiResponse(true, LocaleUtils.getMessage(SIMPLE_AUTH_LOGOUT), null, null));
-  }
+  }*/
 
   @PostMapping("/request-phone-verification")
   @PreAuthorize(

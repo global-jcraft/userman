@@ -32,7 +32,7 @@ public class NotificationHandler {
   public void notify(
       String type, String recipient, String message, String username, String confirmationLink) {
     log.debug(
-        "NotificationHandler.notify() -> Sending notification to {} - Start time: {}",
+        "NotificationHandler.notify() -> Sending sms notification to {} - Start time: {}",
         recipient,
         OffsetDateTime.now().format(DateTimeFormatter.ISO_OFFSET_DATE_TIME));
     NotificationService service = notificationFactory.getNotificationService(type);
