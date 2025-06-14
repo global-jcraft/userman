@@ -101,5 +101,6 @@ aws:
   ses:
     from: test@localstack.com
   sns:
+    topic-arn: arn:aws:sns:us-east-1:000000000000:sms-notifications
     localstack:
       endpoint: http://localhost:4566

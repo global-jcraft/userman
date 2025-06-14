@@ -160,14 +160,6 @@ public class AuthController {
     return ResponseEntity.ok(response);
   }
 
-  /*  @PostMapping("/logout")
-  public ResponseEntity<ApiResponse> logout(
-      HttpServletRequest request, HttpServletResponse response) {
-    new SecurityContextLogoutHandler().logout(request, response, null);
-    return ResponseEntity.ok(
-        ApiUtils.buildApiResponse(true, LocaleUtils.getMessage(SIMPLE_AUTH_LOGOUT), null, null));
-  }*/
-
   @PostMapping("/request-phone-verification")
   @PreAuthorize(
       "isAuthenticated() and hasAnyRole('ROLE_USER', 'ROLE_CONTENT_CREATOR', 'ROLE_ADMIN')")

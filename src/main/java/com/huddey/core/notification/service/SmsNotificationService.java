@@ -36,7 +36,11 @@ public class SmsNotificationService implements NotificationService {
 
     try {
       PublishRequest publishRequest =
-          PublishRequest.builder().phoneNumber(recipient).message(message).build();
+          PublishRequest.builder()
+              .phoneNumber(recipient)
+              .subject("Your OTP")
+              .message(message)
+              .build();
 
       PublishResponse publishResponse = snsClient.publish(publishRequest);
       log.debug(

@@ -53,7 +53,11 @@ public class NotificationHandler {
     notification.setIsRead(false);
     notification.setStatus(NotificationStatus.SENT);
     notification.setCreatedAt(OffsetDateTime.now());
-    notification.setNotificationType(NotificationType.EMAIL);
+    if (type.equals("email")) {
+      notification.setNotificationType(NotificationType.EMAIL);
+    } else {
+      notification.setNotificationType(NotificationType.SMS);
+    }
     notificationRepository.save(notification);
   }
 }

@@ -4,7 +4,6 @@ import static com.huddey.core.userman.constants.Message.SIMPLE_AUTH_LOGOUT;
 
 import java.util.List;
 
-import com.huddey.core.notification.utils.SecurityUtils;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -27,6 +26,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.huddey.core.notification.utils.SecurityUtils;
 import com.huddey.core.userman.auth.CustomAuthenticationEntryPoint;
 import com.huddey.core.userman.auth.JwtAuthenticationFilter;
 import com.huddey.core.userman.auth.oauth2.OAuth2AuthenticationFailureHandler;
@@ -114,8 +114,7 @@ public class UsermanSecurityConfig {
             logout ->
                 logout
                     .logoutUrl("/api/v1/auth/logout")
-                    .logoutRequestMatcher(
-                        new AntPathRequestMatcher("/api/v1/auth/logout", "POST"))
+                    .logoutRequestMatcher(new AntPathRequestMatcher("/api/v1/auth/logout", "POST"))
                     .deleteCookies("access_token", "refresh_token")
                     .logoutSuccessHandler(customLogoutSuccessHandler())
                     .permitAll());

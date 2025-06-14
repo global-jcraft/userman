@@ -290,11 +290,17 @@ public class AuthServiceImpl implements AuthService {
     String resetLink = baseUrl + "/reset-password?token=" + resetToken;
     var securityUser = new SecurityUser(user);
     notificationHandler.notify(
-            EMAIL_NOTIFICATION,
-            securityUser.getUser().getEmail(),
-            securityUser.getUser().getEmailVerificationToken(),
-            securityUser.getUsername(),
-            resetLink);
+        EMAIL_NOTIFICATION,
+        securityUser.getUser().getEmail(),
+        securityUser.getUser().getCredentials().stream()
+                .filter(f -> f.getAuthProvider().getName().equals("local"))
+                .map(UserCredential::getPasswordResetToken)
+                .findFirst()
+                .isPresent()
+            ? localCredential.getPasswordResetToken()
+            : null,
+        securityUser.getUsername(),
+        resetLink);
 
     log.debug(
         "Reset password token for user {}: {} (expires at: {})",

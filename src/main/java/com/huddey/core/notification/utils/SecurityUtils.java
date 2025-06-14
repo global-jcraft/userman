@@ -1,16 +1,16 @@
 package com.huddey.core.notification.utils;
 
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.Cookie;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import lombok.extern.slf4j.Slf4j;
+import static com.huddey.core.userman.utils.RequestUtils.determineClientType;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 
-import static com.huddey.core.userman.utils.RequestUtils.determineClientType;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class SecurityUtils {
@@ -26,9 +26,8 @@ public class SecurityUtils {
     return MessageDigest.isEqual(aBytes, bBytes);
   }
 
-  public static void logout(
-          HttpServletRequest request, HttpServletResponse response)
-          throws IOException, ServletException {
+  public static void logout(HttpServletRequest request, HttpServletResponse response)
+      throws IOException, ServletException {
     if (request.getParameter("off") != null && request.getParameter("off").equals("true")) {
       log.debug("Processing logout request");
       String clientType = determineClientType(request);
