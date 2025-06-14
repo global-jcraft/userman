@@ -28,4 +28,12 @@ public class Message {
   public static final String USER_ACCOUNT_ACTIVE = "user.account.active";
   public static final String USER_EXPIRED_VERIFY_TOKEN = "user.expired.verify.token";
   public static final String USER_VERIFY_INVALID_TOKEN = "user.invalid.verify.token";
+
+  // Phone Verification Messages
+  public static final String PHONE_VERIFICATION_SENT_SUCCESS = "phone.verification.sent.success";
+  public static final String PHONE_VERIFICATION_SUCCESS = "phone.verification.success";
+  public static final String PHONE_ALREADY_VERIFIED = "phone.already.verified";
+  public static final String PHONE_NUMBER_REQUIRED = "phone.number.required";
+  public static final String PHONE_VERIFICATION_INVALID_TOKEN = "phone.verification.invalid.token";
+  public static final String PHONE_VERIFICATION_EXPIRED_TOKEN = "phone.verification.expired.token";
 }

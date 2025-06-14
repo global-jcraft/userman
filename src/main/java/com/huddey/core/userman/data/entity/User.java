@@ -48,6 +48,15 @@ public class User implements Serializable {
   @Column(name = "phone_number")
   private String phoneNumber;
 
+  @Column(name = "phone_number_verified")
+  private boolean phoneNumberVerified;
+
+  @Column(name = "phone_number_verification_token")
+  private String phoneNumberVerificationToken;
+
+  @Column(name = "phone_number_verification_token_expires_at")
+  private OffsetDateTime phoneNumberVerificationTokenExpiresAt;
+
   @Column(nullable = false)
   @Enumerated(EnumType.STRING)
   private UserStatus status = UserStatus.PENDING;

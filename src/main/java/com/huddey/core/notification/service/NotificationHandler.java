@@ -32,7 +32,7 @@ public class NotificationHandler {
   public void notify(
       String type, String recipient, String message, String username, String confirmationLink) {
     log.debug(
-        "NotificationHandler.notify() -> Sending notification to {} - Start time: {}",
+        "NotificationHandler.notify() -> Sending sms notification to {} - Start time: {}",
         recipient,
         OffsetDateTime.now().format(DateTimeFormatter.ISO_OFFSET_DATE_TIME));
     NotificationService service = notificationFactory.getNotificationService(type);
@@ -41,13 +41,23 @@ public class NotificationHandler {
     Notification notification = new Notification();
     notification.setUserId(username);
     notification.setRecipient(recipient);
-    notification.setSubject("new_user_registration_notification");
-    notification.setMessage("Welcome to our service, " + username);
+    if (type.equals("email")) {
+      notification.setSubject("new_user_email_registration_notification");
+    } else if (type.equals("sms")) {
+      notification.setSubject("new_user_mobile_registration_notification");
+    } else {
+      throw new IllegalArgumentException("Invalid notification type");
+    }
+    notification.setMessage("Welcome to Huddey, " + username);
     notification.setSentAt(OffsetDateTime.now());
     notification.setIsRead(false);
     notification.setStatus(NotificationStatus.SENT);
     notification.setCreatedAt(OffsetDateTime.now());
-    notification.setNotificationType(NotificationType.EMAIL);
+    if (type.equals("email")) {
+      notification.setNotificationType(NotificationType.EMAIL);
+    } else {
+      notification.setNotificationType(NotificationType.SMS);
+    }
     notificationRepository.save(notification);
   }
 }

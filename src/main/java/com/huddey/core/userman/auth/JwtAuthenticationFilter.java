@@ -56,10 +56,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     filterChain.doFilter(request, response);
   }
 
-  private static void logout(
+  public static void logout(
       HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
       throws IOException, ServletException {
-    if (request.getParameter("off") != null) {
+    if (request.getParameter("off") != null && request.getParameter("off").equals("true")) {
       log.debug("Processing logout request");
       String clientType = determineClientType(request);
       if (clientType.equals("web")) {

@@ -11,13 +11,17 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.MessageSource;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import com.huddey.core.notification.service.NotificationHandler;
 import com.huddey.core.userman.data.dto.ResetPasswordCompleteRequest;
 import com.huddey.core.userman.data.dto.ResetPasswordRequest;
 import com.huddey.core.userman.data.dto.ResetPasswordResponse;
@@ -28,6 +32,7 @@ import com.huddey.core.userman.exception.InvalidTokenException;
 import com.huddey.core.userman.exception.UserNotFoundException;
 import com.huddey.core.userman.repository.UserRepository;
 import com.huddey.core.userman.service.AuthServiceImpl;
+import com.huddey.core.userman.utils.LocaleUtils;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -43,7 +48,18 @@ class AuthServiceImplTest {
 
   @Mock private HttpServletResponse servletResponse;
 
+  @Mock private NotificationHandler notificationHandler;
+
   @InjectMocks private AuthServiceImpl authService;
+
+  @BeforeEach
+  void setUp() {
+    MessageSource messageSource = Mockito.mock(MessageSource.class);
+    Mockito.lenient()
+        .when(messageSource.getMessage(Mockito.anyString(), Mockito.any(), Mockito.any()))
+        .thenReturn("dummy-message");
+    LocaleUtils.instance = new LocaleUtils(messageSource);
+  }
 
   @Test
   void resetPasswordRequest_WithValidLocalUser_ShouldSucceed() {

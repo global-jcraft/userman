@@ -1,12 +1,15 @@
 package com.huddey.core.userman.service;
 
 import static com.huddey.core.notification.data.constants.NotificationConstants.EMAIL_NOTIFICATION;
+import static com.huddey.core.notification.data.constants.NotificationConstants.SMS_NOTIFICATION;
 import static com.huddey.core.userman.constants.Message.*;
 import static com.huddey.core.userman.constants.UsermanConstants.WEB_CLIENT_TYPE;
 import static com.huddey.core.userman.utils.ApiUtils.buildTokenResponse;
 import static com.huddey.core.userman.utils.RequestUtils.*;
 import static com.huddey.core.userman.utils.RequestUtils.getUserRegistrationResponse;
 
+import java.security.SecureRandom;
+import java.text.DecimalFormat;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -31,9 +34,7 @@ import com.huddey.core.userman.auth.JwtAuthenticationFilter;
 import com.huddey.core.userman.auth.JwtTokenProvider;
 import com.huddey.core.userman.data.SecurityUser;
 import com.huddey.core.userman.data.dto.*;
-import com.huddey.core.userman.data.dto.response.LoginResponse;
-import com.huddey.core.userman.data.dto.response.UserRegistrationResponse;
-import com.huddey.core.userman.data.dto.response.UserVerificationResponse;
+import com.huddey.core.userman.data.dto.response.*;
 import com.huddey.core.userman.data.dto.token.TokenRefreshResponse;
 import com.huddey.core.userman.data.entity.Role;
 import com.huddey.core.userman.data.entity.User;
@@ -73,6 +74,9 @@ public class AuthServiceImpl implements AuthService {
 
   @Value("${app.confirmation.baseUrl}")
   private String baseUrl;
+
+  @Value("${app.phone.verification.token.expiry.minutes:10}") // Default to 10 minutes
+  private long phoneTokenExpiryMinutes;
 
   @Override
   public UserRegistrationResponse registerBasicFlow(
@@ -282,7 +286,22 @@ public class AuthServiceImpl implements AuthService {
     localCredential.setPasswordResetToken(resetToken);
     localCredential.setPasswordResetTokenExpiresAt(tokenExpiresAt);
     userRepository.save(user);
-    // send email functionality
+
+    String resetLink = baseUrl + "/reset-password?token=" + resetToken;
+    var securityUser = new SecurityUser(user);
+    notificationHandler.notify(
+        EMAIL_NOTIFICATION,
+        securityUser.getUser().getEmail(),
+        securityUser.getUser().getCredentials().stream()
+                .filter(f -> f.getAuthProvider().getName().equals("local"))
+                .map(UserCredential::getPasswordResetToken)
+                .findFirst()
+                .isPresent()
+            ? localCredential.getPasswordResetToken()
+            : null,
+        securityUser.getUsername(),
+        resetLink);
+
     log.debug(
         "Reset password token for user {}: {} (expires at: {})",
         user.getEmail(),
@@ -321,5 +340,105 @@ public class AuthServiceImpl implements AuthService {
     // Save changes via the user entity
     userRepository.save(credential.getUser());
     log.debug("Password reset complete for user {}", credential.getUser().getEmail());
+  }
+
+  @Override
+  public PhoneNumberVerificationResponse requestPhoneNumberVerification(
+      PhoneNumberVerificationRequest request, HttpServletRequest servletRequest) {
+    log.debug("Received request for phone number verification for email: {}", request.getEmail());
+    User user =
+        userRepository
+            .findByEmail(request.getEmail())
+            .orElseThrow(
+                () ->
+                    new UserNotFoundException("User not found with email: " + request.getEmail()));
+
+    if (request.getPhoneNumber() == null
+        || request.getPhoneNumber().isBlank()
+        || !request.getPhoneNumber().matches("\\+?[0-9]+")) {
+      throw new InvalidInputException(LocaleUtils.getMessage(PHONE_NUMBER_REQUIRED));
+    }
+
+    if (user.getPhoneNumber() == null || user.getPhoneNumber().isBlank()) {
+      throw new InvalidInputException(LocaleUtils.getMessage(PHONE_NUMBER_REQUIRED));
+    }
+
+    if (user.isPhoneNumberVerified()) {
+      return PhoneNumberVerificationResponse.builder()
+          .message(LocaleUtils.getMessage(PHONE_ALREADY_VERIFIED))
+          .build();
+    }
+
+    String otp = generateOtp();
+    user.setPhoneNumberVerificationToken(otp);
+    user.setPhoneNumberVerificationTokenExpiresAt(
+        OffsetDateTime.now().plusMinutes(phoneTokenExpiryMinutes));
+    userRepository.save(user);
+
+    // TODO: Implement actual SMS sending logic here
+    // For now, we'll log the OTP
+    log.debug("OTP for phone number verification for user {}: {}", user.getEmail(), otp);
+    notificationHandler.notify(SMS_NOTIFICATION, user.getPhoneNumber(), otp, user.getEmail(), null);
+
+    return PhoneNumberVerificationResponse.builder()
+        .message(LocaleUtils.getMessage(PHONE_VERIFICATION_SENT_SUCCESS))
+        .build();
+  }
+
+  @Override
+  public VerifyPhoneNumberResponse verifyPhoneNumber(
+      VerifyPhoneNumberRequest request, HttpServletRequest servletRequest) {
+    User user =
+        userRepository
+            .findByEmail(request.getEmail())
+            .orElseThrow(
+                () ->
+                    new UserNotFoundException("User not found with email: " + request.getEmail()));
+
+    if (user.isPhoneNumberVerified()) {
+      return VerifyPhoneNumberResponse.builder()
+          .success(true)
+          .status("ALREADY_VERIFIED")
+          .message(LocaleUtils.getMessage(PHONE_ALREADY_VERIFIED))
+          .build();
+    }
+
+    if (user.getPhoneNumberVerificationToken() == null
+        || user.getPhoneNumberVerificationTokenExpiresAt() == null) {
+      throw new InvalidTokenException(LocaleUtils.getMessage(PHONE_VERIFICATION_INVALID_TOKEN));
+    }
+
+    if (user.getPhoneNumberVerificationTokenExpiresAt().isBefore(OffsetDateTime.now())) {
+      user.setPhoneNumberVerificationToken(null);
+      user.setPhoneNumberVerificationTokenExpiresAt(null);
+      userRepository.save(user);
+      throw new InvalidTokenException(LocaleUtils.getMessage(PHONE_VERIFICATION_EXPIRED_TOKEN));
+    }
+
+    if (!SecurityUtils.constantTimeEquals(
+        request.getToken(), user.getPhoneNumberVerificationToken())) {
+      // Optional: Implement attempt counting to prevent brute-force
+      throw new InvalidTokenException(LocaleUtils.getMessage(PHONE_VERIFICATION_INVALID_TOKEN));
+    }
+
+    user.setPhoneNumberVerified(true);
+    user.setPhoneNumberVerificationToken(null);
+    user.setPhoneNumberVerificationTokenExpiresAt(null);
+    // Optionally, update user status if phone verification is a prerequisite for ACTIVE status
+    // if (user.isEmailVerified()) { // Example condition
+    //     user.setStatus(UserStatus.ACTIVE);
+    // }
+    userRepository.save(user);
+
+    return VerifyPhoneNumberResponse.builder()
+        .success(true)
+        .status("PHONE_VERIFIED")
+        .message(LocaleUtils.getMessage(PHONE_VERIFICATION_SUCCESS))
+        .build();
+  }
+
+  private String generateOtp() {
+    // Generate a 6-digit OTP
+    return new DecimalFormat("000000").format(new SecureRandom().nextInt(999999));
   }
 }

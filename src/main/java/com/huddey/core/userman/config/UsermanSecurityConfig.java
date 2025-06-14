@@ -1,5 +1,7 @@
 package com.huddey.core.userman.config;
 
+import static com.huddey.core.userman.constants.Message.SIMPLE_AUTH_LOGOUT;
+
 import java.util.List;
 
 import org.springframework.context.annotation.Bean;
@@ -16,19 +18,30 @@ import org.springframework.security.config.annotation.web.configurers.HeadersCon
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.authentication.logout.LogoutSuccessHandler;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.huddey.core.notification.utils.SecurityUtils;
 import com.huddey.core.userman.auth.CustomAuthenticationEntryPoint;
 import com.huddey.core.userman.auth.JwtAuthenticationFilter;
 import com.huddey.core.userman.auth.oauth2.OAuth2AuthenticationFailureHandler;
 import com.huddey.core.userman.auth.oauth2.OAuth2AuthenticationSuccessHandler;
+import com.huddey.core.userman.data.ApiResponse;
 import com.huddey.core.userman.service.CustomOAuth2UserService;
 import com.huddey.core.userman.service.CustomUserDetailsService;
+import com.huddey.core.userman.utils.ApiUtils;
+import com.huddey.core.userman.utils.LocaleUtils;
 
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
@@ -37,6 +50,7 @@ public class UsermanSecurityConfig {
 
   private final CustomAuthenticationEntryPoint authEntryPoint;
   private final SecurityConfig securityConfig;
+  private final ObjectMapper objectMapper;
 
   private final CustomOAuth2UserService customOAuth2UserService;
   private final OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler;
@@ -71,9 +85,14 @@ public class UsermanSecurityConfig {
                       "/oauth2/authorization/**",
                       "/api/v1/auth/register",
                       "/api/v1/auth/login",
+                      "/api/v1/auth/logout?off=true",
                       "/api/v1/auth/verify-email/**",
                       "/api/v1/auth/forgot-password",
                       "/api/v1/auth/reset-password",
+                      "/api/v1/auth/request-phone-verification",
+                      "/api/v1/auth/verify-phone",
+                      "/api/v1/auth/refresh-token",
+                      "/api/v1/auth/reset-password-request",
                       "/v3/api-docs/**",
                       "/swagger-ui/**",
                       "/actuator/health")
@@ -90,9 +109,39 @@ public class UsermanSecurityConfig {
                     .successHandler(oAuth2AuthenticationSuccessHandler)
                     .failureHandler(oAuth2AuthenticationFailureHandler))
         .authenticationProvider(authenticationProvider(userDetailsService))
-        .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+        .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
+        .logout(
+            logout ->
+                logout
+                    .logoutUrl("/api/v1/auth/logout")
+                    .logoutRequestMatcher(new AntPathRequestMatcher("/api/v1/auth/logout", "POST"))
+                    .deleteCookies("access_token", "refresh_token")
+                    .logoutSuccessHandler(customLogoutSuccessHandler())
+                    .permitAll());
 
     return http.build();
+  }
+
+  private LogoutSuccessHandler customLogoutSuccessHandler() {
+    objectMapper.registerModule(new JavaTimeModule());
+
+    return (request, response, authentication) -> {
+      response.setStatus(HttpServletResponse.SC_OK);
+      response.setContentType("application/json");
+      try {
+        SecurityUtils.logout(request, response);
+        ApiResponse apiResponse =
+            ApiUtils.buildApiResponse(true, LocaleUtils.getMessage(SIMPLE_AUTH_LOGOUT), null, null);
+        response.getWriter().write(objectMapper.writeValueAsString(apiResponse));
+        response.getWriter().flush();
+      } catch (Exception e) {
+        log.error("Error writing logout response: ", e);
+        if (!response.isCommitted()) {
+          response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+          log.error("Error writing logout response: ", e);
+        }
+      }
+    };
   }
 
   @Bean

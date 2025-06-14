@@ -18,7 +18,7 @@ import software.amazon.awssdk.services.ses.SesClient;
  * credentials. - '!local' (production) uses the default provider chain (env vars, IAM roles).
  */
 @Configuration
-public class SesConfig {
+public class AwsSesConfig {
   @Value("${aws.region}")
   private String awsRegion;
 

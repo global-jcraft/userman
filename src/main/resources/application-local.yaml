@@ -89,10 +89,18 @@ app:
       refreshTokenValidity: 86400000 # 24 hours
       rememberMeAccessTokenValidity:  432000000 # 5 days
       rememberMeRefreshTokenValidity:  604800000 # 7 days
-
+  phone:
+    verification:
+      token:
+        expiry:
+          minutes: 10
 aws:
   region: us-east-1
   endpoint:
     ses: http://localhost:4566
   ses:
     from: test@localstack.com
+  sns:
+    topic-arn: arn:aws:sns:us-east-1:000000000000:sms-notifications
+    localstack:
+      endpoint: http://localhost:4566

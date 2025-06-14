@@ -1,4 +1,4 @@
-name: Build, Test, Scan and Deploy Dev
+name: Huddey-DEV
 
 on:
   push:
