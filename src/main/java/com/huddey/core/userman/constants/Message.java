@@ -36,4 +36,7 @@ public class Message {
   public static final String PHONE_NUMBER_REQUIRED = "phone.number.required";
   public static final String PHONE_VERIFICATION_INVALID_TOKEN = "phone.verification.invalid.token";
   public static final String PHONE_VERIFICATION_EXPIRED_TOKEN = "phone.verification.expired.token";
+
+  // Profile Messages
+  public static final String PROFILE_FETCH_SUCCESS = "profile.fetch.success";
 }

@@ -10,13 +10,16 @@ import javax.management.relation.RoleNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import com.huddey.core.userman.auth.JwtTokenProvider;
 import com.huddey.core.userman.data.ApiResponse;
+import com.huddey.core.userman.data.SecurityUser;
 import com.huddey.core.userman.data.dto.*;
 import com.huddey.core.userman.exception.UserAlreadyExistsException;
+import com.huddey.core.userman.mapper.UserMapper;
 import com.huddey.core.userman.service.AuthService;
 import com.huddey.core.userman.service.CustomUserDetailsService;
 import com.huddey.core.userman.utils.ApiUtils;
@@ -34,6 +37,7 @@ import lombok.extern.slf4j.Slf4j;
 public class AuthController {
 
   final AuthService authService;
+  final CustomUserDetailsService customUserDetailsService;
 
   @Autowired
   public AuthController(
@@ -41,6 +45,7 @@ public class AuthController {
       JwtTokenProvider jwtTokenProvider,
       CustomUserDetailsService customUserDetailsService) {
     this.authService = authService;
+    this.customUserDetailsService = customUserDetailsService;
   }
 
   @PostMapping("/basic-auth")
@@ -193,6 +198,25 @@ public class AuthController {
             .success(true)
             .message(LocaleUtils.getMessage(PHONE_VERIFICATION_SUCCESS))
             .data(authService.verifyPhoneNumber(verifyRequest, servletRequest))
+            .timestamp(OffsetDateTime.now())
+            .build();
+    return ResponseEntity.ok(response);
+  }
+
+  @GetMapping("/me")
+  @PreAuthorize(
+      "isAuthenticated() and hasAnyRole('ROLE_USER', 'ROLE_CONTENT_CREATOR', 'ROLE_ADMIN')")
+  public ResponseEntity<ApiResponse> getCurrentUser(Authentication authentication) {
+    log.debug(
+        "AuthController.getCurrentUser() -> Fetching current user - Start time: {}",
+        OffsetDateTime.now().format(DateTimeFormatter.ISO_OFFSET_DATE_TIME));
+    var user = customUserDetailsService.loadUserByUsername(authentication.getName());
+    var securityUser = (SecurityUser) user;
+    ApiResponse response =
+        ApiResponse.builder()
+            .success(true)
+            .message(LocaleUtils.getMessage(PROFILE_FETCH_SUCCESS))
+            .data(UserMapper.toDto(securityUser.getUser()))
             .timestamp(OffsetDateTime.now())
             .build();
     return ResponseEntity.ok(response);
