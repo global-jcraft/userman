@@ -1,12 +1,20 @@
 spring:
+  threads:
+    virtual:
+      enabled: true
+  web:
+    server:
+      tomcat:
+        threads:
+          virtual: true
   task:
     execution:
       pool:
-        core-size: 4
-        max-size: 8
-        queue-capacity: 100
+        core-size: 50
+        max-size: 100
+        queue-capacity: 500
         keep-alive: 60s
-      thread-name-prefix: email-async-
+      thread-name-prefix: huddey-core-
   thymeleaf:
     cache: false
     mode: HTML
@@ -46,6 +54,15 @@ spring:
     username: postgres
     password: dev_password
     driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 100              # Increased for high concurrency
+      minimum-idle: 20                    # Higher baseline connections
+      idle-timeout: 300000               # 5 minutes
+      connection-timeout: 30000          # 30 seconds
+      max-lifetime: 1800000             # 30 minutes
+      keepalive-time: 60000             # 1 minute
+      validation-timeout: 5000          # 5 seconds
+      leak-detection-threshold: 60000   # 1 minute
   jpa:
     hibernate:
       ddl-auto: validate
