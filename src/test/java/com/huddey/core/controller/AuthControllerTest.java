@@ -15,14 +15,20 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.MessageSource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 
 import com.huddey.core.userman.auth.JwtTokenProvider;
 import com.huddey.core.userman.controller.AuthController;
 import com.huddey.core.userman.data.ApiResponse;
+import com.huddey.core.userman.data.SecurityUser;
 import com.huddey.core.userman.data.dto.*;
 import com.huddey.core.userman.data.dto.response.LoginResponse;
+import com.huddey.core.userman.data.dto.response.PhoneNumberVerificationResponse;
 import com.huddey.core.userman.data.dto.response.UserRegistrationResponse;
+import com.huddey.core.userman.data.dto.response.VerifyPhoneNumberResponse;
 import com.huddey.core.userman.data.dto.token.TokenData;
+import com.huddey.core.userman.data.entity.User;
 import com.huddey.core.userman.exception.RoleNotFoundException;
 import com.huddey.core.userman.exception.UserAlreadyExistsException;
 import com.huddey.core.userman.service.AuthService;
@@ -46,6 +52,8 @@ class AuthControllerTest {
   @Mock private HttpServletResponse response;
 
   @Mock private MessageSource messageSource;
+
+  @Mock private Authentication authentication;
 
   private AuthController authController;
 
@@ -265,5 +273,142 @@ class AuthControllerTest {
         RuntimeException.class,
         () ->
             authController.resetPasswordComplete(resetPasswordCompleteRequest, request, response));
+  }
+
+  @Test
+  void getCurrentUser_ShouldReturnSuccessResponse() {
+    // Arrange
+    String username = "test@example.com";
+    User user = new User();
+    user.setEmail(username);
+    SecurityUser securityUser = new SecurityUser(user);
+
+    when(authentication.getName()).thenReturn(username);
+    when(customUserDetailsService.loadUserByUsername(username)).thenReturn(securityUser);
+    when(messageSource.getMessage(eq("profile.fetch.success"), any(), any(Locale.class)))
+        .thenReturn("Profile fetched successfully");
+
+    // Act
+    ResponseEntity<ApiResponse> responseEntity = authController.getCurrentUser(authentication);
+
+    // Assert
+    assertThat(responseEntity.getStatusCode()).isEqualTo(HttpStatus.OK);
+    assertThat(responseEntity.getBody()).isNotNull();
+    assertThat(responseEntity.getBody().isSuccess()).isTrue();
+    assertThat(responseEntity.getBody().getMessage()).isEqualTo("Profile fetched successfully");
+    assertThat(responseEntity.getBody().getData()).isNotNull();
+    assertThat(responseEntity.getBody().getTimestamp()).isNotNull();
+
+    verify(customUserDetailsService).loadUserByUsername(username);
+  }
+
+  @Test
+  void getCurrentUser_WhenUserNotFound_ShouldThrowException() {
+    // Arrange
+    String username = "nonexistent@example.com";
+
+    when(authentication.getName()).thenReturn(username);
+    when(customUserDetailsService.loadUserByUsername(username))
+        .thenThrow(new UsernameNotFoundException("User not found"));
+
+    // Act & Assert
+    assertThrows(
+        UsernameNotFoundException.class, () -> authController.getCurrentUser(authentication));
+
+    verify(customUserDetailsService).loadUserByUsername(username);
+  }
+
+  @Test
+  void requestPhoneVerification_ShouldReturnSuccessResponse() {
+    // Arrange
+    PhoneNumberVerificationRequest verificationRequest = new PhoneNumberVerificationRequest();
+    verificationRequest.setEmail("test@example.com");
+    verificationRequest.setPhoneNumber("+1234567890");
+
+    PhoneNumberVerificationResponse expectedResponse = new PhoneNumberVerificationResponse();
+
+    when(authService.requestPhoneNumberVerification(
+            any(PhoneNumberVerificationRequest.class), any(HttpServletRequest.class)))
+        .thenReturn(expectedResponse);
+    when(messageSource.getMessage(eq("phone.verification.sent.success"), any(), any(Locale.class)))
+        .thenReturn("Phone verification code sent successfully");
+
+    // Act
+    ResponseEntity<ApiResponse> responseEntity =
+        authController.requestPhoneVerification(verificationRequest, request, response);
+
+    // Assert
+    assertThat(responseEntity.getStatusCode()).isEqualTo(HttpStatus.OK);
+    assertThat(responseEntity.getBody()).isNotNull();
+    assertThat(responseEntity.getBody().isSuccess()).isTrue();
+    assertThat(responseEntity.getBody().getMessage())
+        .isEqualTo("Phone verification code sent successfully");
+    assertThat(responseEntity.getBody().getData()).isEqualTo(expectedResponse);
+    assertThat(responseEntity.getBody().getTimestamp()).isNotNull();
+
+    verify(authService).requestPhoneNumberVerification(verificationRequest, request);
+  }
+
+  @Test
+  void requestPhoneVerification_WhenServiceThrowsException_ShouldPropagateException() {
+    // Arrange
+    PhoneNumberVerificationRequest verificationRequest = new PhoneNumberVerificationRequest();
+    verificationRequest.setEmail("test@example.com");
+
+    when(authService.requestPhoneNumberVerification(
+            any(PhoneNumberVerificationRequest.class), any(HttpServletRequest.class)))
+        .thenThrow(new RuntimeException("Failed to send verification code"));
+
+    // Act & Assert
+    assertThrows(
+        RuntimeException.class,
+        () -> authController.requestPhoneVerification(verificationRequest, request, response));
+  }
+
+  @Test
+  void verifyPhoneNumber_ShouldReturnSuccessResponse() {
+    // Arrange
+    VerifyPhoneNumberRequest verifyRequest = new VerifyPhoneNumberRequest();
+    verifyRequest.setEmail("test@example.com");
+    verifyRequest.setToken("123456");
+
+    VerifyPhoneNumberResponse expectedResponse = new VerifyPhoneNumberResponse();
+
+    when(authService.verifyPhoneNumber(
+            any(VerifyPhoneNumberRequest.class), any(HttpServletRequest.class)))
+        .thenReturn(expectedResponse);
+    when(messageSource.getMessage(eq("phone.verification.success"), any(), any(Locale.class)))
+        .thenReturn("Phone number verified successfully");
+
+    // Act
+    ResponseEntity<ApiResponse> responseEntity =
+        authController.verifyPhoneNumber(verifyRequest, request, response);
+
+    // Assert
+    assertThat(responseEntity.getStatusCode()).isEqualTo(HttpStatus.OK);
+    assertThat(responseEntity.getBody()).isNotNull();
+    assertThat(responseEntity.getBody().isSuccess()).isTrue();
+    assertThat(responseEntity.getBody().getMessage())
+        .isEqualTo("Phone number verified successfully");
+    assertThat(responseEntity.getBody().getData()).isEqualTo(expectedResponse);
+    assertThat(responseEntity.getBody().getTimestamp()).isNotNull();
+
+    verify(authService).verifyPhoneNumber(verifyRequest, request);
+  }
+
+  @Test
+  void verifyPhoneNumber_WhenServiceThrowsException_ShouldPropagateException() {
+    // Arrange
+    VerifyPhoneNumberRequest verifyRequest = new VerifyPhoneNumberRequest();
+    verifyRequest.setEmail("test@example.com");
+
+    when(authService.verifyPhoneNumber(
+            any(VerifyPhoneNumberRequest.class), any(HttpServletRequest.class)))
+        .thenThrow(new RuntimeException("Failed to verify phone number"));
+
+    // Act & Assert
+    assertThrows(
+        RuntimeException.class,
+        () -> authController.verifyPhoneNumber(verifyRequest, request, response));
   }
 }
