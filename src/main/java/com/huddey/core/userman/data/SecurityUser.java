@@ -8,6 +8,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.huddey.core.userman.data.entity.User;
 import com.huddey.core.userman.data.entity.UserCredential;
 import com.huddey.core.userman.data.entity.UserStatus;
@@ -20,6 +21,7 @@ import lombok.Setter;
 @Getter
 @Builder
 @AllArgsConstructor
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class SecurityUser implements UserDetails, OAuth2User {
   @Getter private final User user; // Our database entity
   private final Collection<? extends GrantedAuthority> authorities;
@@ -34,7 +36,9 @@ public class SecurityUser implements UserDetails, OAuth2User {
 
   @Override
   public Collection<? extends GrantedAuthority> getAuthorities() {
-    return authorities;
+    return user.getRoles().stream()
+        .map(role -> new SimpleGrantedAuthority(role.getName()))
+        .toList();
   }
 
   @Override

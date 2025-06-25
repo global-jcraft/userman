@@ -6,6 +6,8 @@ import java.time.OffsetDateTime;
 import java.util.HashSet;
 import java.util.Set;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -33,6 +35,7 @@ public class Role implements Serializable {
   private OffsetDateTime updatedAt;
 
   @ManyToMany(mappedBy = "roles")
+  @JsonIgnore
   private Set<User> users = new HashSet<>();
 
   @PrePersist

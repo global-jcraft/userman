@@ -16,12 +16,10 @@ import org.springframework.context.MessageSource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 
 import com.huddey.core.userman.auth.JwtTokenProvider;
 import com.huddey.core.userman.controller.AuthController;
 import com.huddey.core.userman.data.ApiResponse;
-import com.huddey.core.userman.data.SecurityUser;
 import com.huddey.core.userman.data.dto.*;
 import com.huddey.core.userman.data.dto.response.LoginResponse;
 import com.huddey.core.userman.data.dto.response.PhoneNumberVerificationResponse;
@@ -31,6 +29,7 @@ import com.huddey.core.userman.data.dto.token.TokenData;
 import com.huddey.core.userman.data.entity.User;
 import com.huddey.core.userman.exception.RoleNotFoundException;
 import com.huddey.core.userman.exception.UserAlreadyExistsException;
+import com.huddey.core.userman.exception.UserNotFoundException;
 import com.huddey.core.userman.service.AuthService;
 import com.huddey.core.userman.service.CustomUserDetailsService;
 import com.huddey.core.userman.utils.LocaleUtils;
@@ -281,10 +280,9 @@ class AuthControllerTest {
     String username = "test@example.com";
     User user = new User();
     user.setEmail(username);
-    SecurityUser securityUser = new SecurityUser(user);
 
     when(authentication.getName()).thenReturn(username);
-    when(customUserDetailsService.loadUserByUsername(username)).thenReturn(securityUser);
+    when(customUserDetailsService.me(username)).thenReturn(user);
     when(messageSource.getMessage(eq("profile.fetch.success"), any(), any(Locale.class)))
         .thenReturn("Profile fetched successfully");
 
@@ -299,7 +297,7 @@ class AuthControllerTest {
     assertThat(responseEntity.getBody().getData()).isNotNull();
     assertThat(responseEntity.getBody().getTimestamp()).isNotNull();
 
-    verify(customUserDetailsService).loadUserByUsername(username);
+    verify(customUserDetailsService).me(username);
   }
 
   @Test
@@ -308,14 +306,12 @@ class AuthControllerTest {
     String username = "nonexistent@example.com";
 
     when(authentication.getName()).thenReturn(username);
-    when(customUserDetailsService.loadUserByUsername(username))
-        .thenThrow(new UsernameNotFoundException("User not found"));
+    when(customUserDetailsService.me(username)).thenReturn(null);
 
     // Act & Assert
-    assertThrows(
-        UsernameNotFoundException.class, () -> authController.getCurrentUser(authentication));
+    assertThrows(UserNotFoundException.class, () -> authController.getCurrentUser(authentication));
 
-    verify(customUserDetailsService).loadUserByUsername(username);
+    verify(customUserDetailsService).me(username);
   }
 
   @Test

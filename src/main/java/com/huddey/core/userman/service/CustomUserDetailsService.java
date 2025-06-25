@@ -7,6 +7,7 @@ import java.util.Optional;
 import javax.management.relation.RoleNotFoundException;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -76,6 +77,22 @@ public class CustomUserDetailsService implements UserDetailsService {
                 () -> new UsernameNotFoundException("User not found with email: " + email));
 
     return new SecurityUser(user);
+  }
+
+  /**
+   * Load a user by email.
+   *
+   * @param email
+   * @return
+   * @throws UsernameNotFoundException
+   */
+  @Transactional
+  @Cacheable(value = "user-cache", key = "#email", unless = "#result == null")
+  public User me(String email) throws UsernameNotFoundException {
+    log.info("Loading user from database for email: {}", email);
+    return userRepository
+        .findByEmail(email)
+        .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + email));
   }
 
   /**
