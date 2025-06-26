@@ -16,9 +16,9 @@ import org.springframework.web.bind.annotation.*;
 
 import com.huddey.core.userman.auth.JwtTokenProvider;
 import com.huddey.core.userman.data.ApiResponse;
-import com.huddey.core.userman.data.SecurityUser;
 import com.huddey.core.userman.data.dto.*;
 import com.huddey.core.userman.exception.UserAlreadyExistsException;
+import com.huddey.core.userman.exception.UserNotFoundException;
 import com.huddey.core.userman.mapper.UserMapper;
 import com.huddey.core.userman.service.AuthService;
 import com.huddey.core.userman.service.CustomUserDetailsService;
@@ -68,7 +68,7 @@ public class AuthController {
 
   @PostMapping("/basic-auth-complete")
   @PreAuthorize(
-      "isAuthenticated() and hasAnyRole('ROLE_USER', 'ROLE_CONTENT_CREATOR', 'ROLE_ADMIN')")
+      "isAuthenticated() and hasAnyAuthority('ROLE_USER', 'ROLE_CONTENT_CREATOR', 'ROLE_ADMIN')")
   public ResponseEntity<ApiResponse> registerBasicFlowComplete(
       @Valid @RequestBody UserRegistrationRequest userRegistrationRequest,
       HttpServletRequest request,
@@ -120,7 +120,7 @@ public class AuthController {
 
   @PostMapping("/refresh-token")
   @PreAuthorize(
-      "isAuthenticated() and hasAnyRole('ROLE_USER', 'ROLE_CONTENT_CREATOR', 'ROLE_ADMIN')")
+      "isAuthenticated() and hasAnyAuthority('ROLE_USER', 'ROLE_CONTENT_CREATOR', 'ROLE_ADMIN')")
   public ResponseEntity<ApiResponse> refreshToken(
       @Valid @RequestBody RefreshTokenRequest request,
       HttpServletRequest servletRequest,
@@ -136,7 +136,7 @@ public class AuthController {
 
   @PostMapping("/reset-password-request")
   @PreAuthorize(
-      "isAuthenticated() and hasAnyRole('ROLE_USER', 'ROLE_CONTENT_CREATOR', 'ROLE_ADMIN')")
+      "isAuthenticated() and hasAnyAuthority('ROLE_USER', 'ROLE_CONTENT_CREATOR', 'ROLE_ADMIN')")
   public ResponseEntity<ApiResponse> resetPasswordRequest(
       @Valid @RequestBody ResetPasswordRequest request,
       HttpServletRequest servletRequest,
@@ -167,7 +167,7 @@ public class AuthController {
 
   @PostMapping("/request-phone-verification")
   @PreAuthorize(
-      "isAuthenticated() and hasAnyRole('ROLE_USER', 'ROLE_CONTENT_CREATOR', 'ROLE_ADMIN')")
+      "isAuthenticated() and hasAnyAuthority('ROLE_USER', 'ROLE_CONTENT_CREATOR', 'ROLE_ADMIN')")
   public ResponseEntity<ApiResponse> requestPhoneVerification(
       @Valid @RequestBody PhoneNumberVerificationRequest verificationRequest,
       HttpServletRequest servletRequest,
@@ -187,7 +187,7 @@ public class AuthController {
 
   @PostMapping("/verify-phone")
   @PreAuthorize(
-      "isAuthenticated() and hasAnyRole('ROLE_USER', 'ROLE_CONTENT_CREATOR', 'ROLE_ADMIN')")
+      "isAuthenticated() and hasAnyAuthority('ROLE_USER', 'ROLE_CONTENT_CREATOR', 'ROLE_ADMIN')")
   public ResponseEntity<ApiResponse> verifyPhoneNumber(
       @Valid @RequestBody VerifyPhoneNumberRequest verifyRequest,
       HttpServletRequest servletRequest,
@@ -205,18 +205,20 @@ public class AuthController {
 
   @GetMapping("/me")
   @PreAuthorize(
-      "isAuthenticated() and hasAnyRole('ROLE_USER', 'ROLE_CONTENT_CREATOR', 'ROLE_ADMIN')")
+      "isAuthenticated() and hasAnyAuthority('ROLE_USER', 'ROLE_CONTENT_CREATOR', 'ROLE_ADMIN')")
   public ResponseEntity<ApiResponse> getCurrentUser(Authentication authentication) {
     log.debug(
         "AuthController.getCurrentUser() -> Fetching current user - Start time: {}",
         OffsetDateTime.now().format(DateTimeFormatter.ISO_OFFSET_DATE_TIME));
-    var user = customUserDetailsService.loadUserByUsername(authentication.getName());
-    var securityUser = (SecurityUser) user;
+    var user = customUserDetailsService.me(authentication.getName());
+    if (user == null) {
+      throw new UserNotFoundException("User not found with email: " + authentication.getName());
+    }
     ApiResponse response =
         ApiResponse.builder()
             .success(true)
             .message(LocaleUtils.getMessage(PROFILE_FETCH_SUCCESS))
-            .data(UserMapper.toDto(securityUser.getUser()))
+            .data(UserMapper.toDto(user))
             .timestamp(OffsetDateTime.now())
             .build();
     return ResponseEntity.ok(response);

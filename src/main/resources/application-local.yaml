@@ -80,6 +80,12 @@ spring:
     password: dev_password
     default-schema: huddey_core
 
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+
 logging:
   level:
     org.springframework.security: DEBUG
