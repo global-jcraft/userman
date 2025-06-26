@@ -54,11 +54,12 @@ public class RedisCacheConfig {
     Map<String, RedisCacheConfiguration> cacheConfigurations = new HashMap<>();
     cacheConfigurations.put("user-cache", defaultConfig.entryTtl(Duration.ofHours(2)));
 
-    RedisCacheManager cacheManager = RedisCacheManager.builder(connectionFactory)
-        .cacheDefaults(defaultConfig)
-        .withInitialCacheConfigurations(cacheConfigurations)
-        .build();
-    
+    RedisCacheManager cacheManager =
+        RedisCacheManager.builder(connectionFactory)
+            .cacheDefaults(defaultConfig)
+            .withInitialCacheConfigurations(cacheConfigurations)
+            .build();
+
     System.out.println("Redis Cache Manager configured with user-cache TTL: 2 hours");
     return cacheManager;
   }
