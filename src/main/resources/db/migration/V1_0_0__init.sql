@@ -1,7 +1,6 @@
 -- V1.0.0__create_initial_schema.sql
 CREATE SCHEMA IF NOT EXISTS huddey_core;
 
--- V1.0.1__create_roles_table.sql
 CREATE TABLE huddey_core.roles
 (
     id          BIGSERIAL PRIMARY KEY,
@@ -11,7 +10,6 @@ CREATE TABLE huddey_core.roles
     updated_at  TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- V1.0.2__create_auth_providers_table.sql
 CREATE TABLE huddey_core.auth_providers
 (
     id         BIGSERIAL PRIMARY KEY,
@@ -22,7 +20,6 @@ CREATE TABLE huddey_core.auth_providers
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- V1.0.3__create_users_table.sql
 CREATE TABLE huddey_core.users
 (
     id                                  BIGSERIAL PRIMARY KEY,
@@ -44,7 +41,6 @@ CREATE TABLE huddey_core.users
     updated_at                          TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- V1.0.4__create_user_credentials_table.sql
 CREATE TABLE huddey_core.user_credentials
 (
     id                              BIGSERIAL PRIMARY KEY,
@@ -59,7 +55,6 @@ CREATE TABLE huddey_core.user_credentials
     UNIQUE (auth_provider_id, identifier)
 );
 
--- V1.0.5__create_social_connections_table.sql
 CREATE TABLE huddey_core.social_connections
 (
     id                BIGSERIAL PRIMARY KEY,
@@ -77,7 +72,6 @@ CREATE TABLE huddey_core.social_connections
     UNIQUE (auth_provider_id, provider_user_id)
 );
 
--- V1.0.6__create_user_roles_table.sql
 CREATE TABLE huddey_core.user_roles
 (
     user_id    BIGINT REFERENCES huddey_core.users (id),
@@ -86,14 +80,12 @@ CREATE TABLE huddey_core.user_roles
     PRIMARY KEY (user_id, role_id)
 );
 
--- V1.1.0__insert_initial_roles.sql
 INSERT INTO huddey_core.roles (name, description)
 VALUES ('ROLE_USER', 'Basic user role for all registered users'),
        ('ROLE_ADMIN', 'Administrator role'),
        ('ROLE_MENTOR', 'Mentor role for Creative Academy'),
        ('ROLE_CONTENT_CREATOR', 'Content creator role');
 
--- V1.1.1__insert_auth_providers.sql
 INSERT INTO huddey_core.auth_providers (name, config)
 VALUES ('local', '{
   "type": "email"
@@ -111,16 +103,21 @@ VALUES ('local', '{
          "type": "oauth2"
        }'::jsonb);
 
--- V1.2.0__create_indexes.sql
-CREATE INDEX idx_users_email ON huddey_core.users (email);
-CREATE INDEX idx_users_status ON huddey_core.users (status);
-CREATE INDEX idx_user_roles_user_id ON huddey_core.user_roles (user_id);
-CREATE INDEX idx_user_credentials_user_id ON huddey_core.user_credentials (user_id);
-CREATE INDEX idx_user_credentials_identifier ON huddey_core.user_credentials (identifier);
-CREATE INDEX idx_social_connections_user_id ON huddey_core.social_connections (user_id);
-CREATE INDEX idx_social_connections_provider_user ON huddey_core.social_connections (auth_provider_id, provider_user_id);
+CREATE INDEX IF NOT EXISTS idx_users_email ON huddey_core.users (LOWER(email));
+CREATE INDEX IF NOT EXISTS idx_users_status ON huddey_core.users (status);
+CREATE INDEX IF NOT EXISTS idx_user_roles_user_id ON huddey_core.user_roles (user_id);
+CREATE INDEX IF NOT EXISTS idx_user_credentials_user_id ON huddey_core.user_credentials (user_id);
+CREATE INDEX IF NOT EXISTS idx_user_credentials_identifier ON huddey_core.user_credentials (identifier);
+CREATE INDEX IF NOT EXISTS idx_social_connections_user_id ON huddey_core.social_connections (user_id);
+CREATE INDEX IF NOT EXISTS idx_social_connections_provider_user ON huddey_core.social_connections (auth_provider_id, provider_user_id);
+CREATE INDEX IF NOT EXISTS idx_users_email_verification_token ON huddey_core.users (email_verification_token) WHERE email_verification_token IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_users_phone_number ON huddey_core.users (phone_number) WHERE phone_number IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_user_credentials_auth_provider_identifier ON huddey_core.user_credentials (auth_provider_id, identifier);
 
--- V1.2.1__create_audit_triggers.sql
+CREATE SEQUENCE IF NOT EXISTS huddey_core.user_id_seq START WITH 1000000 INCREMENT BY 1 NO CYCLE CACHE 100;
+ALTER TABLE huddey_core.users ALTER COLUMN id SET DEFAULT nextval('huddey_core.user_id_seq');
+
+-- create audit triggers
 CREATE OR REPLACE FUNCTION huddey_core.update_updated_at_column()
     RETURNS TRIGGER AS
 $$

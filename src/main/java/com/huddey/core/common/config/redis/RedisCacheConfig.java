@@ -13,9 +13,11 @@ import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.RedisSerializationContext;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.jsontype.BasicPolymorphicTypeValidator;
+import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 @Configuration
@@ -26,9 +28,12 @@ public class RedisCacheConfig {
 
   @Bean
   public RedisCacheManager cacheManager(RedisConnectionFactory connectionFactory) {
-    // Create an ObjectMapper and register necessary modules
     ObjectMapper objectMapper = new ObjectMapper();
     objectMapper.registerModule(new JavaTimeModule());
+
+    SimpleModule module = new SimpleModule();
+    module.addDeserializer(SimpleGrantedAuthority.class, new SimpleGrantedAuthorityDeserializer());
+    objectMapper.registerModule(module);
 
     // Enable default typing for polymorphic deserialization
     objectMapper.activateDefaultTyping(
@@ -53,6 +58,8 @@ public class RedisCacheConfig {
     // Specific cache configurations
     Map<String, RedisCacheConfiguration> cacheConfigurations = new HashMap<>();
     cacheConfigurations.put("user-cache", defaultConfig.entryTtl(Duration.ofHours(2)));
+    cacheConfigurations.put("user-profile-cache", defaultConfig.entryTtl(Duration.ofMinutes(30)));
+    cacheConfigurations.put("user-session-cache", defaultConfig.entryTtl(Duration.ofMinutes(15)));
 
     RedisCacheManager cacheManager =
         RedisCacheManager.builder(connectionFactory)

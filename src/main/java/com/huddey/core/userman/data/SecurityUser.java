@@ -13,18 +13,16 @@ import com.huddey.core.userman.data.entity.User;
 import com.huddey.core.userman.data.entity.UserCredential;
 import com.huddey.core.userman.data.entity.UserStatus;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
 @Getter
 @Builder
 @AllArgsConstructor
+@NoArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class SecurityUser implements UserDetails, OAuth2User {
-  @Getter private final User user; // Our database entity
-  private final Collection<? extends GrantedAuthority> authorities;
+  @Getter private User user; // Our database entity
+  private Collection<? extends GrantedAuthority> authorities;
   @Setter private Map<String, Object> attributes;
 
   public SecurityUser(User user) {
@@ -36,14 +34,13 @@ public class SecurityUser implements UserDetails, OAuth2User {
 
   @Override
   public Collection<? extends GrantedAuthority> getAuthorities() {
-    return user.getRoles().stream()
-        .map(role -> new SimpleGrantedAuthority(role.getName()))
-        .toList();
+    return authorities != null
+        ? authorities
+        : user.getRoles().stream().map(role -> new SimpleGrantedAuthority(role.getName())).toList();
   }
 
   @Override
   public String getPassword() {
-    // Get password from our user credentials
     return user.getCredentials().stream()
         .filter(c -> c.getAuthProvider().getName().equals("local"))
         .map(UserCredential::getPasswordHash)

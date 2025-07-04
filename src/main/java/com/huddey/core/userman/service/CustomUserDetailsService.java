@@ -7,6 +7,7 @@ import java.util.Optional;
 import javax.management.relation.RoleNotFoundException;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -103,6 +104,7 @@ public class CustomUserDetailsService implements UserDetailsService {
    * @throws RoleNotFoundException if the default role is not found
    */
   @Transactional
+  @CacheEvict(value = "user-cache", key = "#request.email")
   public SecurityUser createNewUserBasicFlow(UserRegistrationBasicFlowRequest request)
       throws RoleNotFoundException {
     Optional<User> user = checkIfUserExists(request.getEmail());
@@ -124,6 +126,7 @@ public class CustomUserDetailsService implements UserDetailsService {
    * @throws RoleNotFoundException if the default role is not found
    */
   @Transactional
+  @CacheEvict(value = "user-cache", key = "#request.email")
   public SecurityUser updateUserInfo(UserRegistrationRequest request) throws RoleNotFoundException {
     User existingUser =
         checkIfUserExists(request.getEmail())

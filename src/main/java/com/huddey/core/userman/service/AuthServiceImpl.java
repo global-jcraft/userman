@@ -17,6 +17,7 @@ import java.util.stream.Collectors;
 import javax.management.relation.RoleNotFoundException;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -79,6 +80,7 @@ public class AuthServiceImpl implements AuthService {
   private long phoneTokenExpiryMinutes;
 
   @Override
+  @CacheEvict(value = "user-cache", key = "#user.email")
   public UserRegistrationResponse registerBasicFlow(
       UserRegistrationBasicFlowRequest user,
       HttpServletRequest servletRequest,
@@ -92,6 +94,7 @@ public class AuthServiceImpl implements AuthService {
   }
 
   @Override
+  @CacheEvict(value = "user-cache", key = "#request.email")
   public UserRegistrationResponse completeRegistration(
       UserRegistrationRequest request,
       HttpServletRequest servletRequest,
@@ -115,6 +118,7 @@ public class AuthServiceImpl implements AuthService {
   }
 
   @Override
+  @CacheEvict(value = "user-cache", key = "#result.email")
   public UserVerificationResponse userAccountVerification(
       String token, HttpServletRequest request, HttpServletResponse response) {
     log.debug("Verifying user by email with token: {}", token);
@@ -171,11 +175,11 @@ public class AuthServiceImpl implements AuthService {
   }
 
   @Override
+  @CacheEvict(value = "user-cache", key = "#request.email")
   public LoginResponse login(
       LoginRequest request,
       HttpServletRequest servletRequest,
       HttpServletResponse servletResponse) {
-    User user = null;
     try {
       // Load user details first to validate existence and status
       UserDetails userDetails = userDetailsService.loadUserByUsername(request.getEmail());
@@ -189,7 +193,7 @@ public class AuthServiceImpl implements AuthService {
               new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword()));
 
       SecurityUser securityUser = (SecurityUser) authentication.getPrincipal();
-      user = securityUser.getUser();
+      User user = securityUser.getUser();
 
       if (!user.isEmailVerified()) {
         // FIXME: This should be handled in the frontend
@@ -210,8 +214,7 @@ public class AuthServiceImpl implements AuthService {
           jwtTokenProvider,
           request.isRememberMe());
     } catch (BadCredentialsException ex) {
-      assert user != null;
-      log.error("Username or password is wrong for the user: {}", user.getEmail());
+      log.error("Username or password is wrong for the user: {}", request.getEmail());
       throw new AuthenticationException(LocaleUtils.getMessage(USER_INVALID_CREDENTIALS_ERROR));
     }
   }
@@ -311,6 +314,7 @@ public class AuthServiceImpl implements AuthService {
   }
 
   @Override
+  @CacheEvict(value = "user-cache", key = "#request.email")
   public void resetPasswordComplete(
       ResetPasswordCompleteRequest request,
       HttpServletRequest servletRequest,
@@ -386,6 +390,7 @@ public class AuthServiceImpl implements AuthService {
   }
 
   @Override
+  @CacheEvict(value = "user-cache", key = "#request.email")
   public VerifyPhoneNumberResponse verifyPhoneNumber(
       VerifyPhoneNumberRequest request, HttpServletRequest servletRequest) {
     User user =

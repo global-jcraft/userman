@@ -64,6 +64,7 @@ dependencies {
     runtimeOnly "io.jsonwebtoken:jjwt-impl:${jwtVersion}"
     runtimeOnly "io.jsonwebtoken:jjwt-jackson:${jwtVersion}"
     implementation "org.flywaydb:flyway-core:${flywayVersion}"
+    runtimeOnly "org.flywaydb:flyway-database-postgresql:${flywayVersion}"
     implementation 'org.postgresql:postgresql'
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'

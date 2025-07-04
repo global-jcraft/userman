@@ -53,6 +53,13 @@ spring:
     name: huddey
   datasource:
     url: jdbc:postgresql://localhost:5432/huddey_core
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+  cache:
+    type: redis
     username: postgres
     password: dev_password
     driver-class-name: org.postgresql.Driver

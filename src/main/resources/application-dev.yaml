@@ -15,6 +15,13 @@ spring:
         queue-capacity: 500
         keep-alive: 60s
       thread-name-prefix: huddey-core-
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+  cache:
+    type: redis
   thymeleaf:
     cache: false
     mode: HTML
@@ -50,7 +57,7 @@ spring:
   application:
     name: huddey
   datasource:
-    url: jdbc:postgresql://localhost:5432/huddey_core
+    url: jdbc:postgresql://localhost:6432/huddey_core?sslmode=disable
     username: postgres
     password: dev_password
     driver-class-name: org.postgresql.Driver
