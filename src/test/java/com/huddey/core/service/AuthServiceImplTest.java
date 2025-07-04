@@ -6,8 +6,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.OffsetDateTime;
-import java.util.Collections;
-import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
@@ -30,6 +28,7 @@ import com.huddey.core.userman.data.entity.User;
 import com.huddey.core.userman.data.entity.UserCredential;
 import com.huddey.core.userman.exception.InvalidTokenException;
 import com.huddey.core.userman.exception.UserNotFoundException;
+import com.huddey.core.userman.repository.UserCredentialRepository;
 import com.huddey.core.userman.repository.UserRepository;
 import com.huddey.core.userman.service.AuthServiceImpl;
 import com.huddey.core.userman.utils.LocaleUtils;
@@ -49,6 +48,8 @@ class AuthServiceImplTest {
   @Mock private HttpServletResponse servletResponse;
 
   @Mock private NotificationHandler notificationHandler;
+
+  @Mock private UserCredentialRepository userCredentialRepository;
 
   @InjectMocks private AuthServiceImpl authService;
 
@@ -159,7 +160,8 @@ class AuthServiceImplTest {
 
     user.setCredentials(Set.of(credential));
 
-    when(userRepository.findAll()).thenReturn(List.of(user));
+    when(userCredentialRepository.findByPasswordResetToken(token))
+        .thenReturn(Optional.of(credential));
     when(passwordEncoder.encode(newPassword)).thenReturn(encodedPassword);
     when(userRepository.save(any(User.class))).thenReturn(user);
 
@@ -190,7 +192,8 @@ class AuthServiceImplTest {
     credential.setUser(user);
     user.setCredentials(Set.of(credential));
 
-    when(userRepository.findAll()).thenReturn(List.of(user));
+    when(userCredentialRepository.findByPasswordResetToken(token))
+        .thenReturn(Optional.of(credential));
 
     // Act & Assert
     assertThrows(
@@ -205,7 +208,8 @@ class AuthServiceImplTest {
     request.setToken("invalid-token");
     request.setNewPassword("newPassword123");
 
-    when(userRepository.findAll()).thenReturn(Collections.emptyList());
+    when(userCredentialRepository.findByPasswordResetToken("invalid-token"))
+        .thenReturn(Optional.empty());
 
     // Act & Assert
     assertThrows(

@@ -7,12 +7,14 @@ import java.util.Optional;
 import javax.management.relation.RoleNotFoundException;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.huddey.core.notification.config.TokenService;
 import com.huddey.core.userman.data.SecurityUser;
@@ -28,7 +30,6 @@ import com.huddey.core.userman.repository.UserCredentialRepository;
 import com.huddey.core.userman.repository.UserRepository;
 import com.huddey.core.userman.utils.RequestUtils;
 
-import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
 
 @Service
@@ -68,11 +69,11 @@ public class CustomUserDetailsService implements UserDetailsService {
    * @throws UsernameNotFoundException if the user is not found
    */
   @Override
-  @Transactional
+  @Transactional(readOnly = true)
   public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
     User user =
         userRepository
-            .findByEmail(email)
+            .findByEmailWithRolesAndCredentials(email)
             .orElseThrow(
                 () -> new UsernameNotFoundException("User not found with email: " + email));
 
@@ -103,6 +104,7 @@ public class CustomUserDetailsService implements UserDetailsService {
    * @throws RoleNotFoundException if the default role is not found
    */
   @Transactional
+  @CacheEvict(value = "user-cache", key = "#request.email")
   public SecurityUser createNewUserBasicFlow(UserRegistrationBasicFlowRequest request)
       throws RoleNotFoundException {
     Optional<User> user = checkIfUserExists(request.getEmail());
@@ -111,8 +113,8 @@ public class CustomUserDetailsService implements UserDetailsService {
     }
     var newUser = buildUserBasicFlow(request);
     assignDefaultRole(newUser);
-    userRepository.save(newUser);
-    saveUserCredentials(newUser, request.getPassword());
+    buildUserCredentials(newUser, request.getPassword());
+    userRepository.save(newUser); // Single save with cascade
     return new SecurityUser(newUser);
   }
 
@@ -124,6 +126,7 @@ public class CustomUserDetailsService implements UserDetailsService {
    * @throws RoleNotFoundException if the default role is not found
    */
   @Transactional
+  @CacheEvict(value = "user-cache", key = "#request.email")
   public SecurityUser updateUserInfo(UserRegistrationRequest request) throws RoleNotFoundException {
     User existingUser =
         checkIfUserExists(request.getEmail())
@@ -236,7 +239,7 @@ public class CustomUserDetailsService implements UserDetailsService {
    * @param user the user
    * @param password the password
    */
-  private void saveUserCredentials(User user, String password) {
+  private void buildUserCredentials(User user, String password) {
     AuthProvider emailProvider =
         authProviderRepository
             .findByName("local")
@@ -247,6 +250,5 @@ public class CustomUserDetailsService implements UserDetailsService {
     credentials.setIdentifier(user.getEmail());
     credentials.setPasswordHash(passwordEncoder.encode(password));
     user.getCredentials().add(credentials);
-    userCredentialRepository.save(credentials);
   }
 }

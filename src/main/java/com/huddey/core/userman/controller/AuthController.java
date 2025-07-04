@@ -16,9 +16,9 @@ import org.springframework.web.bind.annotation.*;
 
 import com.huddey.core.userman.auth.JwtTokenProvider;
 import com.huddey.core.userman.data.ApiResponse;
+import com.huddey.core.userman.data.SecurityUser;
 import com.huddey.core.userman.data.dto.*;
 import com.huddey.core.userman.exception.UserAlreadyExistsException;
-import com.huddey.core.userman.exception.UserNotFoundException;
 import com.huddey.core.userman.mapper.UserMapper;
 import com.huddey.core.userman.service.AuthService;
 import com.huddey.core.userman.service.CustomUserDetailsService;
@@ -207,20 +207,11 @@ public class AuthController {
   @PreAuthorize(
       "isAuthenticated() and hasAnyAuthority('ROLE_USER', 'ROLE_CONTENT_CREATOR', 'ROLE_ADMIN')")
   public ResponseEntity<ApiResponse> getCurrentUser(Authentication authentication) {
-    log.debug(
-        "AuthController.getCurrentUser() -> Fetching current user - Start time: {}",
-        OffsetDateTime.now().format(DateTimeFormatter.ISO_OFFSET_DATE_TIME));
-    var user = customUserDetailsService.me(authentication.getName());
-    if (user == null) {
-      throw new UserNotFoundException("User not found with email: " + authentication.getName());
-    }
-    ApiResponse response =
-        ApiResponse.builder()
-            .success(true)
-            .message(LocaleUtils.getMessage(PROFILE_FETCH_SUCCESS))
-            .data(UserMapper.toDto(user))
-            .timestamp(OffsetDateTime.now())
-            .build();
-    return ResponseEntity.ok(response);
+    SecurityUser securityUser = (SecurityUser) authentication.getPrincipal();
+    UserDTO userDTO = UserMapper.toDto(securityUser.getUser());
+    ApiResponse apiResponse =
+        ApiUtils.buildApiResponse(
+            true, LocaleUtils.getMessage(PROFILE_FETCH_SUCCESS), userDTO, null);
+    return ResponseEntity.ok(apiResponse);
   }
 }

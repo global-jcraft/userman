@@ -11,6 +11,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -85,6 +86,21 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
             .path(((ServletWebRequest) request).getRequest().getRequestURI())
             .build();
     return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
+  }
+
+  @ExceptionHandler(AuthorizationDeniedException.class)
+  public ResponseEntity<ErrorResponse> handleAuthorizationDenied(
+      AuthorizationDeniedException ex, WebRequest request) {
+    log.error("Access denied: ", ex);
+    ErrorResponse error =
+        ErrorResponse.builder()
+            .timestamp(LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME))
+            .status(HttpStatus.FORBIDDEN.value())
+            .error("Access Denied")
+            .message("You are not authorized to access this resource.")
+            .path(((ServletWebRequest) request).getRequest().getRequestURI())
+            .build();
+    return new ResponseEntity<>(error, HttpStatus.FORBIDDEN);
   }
 
   @Override

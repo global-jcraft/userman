@@ -52,10 +52,23 @@ spring:
   application:
     name: huddey
   datasource:
-    url: jdbc:postgresql://localhost:5432/huddey_core
+    url: jdbc:postgresql://localhost:5432/huddey_core?sslmode=disable
     username: postgres
     password: dev_password
     driver-class-name: org.postgresql.Driver
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+  cache:
+    type: redis
+    cache-names:
+      - user-cache
+      - user-login-cache
+    redis:
+      time-to-live: 300000  # 5 minutes for login cache
+      cache-null-values: false
     hikari:
       maximum-pool-size: 100              # Increased for high concurrency
       minimum-idle: 20                    # Higher baseline connections
@@ -76,7 +89,7 @@ spring:
   flyway:
     enabled: true
     locations: classpath:db/migration
-    url: jdbc:postgresql://localhost:5432/huddey_core
+    url: jdbc:postgresql://localhost:5432/huddey_core?sslmode=disable
     user: postgres
     password: dev_password
     default-schema: huddey_core
