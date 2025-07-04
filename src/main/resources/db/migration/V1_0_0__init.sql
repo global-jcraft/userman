@@ -113,8 +113,12 @@ CREATE INDEX IF NOT EXISTS idx_social_connections_provider_user ON huddey_core.s
 CREATE INDEX IF NOT EXISTS idx_users_email_verification_token ON huddey_core.users (email_verification_token) WHERE email_verification_token IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_users_phone_number ON huddey_core.users (phone_number) WHERE phone_number IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_user_credentials_auth_provider_identifier ON huddey_core.user_credentials (auth_provider_id, identifier);
+-- Add performance indexes for login operations
+CREATE INDEX IF NOT EXISTS idx_users_email_status_verified  ON huddey_core.users (email, status, email_verified)  WHERE status = 'ACTIVE';
+CREATE INDEX IF NOT EXISTS idx_user_credentials_identifier_provider ON huddey_core.user_credentials (identifier, auth_provider_id) WHERE password_hash IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_user_credentials_password_reset_token ON huddey_core.user_credentials (password_reset_token) WHERE password_reset_token IS NOT NULL;
 
-CREATE SEQUENCE IF NOT EXISTS huddey_core.user_id_seq START WITH 1000000 INCREMENT BY 1 NO CYCLE CACHE 100;
+CREATE SEQUENCE IF NOT EXISTS huddey_core.user_id_seq START WITH 1000000 INCREMENT BY 1 NO CYCLE CACHE 1;
 ALTER TABLE huddey_core.users ALTER COLUMN id SET DEFAULT nextval('huddey_core.user_id_seq');
 
 -- create audit triggers

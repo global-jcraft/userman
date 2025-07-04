@@ -18,6 +18,7 @@ import javax.management.relation.RoleNotFoundException;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -44,6 +45,7 @@ import com.huddey.core.userman.data.entity.UserStatus;
 import com.huddey.core.userman.exception.*;
 import com.huddey.core.userman.repository.AuthProviderRepository;
 import com.huddey.core.userman.repository.RoleRepository;
+import com.huddey.core.userman.repository.UserCredentialRepository;
 import com.huddey.core.userman.repository.UserRepository;
 import com.huddey.core.userman.token.WebTokenGenerationStrategy;
 import com.huddey.core.userman.utils.LocaleUtils;
@@ -72,6 +74,7 @@ public class AuthServiceImpl implements AuthService {
   private final JwtAuthenticationFilter jwtAuthenticationFilter;
   private final NotificationHandler notificationHandler;
   private final TokenService tokenService;
+  private final UserCredentialRepository userCredentialRepository;
 
   @Value("${app.confirmation.baseUrl}")
   private String baseUrl;
@@ -175,11 +178,11 @@ public class AuthServiceImpl implements AuthService {
   }
 
   @Override
-  @CacheEvict(value = "user-cache", key = "#request.email")
   public LoginResponse login(
       LoginRequest request,
       HttpServletRequest servletRequest,
       HttpServletResponse servletResponse) {
+    long startTime = System.currentTimeMillis();
     try {
       // Load user details first to validate existence and status
       UserDetails userDetails = userDetailsService.loadUserByUsername(request.getEmail());
@@ -200,23 +203,33 @@ public class AuthServiceImpl implements AuthService {
         // throw new EmailNotVerifiedException("Please verify your email before logging in");
       }
 
-      user.setLastLoginAt(OffsetDateTime.now());
-      user.setLastLoginIp(RequestUtils.getClientIp());
-      userRepository.save(user);
+      updateLastLogin(user);
 
       String clientType = determineClientType(servletRequest);
 
-      return getLoginResponse(
-          servletResponse,
-          clientType,
-          securityUser,
-          user,
-          jwtTokenProvider,
-          request.isRememberMe());
+      LoginResponse response =
+          getLoginResponse(
+              servletResponse,
+              clientType,
+              securityUser,
+              user,
+              jwtTokenProvider,
+              request.isRememberMe());
+
+      long duration = System.currentTimeMillis() - startTime;
+      log.debug("Login completed for {} in {}ms", request.getEmail(), duration);
+      return response;
     } catch (BadCredentialsException ex) {
       log.error("Username or password is wrong for the user: {}", request.getEmail());
       throw new AuthenticationException(LocaleUtils.getMessage(USER_INVALID_CREDENTIALS_ERROR));
     }
+  }
+
+  @Async("loginTaskExecutor")
+  protected void updateLastLogin(User user) {
+    user.setLastLoginAt(OffsetDateTime.now());
+    user.setLastLoginIp(RequestUtils.getClientIp());
+    userRepository.save(user);
   }
 
   @Override
@@ -314,17 +327,14 @@ public class AuthServiceImpl implements AuthService {
   }
 
   @Override
-  @CacheEvict(value = "user-cache", key = "#request.email")
   public void resetPasswordComplete(
       ResetPasswordCompleteRequest request,
       HttpServletRequest servletRequest,
       HttpServletResponse servletResponse) {
     // Find the user credential that matches the provided token
     UserCredential credential =
-        userRepository.findAll().stream()
-            .flatMap(user -> user.getCredentials().stream())
-            .filter(creds -> request.getToken().equals(creds.getPasswordResetToken()))
-            .findFirst()
+        userCredentialRepository
+            .findByPasswordResetToken(request.getToken())
             .orElseThrow(
                 () -> new InvalidTokenException(LocaleUtils.getMessage(REFRESH_TOKEN_EXPIRED)));
 
