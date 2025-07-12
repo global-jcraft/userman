@@ -75,7 +75,7 @@ class AuthControllerTest {
         .thenReturn(expectedResponse);
 
     // Act
-    ResponseEntity<ApiResponse> responseEntity =
+    ResponseEntity<ApiResponse<UserRegistrationResponse>> responseEntity =
         authController.registerBasicFlow(registrationRequest, request, response);
 
     // Assert
@@ -97,7 +97,7 @@ class AuthControllerTest {
         .thenReturn(expectedResponse);
 
     // Act
-    ResponseEntity<ApiResponse> responseEntity =
+    ResponseEntity<ApiResponse<UserRegistrationResponse>> responseEntity =
         authController.registerBasicFlowComplete(registrationRequest, request, response);
 
     // Assert
@@ -165,7 +165,7 @@ class AuthControllerTest {
         .thenReturn(expectedResponse);
 
     // Act
-    ResponseEntity<ApiResponse> responseEntity =
+    ResponseEntity<ApiResponse<LoginResponse>> responseEntity =
         authController.login(loginRequest, request, response);
 
     // Assert
@@ -195,7 +195,7 @@ class AuthControllerTest {
         .thenReturn("Password reset request sent successfully");
 
     // Act
-    ResponseEntity<ApiResponse> responseEntity =
+    ResponseEntity<ApiResponse<ResetPasswordResponse>> responseEntity =
         authController.resetPasswordRequest(resetPasswordRequest, request, response);
 
     // Assert
@@ -239,7 +239,7 @@ class AuthControllerTest {
         .thenReturn("Password has been reset successfully");
 
     // Act
-    ResponseEntity<ApiResponse> responseEntity =
+    ResponseEntity<ApiResponse<Void>> responseEntity =
         authController.resetPasswordComplete(resetPasswordCompleteRequest, request, response);
 
     // Assert
@@ -286,7 +286,8 @@ class AuthControllerTest {
         .thenReturn("Profile fetched successfully");
 
     // Act
-    ResponseEntity<ApiResponse> responseEntity = authController.getCurrentUser(authentication);
+    ResponseEntity<ApiResponse<UserDTO>> responseEntity =
+        authController.getCurrentUser(authentication);
 
     // Assert
     assertThat(responseEntity.getStatusCode()).isEqualTo(HttpStatus.OK);
@@ -322,7 +323,7 @@ class AuthControllerTest {
         .thenReturn("Phone verification code sent successfully");
 
     // Act
-    ResponseEntity<ApiResponse> responseEntity =
+    ResponseEntity<ApiResponse<PhoneNumberVerificationResponse>> responseEntity =
         authController.requestPhoneVerification(verificationRequest, request, response);
 
     // Assert
@@ -369,7 +370,7 @@ class AuthControllerTest {
         .thenReturn("Phone number verified successfully");
 
     // Act
-    ResponseEntity<ApiResponse> responseEntity =
+    ResponseEntity<ApiResponse<VerifyPhoneNumberResponse>> responseEntity =
         authController.verifyPhoneNumber(verifyRequest, request, response);
 
     // Assert
