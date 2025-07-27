@@ -254,9 +254,9 @@ aws:
 
 stripe:
   api:
-    key: sk_test_51ROOygCsPWgUOsg2jB15RO2bh5nFBjScbxLE6BgPgG8Gp7WQnOLa3GWdzwyKcoL6bTvWfym5YsTkdoHDMTPj9Sn200pv80jZrt
+    key: ${STRIPE_API_KEY}
   publishable:
-    key: pk_test_51ROOygCsPWgUOsg26GivcbSHD2AA3ApJJxJkOH3IhS3LexP3Zywm1XMmyAHC5YMFkAlRmMOuVkmn6Tx02vbBTa9l00jFuI72i6
+    key: ${STRIPE_PUBLISHABLE_KEY}
   webhook:
     secret:
 
