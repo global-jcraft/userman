@@ -26,16 +26,16 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.huddey.core.common.api.ApiResponse;
+import com.huddey.core.common.api.ApiUtils;
+import com.huddey.core.common.utils.LocaleUtils;
 import com.huddey.core.notification.utils.SecurityUtils;
 import com.huddey.core.userman.auth.CustomAuthenticationEntryPoint;
 import com.huddey.core.userman.auth.JwtAuthenticationFilter;
 import com.huddey.core.userman.auth.oauth2.OAuth2AuthenticationFailureHandler;
 import com.huddey.core.userman.auth.oauth2.OAuth2AuthenticationSuccessHandler;
-import com.huddey.core.userman.data.ApiResponse;
 import com.huddey.core.userman.service.CustomOAuth2UserService;
 import com.huddey.core.userman.service.CustomUserDetailsService;
-import com.huddey.core.userman.utils.ApiUtils;
-import com.huddey.core.userman.utils.LocaleUtils;
 
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -95,8 +95,11 @@ public class UsermanSecurityConfig {
                       "/api/v1/auth/reset-password-request",
                       "/v3/api-docs/**",
                       "/swagger-ui/**",
-                      "/actuator/health")
-                  .permitAll();
+                      "/actuator/health",
+                      "/api/webhook/**")
+                  .permitAll()
+                  .requestMatchers("/api/v1/subscription/**", "/api/v1/setup/**")
+                  .authenticated();
               auth.requestMatchers("/api/v1/admin/**").hasRole("ADMIN");
               auth.anyRequest().authenticated();
             })

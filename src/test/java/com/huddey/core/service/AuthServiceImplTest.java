@@ -19,6 +19,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.MessageSource;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import com.huddey.core.common.utils.LocaleUtils;
 import com.huddey.core.notification.service.NotificationHandler;
 import com.huddey.core.userman.data.dto.ResetPasswordCompleteRequest;
 import com.huddey.core.userman.data.dto.ResetPasswordRequest;
@@ -31,7 +32,6 @@ import com.huddey.core.userman.exception.UserNotFoundException;
 import com.huddey.core.userman.repository.UserCredentialRepository;
 import com.huddey.core.userman.repository.UserRepository;
 import com.huddey.core.userman.service.AuthServiceImpl;
-import com.huddey.core.userman.utils.LocaleUtils;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;

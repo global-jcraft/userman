@@ -1,4 +1,4 @@
-package com.huddey.core.userman.data;
+package com.huddey.core.common.api;
 
 import java.time.OffsetDateTime;
 
@@ -51,6 +51,21 @@ public class ApiResponse<T> {
     ApiResponse<T> response = new ApiResponse<>();
     response.success = false;
     response.message = message;
+    return response;
+  }
+
+  public static <T> ApiResponse<T> error(T data) {
+    ApiResponse<T> response = new ApiResponse<>();
+    response.success = false;
+    response.data = data;
+    return response;
+  }
+
+  public static <T> ApiResponse<T> error(String message, T data) {
+    ApiResponse<T> response = new ApiResponse<>();
+    response.success = false;
+    response.message = message;
+    response.data = data;
     return response;
   }
 

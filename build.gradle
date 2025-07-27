@@ -63,6 +63,9 @@ dependencies {
     implementation "io.jsonwebtoken:jjwt-api:${jwtVersion}"
     runtimeOnly "io.jsonwebtoken:jjwt-impl:${jwtVersion}"
     runtimeOnly "io.jsonwebtoken:jjwt-jackson:${jwtVersion}"
+    
+    // Stripe Dependencies
+    implementation 'com.stripe:stripe-java:29.3.0'
     implementation "org.flywaydb:flyway-core:${flywayVersion}"
     runtimeOnly "org.flywaydb:flyway-database-postgresql:${flywayVersion}"
     implementation 'org.postgresql:postgresql'

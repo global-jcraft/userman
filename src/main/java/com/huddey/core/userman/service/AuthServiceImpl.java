@@ -1,10 +1,10 @@
 package com.huddey.core.userman.service;
 
+import static com.huddey.core.common.api.ApiUtils.buildTokenResponse;
 import static com.huddey.core.notification.data.constants.NotificationConstants.EMAIL_NOTIFICATION;
 import static com.huddey.core.notification.data.constants.NotificationConstants.SMS_NOTIFICATION;
 import static com.huddey.core.userman.constants.Message.*;
 import static com.huddey.core.userman.constants.UsermanConstants.WEB_CLIENT_TYPE;
-import static com.huddey.core.userman.utils.ApiUtils.buildTokenResponse;
 import static com.huddey.core.userman.utils.RequestUtils.*;
 import static com.huddey.core.userman.utils.RequestUtils.getUserRegistrationResponse;
 
@@ -28,6 +28,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import com.huddey.core.common.utils.LocaleUtils;
 import com.huddey.core.notification.config.TokenService;
 import com.huddey.core.notification.data.DecodedTokenData;
 import com.huddey.core.notification.service.NotificationHandler;
@@ -48,7 +49,6 @@ import com.huddey.core.userman.repository.RoleRepository;
 import com.huddey.core.userman.repository.UserCredentialRepository;
 import com.huddey.core.userman.repository.UserRepository;
 import com.huddey.core.userman.token.WebTokenGenerationStrategy;
-import com.huddey.core.userman.utils.LocaleUtils;
 import com.huddey.core.userman.utils.RequestUtils;
 
 import jakarta.servlet.http.HttpServletRequest;

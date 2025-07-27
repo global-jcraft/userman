@@ -14,8 +14,9 @@ import org.springframework.security.core.Authentication;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import com.huddey.core.common.api.ApiResponse;
+import com.huddey.core.common.utils.LocaleUtils;
 import com.huddey.core.userman.auth.JwtTokenProvider;
-import com.huddey.core.userman.data.ApiResponse;
 import com.huddey.core.userman.data.SecurityUser;
 import com.huddey.core.userman.data.dto.*;
 import com.huddey.core.userman.data.dto.response.*;
@@ -24,7 +25,6 @@ import com.huddey.core.userman.exception.UserAlreadyExistsException;
 import com.huddey.core.userman.mapper.UserMapper;
 import com.huddey.core.userman.service.AuthService;
 import com.huddey.core.userman.service.CustomUserDetailsService;
-import com.huddey.core.userman.utils.LocaleUtils;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;

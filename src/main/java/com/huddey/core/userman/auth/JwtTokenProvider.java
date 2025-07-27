@@ -5,7 +5,6 @@ import java.security.Key;
 import java.util.Date;
 
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.oauth2.jwt.JwtException;
 import org.springframework.stereotype.Component;
@@ -19,12 +18,13 @@ import lombok.Getter;
 import lombok.Setter;
 
 @Component
-@ConfigurationProperties(prefix = "app.security.jwt")
 @Validated
 @Getter
 @Setter
 public class JwtTokenProvider {
-  @NotBlank private String secret;
+  @Value("${app.security.jwt.secret}")
+  @NotBlank
+  private String secret;
 
   @Value("${app.security.jwt.accessTokenValidity}")
   private long accessTokenValidity;
