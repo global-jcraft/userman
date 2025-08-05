@@ -5,12 +5,11 @@ import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.Optional;
 
-import com.huddey.core.payment.data.dto.CreateDirectSubscriptionRequest;
-import com.stripe.model.Price;
 import org.springframework.stereotype.Service;
 
 import com.huddey.core.payment.data.dto.CancelSubscriptionResponse;
 import com.huddey.core.payment.data.dto.CreateCheckoutSessionRequest;
+import com.huddey.core.payment.data.dto.CreateDirectSubscriptionRequest;
 import com.huddey.core.payment.data.entity.UserSubscription;
 import com.huddey.core.payment.data.enums.SubscriptionPlan;
 import com.huddey.core.payment.data.enums.SubscriptionStatus;
@@ -69,8 +68,7 @@ public class SubscriptionService {
     return session.getUrl();
   }
 
-  public void createSubscription(
-          Long userId, String email, CreateDirectSubscriptionRequest request)
+  public void createSubscription(Long userId, String email, CreateDirectSubscriptionRequest request)
       throws StripeException {
 
     // Create or get customer

@@ -19,7 +19,6 @@ import com.huddey.core.payment.data.dto.CancelSubscriptionRequest;
 import com.huddey.core.payment.data.dto.CancelSubscriptionResponse;
 import com.huddey.core.payment.data.dto.CreateCheckoutSessionRequest;
 import com.huddey.core.payment.data.dto.CreateCheckoutSessionResponse;
-import com.huddey.core.payment.data.dto.CreateDirectSubscriptionRequest;
 import com.huddey.core.payment.data.entity.UserSubscription;
 import com.huddey.core.payment.data.enums.SubscriptionPlan;
 import com.huddey.core.payment.service.SubscriptionService;
@@ -81,7 +80,7 @@ public class SubscriptionController {
     }
   }
 
-  @PostMapping
+  /*@PostMapping
   public ResponseEntity<ApiResponse<Map<String, String>>> createSubscription(
       Authentication authentication, @Valid @RequestBody CreateDirectSubscriptionRequest request) {
 
@@ -106,7 +105,7 @@ public class SubscriptionController {
       error.put("error", e.getMessage());
       return ResponseEntity.badRequest().body(ApiResponse.error(error));
     }
-  }
+  }*/
 
   @PutMapping("/update")
   public ResponseEntity<Map<String, String>> updateSubscription(

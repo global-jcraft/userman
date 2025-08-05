@@ -32,6 +32,7 @@ public class WebhookController {
   public ResponseEntity<String> handleStripeWebhook(
       @RequestBody String payload, @RequestHeader("Stripe-Signature") String sigHeader) {
 
+    log.debug("Entering WebhookController.handleStripeWebhook() method");
     Event event;
 
     try {

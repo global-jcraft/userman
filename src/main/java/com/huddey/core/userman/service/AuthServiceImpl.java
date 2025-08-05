@@ -260,8 +260,8 @@ public class AuthServiceImpl implements AuthService {
           new WebTokenGenerationStrategy(jwtTokenProvider);
       tokenGenerationStrategy.generateAndSetToken(response, securityUser, request.isRememberMe());
 
-      response.addCookie(tokenGenerationStrategy.getAccessTokenCookie());
-      response.addCookie(tokenGenerationStrategy.getRefreshTokenCookie());
+      response.addHeader("Set-Cookie", tokenGenerationStrategy.getAccessTokenCookie().toString());
+      response.addHeader("Set-Cookie", tokenGenerationStrategy.getRefreshTokenCookie().toString());
 
       return TokenRefreshResponse.builder()
           .tokenType("Bearer")

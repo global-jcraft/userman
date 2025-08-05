@@ -2,6 +2,8 @@ package com.huddey.core.payment.data.enums;
 
 public class StripeConstants {
 
+  private StripeConstants() {}
+
   public static final String CHECKOUT_COMPLETED = "checkout.session.completed";
   public static final String SUBSCRIPTION_CREATED = "customer.subscription.created";
   public static final String SUBSCRIPTION_UPDATED = "customer.subscription.updated";
