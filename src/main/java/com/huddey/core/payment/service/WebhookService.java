@@ -5,6 +5,8 @@ import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.Optional;
 
+import com.huddey.core.payment.utils.StripeUtils;
+import com.stripe.model.Invoice;
 import org.springframework.stereotype.Service;
 
 import com.huddey.core.payment.data.entity.UserSubscription;
@@ -102,13 +104,112 @@ public class WebhookService {
   }
 
   public void handleInvoicePaymentSucceeded(Event event) {
-    // Handle successful payment - subscription remains active
-    System.out.println("Payment succeeded for subscription");
+      StripeUtils.logEventStart("invoice payment succeeded", event.getId());
+
+      Optional<Invoice> invoiceOpt = StripeUtils.extractInvoice(event);
+      if (invoiceOpt.isEmpty()) {
+          return;
+      }
+
+      Invoice invoice = invoiceOpt.get();
+
+      // Try to get subscription from invoice lines first
+      Optional<String> subscriptionIdOpt = StripeUtils.getSubscriptionIdFromInvoice(invoice);
+      Optional<UserSubscription> userSubOpt = Optional.empty();
+
+      if (subscriptionIdOpt.isPresent()) {
+          userSubOpt = StripeUtils.findUserSubscription(subscriptionIdOpt.get(), subscriptionRepository);
+      } else {
+          // Fallback: try to find subscription by customer ID
+          String customerId = invoice.getCustomer();
+          if (customerId != null) {
+              userSubOpt = StripeUtils.findUserSubscriptionByCustomerId(customerId, subscriptionRepository);
+          }
+      }
+
+      if (userSubOpt.isEmpty()) {
+          return;
+      }
+
+      try {
+          UserSubscription userSub = userSubOpt.get();
+
+          // Ensure subscription is active after successful payment
+          if (userSub.getStatus() != SubscriptionStatus.ACTIVE) {
+              userSub.setStatus(SubscriptionStatus.ACTIVE);
+              userSub.setUpdatedAt(OffsetDateTime.now());
+              subscriptionRepository.save(userSub);
+              log.info("Reactivated subscription {} after successful payment", userSub.getStripeSubscriptionId());
+          }
+
+          // Log successful payment
+          log.info("Payment succeeded for subscription: {}, user: {}, amount: {}",
+                  userSub.getStripeSubscriptionId(),
+                  userSub.getUserId(),
+                  StripeUtils.formatAmount(invoice.getAmountPaid()));
+
+      } catch (Exception e) {
+          StripeUtils.logEventError("invoice payment succeeded", event.getId(), e);
+      }
+
   }
 
   public void handleInvoicePaymentFailed(Event event) {
-    // Handle failed payment - could trigger dunning management
-    System.out.println("Payment failed for subscription");
+      StripeUtils.logEventStart("invoice payment failed", event.getId());
+
+      Optional<Invoice> invoiceOpt = StripeUtils.extractInvoice(event);
+      if (invoiceOpt.isEmpty()) {
+          return;
+      }
+
+      Invoice invoice = invoiceOpt.get();
+
+      // Try to get subscription from invoice lines first
+      Optional<String> subscriptionIdOpt = StripeUtils.getSubscriptionIdFromInvoice(invoice);
+      Optional<UserSubscription> userSubOpt = Optional.empty();
+
+      if (subscriptionIdOpt.isPresent()) {
+          userSubOpt = StripeUtils.findUserSubscription(subscriptionIdOpt.get(), subscriptionRepository);
+      } else {
+          // Fallback: try to find subscription by customer ID
+          String customerId = invoice.getCustomer();
+          if (customerId != null) {
+              userSubOpt = StripeUtils.findUserSubscriptionByCustomerId(customerId, subscriptionRepository);
+          }
+      }
+
+      if (userSubOpt.isEmpty()) {
+          return;
+      }
+
+      try {
+          UserSubscription userSub = userSubOpt.get();
+
+          // Update subscription status to indicate payment issues
+          // Note: Don't immediately cancel - Stripe has retry logic
+          if (userSub.getStatus() == SubscriptionStatus.ACTIVE) {
+              userSub.setStatus(SubscriptionStatus.PAST_DUE);
+              userSub.setUpdatedAt(OffsetDateTime.now());
+              subscriptionRepository.save(userSub);
+              log.warn("Updated subscription {} to PAST_DUE after payment failure", userSub.getStripeSubscriptionId());
+          }
+
+          // Log payment failure details for monitoring/alerting
+          log.error("Payment failed for subscription: {}, user: {}, attempt: {}, amount: {}",
+                  userSub.getStripeSubscriptionId(),
+                  userSub.getUserId(),
+                  invoice.getAttemptCount(),
+                  StripeUtils.formatAmount(invoice.getAmountDue()));
+
+          // Here you could add additional logic such as:
+          // - Send notification to user about payment failure
+          // - Trigger dunning management process
+          // - Log to external monitoring system
+
+      } catch (Exception e) {
+          StripeUtils.logEventError("invoice payment failed", event.getId(), e);
+      }
+
   }
 
   /**
