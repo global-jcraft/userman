@@ -42,27 +42,52 @@ public class WebhookController {
     }
 
     // Handle the event
-    switch (event.getType()) {
-      case CHECKOUT_COMPLETED:
-        webhookService.handleCheckoutSessionCompleted(event);
-        break;
-      case SUBSCRIPTION_CREATED:
-        webhookService.handleSubscriptionCreated(event);
-        break;
-      case SUBSCRIPTION_UPDATED:
-        webhookService.handleSubscriptionUpdated(event);
-        break;
-      case SUBSCRIPTION_DELETED:
-        webhookService.handleSubscriptionDeleted(event);
-        break;
-      case INVOICE_PAYMENT_OK:
-        webhookService.handleInvoicePaymentSucceeded(event);
-        break;
-      case INVOICE_PAYMENT_KO:
-        webhookService.handleInvoicePaymentFailed(event);
-        break;
-      default:
-        log.error("Unhandled event type: {}", event.getType());
+    try {
+      switch (event.getType()) {
+        case CHECKOUT_COMPLETED:
+          webhookService.handleCheckoutSessionCompleted(event);
+          break;
+        case SUBSCRIPTION_CREATED:
+          webhookService.handleSubscriptionCreated(event);
+          break;
+        case SUBSCRIPTION_UPDATED:
+          webhookService.handleSubscriptionUpdated(event);
+          break;
+        case SUBSCRIPTION_DELETED:
+          webhookService.handleSubscriptionDeleted(event);
+          break;
+        case INVOICE_PAYMENT_OK:
+          webhookService.handleInvoicePaymentSucceeded(event);
+          break;
+        case INVOICE_PAYMENT_KO:
+          webhookService.handleInvoicePaymentFailed(event);
+          break;
+        case INVOICE_CREATED:
+          webhookService.handleInvoiceCreated(event);
+          break;
+        case INVOICE_PAID:
+          webhookService.handleInvoicePaid(event);
+          break;
+        case INVOICE_FINALIZED:
+          webhookService.handleInvoiceFinalized(event);
+          break;
+        case CHARGE_SUCCEEDED:
+          webhookService.handleChargeSucceeded(event);
+          break;
+        case PAYMENT_METHOD_ATTACHED:
+          webhookService.handlePaymentMethodAttached(event);
+          break;
+        case PAYMENT_INTENT_SUCCEEDED:
+          webhookService.handlePaymentIntentSucceeded(event);
+          break;
+        case PAYMENT_INTENT_CREATED:
+          webhookService.handlePaymentIntentCreated(event);
+          break;
+        default:
+          log.error("Unhandled event type: {}", event.getType());
+      }
+    } catch (Exception e) {
+      log.error("Error processing webhook event {}: {}", event.getType(), e.getMessage(), e);
     }
 
     return ResponseEntity.ok("Success");
