@@ -138,7 +138,7 @@ public class WebhookService {
 
     Optional<Invoice> invoiceOpt = StripeUtils.extractInvoice(event);
     if (invoiceOpt.isEmpty()) {
-        log.debug("");
+      log.debug("Invoice output is empty");
       return;
     }
 
