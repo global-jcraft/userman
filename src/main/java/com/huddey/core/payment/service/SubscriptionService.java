@@ -43,6 +43,17 @@ public class SubscriptionService {
 
     log.debug("Creating checkout session for user {} with plan {}", userId, request.getPlan());
 
+    // Check for existing active subscription with same plan
+    Optional<UserSubscription> existingSubscription = subscriptionRepository.findByUserId(userId);
+    if (existingSubscription.isPresent()) {
+      UserSubscription userSub = existingSubscription.get();
+      if (userSub.getStatus() == SubscriptionStatus.ACTIVE
+          && userSub.getPlan() == request.getPlan()) {
+        throw new StripeServiceException(
+            "User already has an active subscription for plan: " + request.getPlan(), null);
+      }
+    }
+
     Customer customer = getOrCreateCustomer(userId, email);
 
     var lineItem =
