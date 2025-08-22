@@ -3,7 +3,7 @@ package com.huddey.core.payment.service;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
-import java.util.Optional;
+import java.util.*;
 
 import org.springframework.stereotype.Service;
 
@@ -18,6 +18,7 @@ import com.huddey.core.payment.exception.SubscriptionNotFoundException;
 import com.huddey.core.payment.repository.UserSubscriptionRepository;
 import com.stripe.exception.StripeException;
 import com.stripe.model.Customer;
+import com.stripe.model.Price;
 import com.stripe.model.Subscription;
 import com.stripe.model.checkout.Session;
 import com.stripe.param.CustomerCreateParams;
@@ -179,6 +180,20 @@ public class SubscriptionService {
     return subscriptionRepository.findByUserId(userId);
   }
 
+  public UserSubscription createFreeSubscription(Long userId) {
+    UserSubscription freeSubscription = new UserSubscription();
+    freeSubscription.setUserId(userId);
+    freeSubscription.setPlan(SubscriptionPlan.FREE);
+    freeSubscription.setStatus(SubscriptionStatus.ACTIVE);
+    freeSubscription.setCurrentPeriodStart(OffsetDateTime.now());
+    freeSubscription.setCurrentPeriodEnd(OffsetDateTime.now().plusYears(100));
+    freeSubscription.setCancelAtPeriodEnd(false);
+    freeSubscription.setCreatedAt(OffsetDateTime.now());
+    freeSubscription.setUpdatedAt(OffsetDateTime.now());
+    freeSubscription.setStripeCustomerId("free-" + userId);
+    return subscriptionRepository.save(freeSubscription);
+  }
+
   public void handleWebhookEvent(String payload, String sigHeader) throws StripeException {
     // Webhook handling will be implemented in the webhook controller
     // This method can be used for additional webhook processing logic
@@ -187,7 +202,9 @@ public class SubscriptionService {
   private Customer getOrCreateCustomer(Long userId, String email) throws StripeException {
     Optional<UserSubscription> existingSub = subscriptionRepository.findByUserId(userId);
 
-    if (existingSub.isPresent() && existingSub.get().getStripeCustomerId() != null) {
+    if (existingSub.isPresent()
+        && existingSub.get().getStripeCustomerId() != null
+        && existingSub.get().getStripeSubscriptionId() != null) {
       return Customer.retrieve(existingSub.get().getStripeCustomerId());
     }
 
@@ -267,5 +284,38 @@ public class SubscriptionService {
 
     subscriptionRepository.save(userSub);
     log.debug("Updated subscription from webhook for customer {}", stripeCustomerId);
+  }
+
+  /**
+   * Get active prices for a product
+   *
+   * @param productId
+   * @return
+   */
+  public List<Price> getActivePricesForProduct(String productId) {
+    try {
+      Map<String, Object> params = new HashMap<>();
+      params.put("product", productId);
+      params.put("active", true);
+
+      return Price.list(params).getData();
+    } catch (StripeException e) {
+      log.error("Failed to fetch active prices for product {}: {}", productId, e.getMessage());
+      return new ArrayList<>();
+    }
+  }
+
+  /**
+   * Get current price for a product in a currency
+   *
+   * @param productId
+   * @param currency
+   * @return
+   */
+  public Price getCurrentPrice(String productId, String currency) {
+    return getActivePricesForProduct(productId).stream()
+        .filter(price -> currency.equals(price.getCurrency()))
+        .findFirst()
+        .orElseThrow(() -> new IllegalArgumentException("No active price found"));
   }
 }

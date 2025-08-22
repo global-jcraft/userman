@@ -19,6 +19,7 @@ import org.springframework.security.core.Authentication;
 
 import com.huddey.core.common.api.ApiResponse;
 import com.huddey.core.common.utils.LocaleUtils;
+import com.huddey.core.payment.service.SubscriptionService;
 import com.huddey.core.userman.auth.JwtTokenProvider;
 import com.huddey.core.userman.controller.AuthController;
 import com.huddey.core.userman.data.SecurityUser;
@@ -56,9 +57,13 @@ class AuthControllerTest {
 
   private AuthController authController;
 
+  @Mock private SubscriptionService subscriptionService;
+
   @BeforeEach
   void setUp() {
-    authController = new AuthController(authService, jwtTokenProvider, customUserDetailsService);
+    authController =
+        new AuthController(
+            authService, jwtTokenProvider, customUserDetailsService, subscriptionService);
     LocaleUtils.instance = new LocaleUtils(messageSource);
   }
 

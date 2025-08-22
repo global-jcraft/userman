@@ -32,7 +32,9 @@ public class SetupController {
   public ResponseEntity<Map<String, String>> setupStripe(Authentication authentication) {
     try {
       SecurityUser securityUser = (SecurityUser) authentication.getPrincipal();
-      stripeSetupService.createHuddeyProducts();
+      if (securityUser != null) {
+        stripeSetupService.createHuddeyProducts();
+      }
 
       Map<String, String> response = new HashMap<>();
       response.put("status", "success");

@@ -80,33 +80,6 @@ public class SubscriptionController {
     }
   }
 
-  /*@PostMapping
-  public ResponseEntity<ApiResponse<Map<String, String>>> createSubscription(
-      Authentication authentication, @Valid @RequestBody CreateDirectSubscriptionRequest request) {
-
-    try {
-      SecurityUser securityUser = (SecurityUser) authentication.getPrincipal();
-      Long userId = securityUser.getUser().getId();
-      String email = request.getCustomerEmail();
-
-      if (!SecurityUtils.emailEquals(email, securityUser.getUsername())) {
-        throw new UserNotFoundException("User does not exist.");
-      }
-
-      subscriptionService.createSubscription(userId, email, request);
-
-      Map<String, String> response = new HashMap<>();
-      response.put("status", "success");
-
-      return ResponseEntity.ok(ApiResponse.success(response));
-
-    } catch (StripeException e) {
-      Map<String, String> error = new HashMap<>();
-      error.put("error", e.getMessage());
-      return ResponseEntity.badRequest().body(ApiResponse.error(error));
-    }
-  }*/
-
   @PutMapping("/update")
   public ResponseEntity<Map<String, String>> updateSubscription(
       @RequestBody Map<String, Object> request) {

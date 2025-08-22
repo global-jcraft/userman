@@ -51,7 +51,7 @@ public class StripeSetupService {
     // Create Teams Plan Product
     Product teamsProduct10Seats =
         createProduct(
-            TEAMS_PLAN,
+            TEAMS_PLAN.concat(" 10 seats"),
             "Ideal for agencies & brand teams that need collaboration & client management up to 10 seats.");
 
     createPrice(teamsProduct10Seats.getId(), 24900L, MONTH, "Teams Monthly for 10 seats");
@@ -59,7 +59,7 @@ public class StripeSetupService {
 
     Product teamsProduct20Seats =
         createProduct(
-            TEAMS_PLAN,
+            TEAMS_PLAN.concat(" 20 seats"),
             "Ideal for agencies & brand teams that need collaboration & client management up to 20 seats.");
 
     createPrice(teamsProduct20Seats.getId(), 42900L, MONTH, "Teams Monthly for 20 seats");
@@ -67,7 +67,7 @@ public class StripeSetupService {
 
     Product teamsProduct30Seats =
         createProduct(
-            TEAMS_PLAN,
+            TEAMS_PLAN.concat(" 30 seats"),
             "Ideal for agencies & brand teams that need collaboration & client management up to 30 seats.");
 
     createPrice(teamsProduct30Seats.getId(), 59900L, MONTH, "Teams Monthly for 30 seats");
@@ -75,7 +75,7 @@ public class StripeSetupService {
 
     Product teamsProduct50Seats =
         createProduct(
-            TEAMS_PLAN,
+            TEAMS_PLAN.concat(" 50 seats"),
             "Ideal for agencies & brand teams that need collaboration & client management up to 50 seats.");
 
     createPrice(teamsProduct50Seats.getId(), 89900L, MONTH, "Teams Monthly for 50 seats");
@@ -84,7 +84,7 @@ public class StripeSetupService {
     // Create Teams Pro Plan Product
     Product teamsProProduct10Seats =
         createProduct(
-            TEAMS_PRO_PLAN,
+            TEAMS_PRO_PLAN.concat(" 10 seats"),
             "Ideal for large agencies & enterprises managing multiple clients & regions up to 10 seats.");
 
     createPrice(teamsProProduct10Seats.getId(), 42900L, MONTH, "Teams Monthly for 10 seats");
@@ -92,7 +92,7 @@ public class StripeSetupService {
 
     Product teamsProProduct20Seats =
         createProduct(
-            TEAMS_PRO_PLAN,
+            TEAMS_PRO_PLAN.concat(" 20 seats"),
             "Ideal for large agencies & enterprises managing multiple clients & regions up to 20 seats.");
 
     createPrice(teamsProProduct20Seats.getId(), 64500L, MONTH, "Teams Monthly for 20 seats");
@@ -100,7 +100,7 @@ public class StripeSetupService {
 
     Product teamsProProduct30Seats =
         createProduct(
-            TEAMS_PRO_PLAN,
+            TEAMS_PRO_PLAN.concat(" 30 seats"),
             "Ideal for large agencies & enterprises managing multiple clients & regions up to 30 seats.");
 
     createPrice(teamsProProduct30Seats.getId(), 84500L, MONTH, "Teams Monthly for 30 seats");
@@ -108,7 +108,7 @@ public class StripeSetupService {
 
     Product teamsProProduct50Seats =
         createProduct(
-            TEAMS_PRO_PLAN,
+            TEAMS_PRO_PLAN.concat(" 50 seats"),
             "Ideal for large agencies & enterprises managing multiple clients & regions up to 50 seats.");
 
     createPrice(teamsProProduct50Seats.getId(), 118500L, MONTH, "Teams Monthly for 50 seats");

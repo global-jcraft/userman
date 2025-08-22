@@ -17,5 +17,6 @@ public class UserDTO {
   private String profilePictureUrl;
   private String lastLoginAt;
   private Set<String> roles;
+  private UserSubscriptionDTO userSubscription;
   private String status;
 }

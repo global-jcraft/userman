@@ -33,6 +33,7 @@ import com.huddey.core.notification.config.TokenService;
 import com.huddey.core.notification.data.DecodedTokenData;
 import com.huddey.core.notification.service.NotificationHandler;
 import com.huddey.core.notification.utils.SecurityUtils;
+import com.huddey.core.payment.service.SubscriptionService;
 import com.huddey.core.userman.auth.JwtAuthenticationFilter;
 import com.huddey.core.userman.auth.JwtTokenProvider;
 import com.huddey.core.userman.data.SecurityUser;
@@ -75,6 +76,7 @@ public class AuthServiceImpl implements AuthService {
   private final NotificationHandler notificationHandler;
   private final TokenService tokenService;
   private final UserCredentialRepository userCredentialRepository;
+  private final SubscriptionService subscriptionService;
 
   @Value("${app.confirmation.baseUrl}")
   private String baseUrl;
@@ -117,7 +119,25 @@ public class AuthServiceImpl implements AuthService {
         securityUser.getUsername(),
         confirmationLink);
 
-    return getUserRegistrationResponse(servletResponse, clientType, securityUser, jwtTokenProvider);
+    var freeSubscription =
+        subscriptionService.createFreeSubscription(securityUser.getUser().getId());
+    var regResponse =
+        getUserRegistrationResponse(servletResponse, clientType, securityUser, jwtTokenProvider);
+    regResponse.setUserSubscription(
+        UserSubscriptionResponse.builder()
+            .id(freeSubscription.getId())
+            .userId(freeSubscription.getUserId())
+            .stripeCustomerId(freeSubscription.getStripeCustomerId())
+            .stripeSubscriptionId(freeSubscription.getStripeSubscriptionId())
+            .plan(freeSubscription.getPlan())
+            .status(freeSubscription.getStatus())
+            .createdAt(freeSubscription.getCreatedAt())
+            .updatedAt(freeSubscription.getUpdatedAt())
+            .currentPeriodStart(freeSubscription.getCurrentPeriodStart())
+            .currentPeriodEnd(freeSubscription.getCurrentPeriodEnd())
+            .cancelAtPeriodEnd(freeSubscription.isCancelAtPeriodEnd())
+            .build());
+    return regResponse;
   }
 
   @Override
