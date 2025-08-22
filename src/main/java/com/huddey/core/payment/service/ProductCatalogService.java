@@ -19,7 +19,6 @@ import com.stripe.param.ProductListParams;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
 @Service
@@ -47,7 +46,7 @@ public class ProductCatalogService {
 
     ProductCollection stripeProducts = com.stripe.model.Product.list(params);
     List<Product> result = new ArrayList<>();
-    
+
     for (com.stripe.model.Product stripeProduct : stripeProducts.autoPagingIterable()) {
       if (Boolean.TRUE.equals(stripeProduct.getActive())) {
         Product localProduct =
