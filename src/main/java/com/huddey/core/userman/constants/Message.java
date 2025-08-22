@@ -39,4 +39,7 @@ public class Message {
 
   // Profile Messages
   public static final String PROFILE_FETCH_SUCCESS = "profile.fetch.success";
+
+  public static final String STRIPE_PRODUCT_LIST_SUCCESS = "stripe.product.list.success";
+  public static final String STRIPE_PRODUCT_LIST_ERROR = "stripe.product.list.error";
 }

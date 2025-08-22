@@ -1,11 +1,8 @@
 package com.huddey.core.payment.controller;
 
-import static com.huddey.core.userman.constants.Message.SIMPLE_AUTH_REG_SUCCESS;
+import static com.huddey.core.userman.constants.Message.*;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -15,12 +12,10 @@ import org.springframework.web.bind.annotation.*;
 import com.huddey.core.common.api.ApiResponse;
 import com.huddey.core.common.utils.LocaleUtils;
 import com.huddey.core.notification.utils.SecurityUtils;
-import com.huddey.core.payment.data.dto.CancelSubscriptionRequest;
-import com.huddey.core.payment.data.dto.CancelSubscriptionResponse;
-import com.huddey.core.payment.data.dto.CreateCheckoutSessionRequest;
-import com.huddey.core.payment.data.dto.CreateCheckoutSessionResponse;
+import com.huddey.core.payment.data.dto.*;
 import com.huddey.core.payment.data.entity.UserSubscription;
 import com.huddey.core.payment.data.enums.SubscriptionPlan;
+import com.huddey.core.payment.service.ProductCatalogService;
 import com.huddey.core.payment.service.SubscriptionService;
 import com.huddey.core.payment.utils.StripeUtils;
 import com.huddey.core.userman.data.SecurityUser;
@@ -37,9 +32,12 @@ import lombok.extern.slf4j.Slf4j;
 public class SubscriptionController {
 
   private final SubscriptionService subscriptionService;
+  private final ProductCatalogService productCatalogService;
 
-  public SubscriptionController(SubscriptionService subscriptionService) {
+  public SubscriptionController(
+      SubscriptionService subscriptionService, ProductCatalogService productCatalogService) {
     this.subscriptionService = subscriptionService;
+    this.productCatalogService = productCatalogService;
   }
 
   @PostMapping("/create-checkout-session")
@@ -144,11 +142,25 @@ public class SubscriptionController {
       planInfo.put("displayName", plan.getDisplayName());
       planInfo.put("price", plan.getPrice());
       planInfo.put("interval", plan.getInterval());
-      planInfo.put("stripePriceId", plan.getStripePriceId());
+      planInfo.put("stripePriceId", plan.getInternalPriceId());
 
       plans.put(plan.name(), planInfo);
     }
 
     return ResponseEntity.ok(plans);
+  }
+
+  @GetMapping("/products")
+  public ResponseEntity<ApiResponse<List<ProductResponse>>> getAllProductsWithPrices() {
+    try {
+      return ResponseEntity.ok(
+          ApiResponse.success(
+              LocaleUtils.getMessage(STRIPE_PRODUCT_LIST_SUCCESS),
+              productCatalogService.getAllProducts()));
+    } catch (StripeException e) {
+      log.error("Stripe error syncing products", e);
+      return ResponseEntity.badRequest()
+          .body(ApiResponse.error(LocaleUtils.getMessage(STRIPE_PRODUCT_LIST_ERROR)));
+    }
   }
 }

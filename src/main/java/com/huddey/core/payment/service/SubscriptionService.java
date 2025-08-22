@@ -129,7 +129,7 @@ public class SubscriptionService {
             .addItem(
                 SubscriptionUpdateParams.Item.builder()
                     .setId(subscription.getItems().getData().getFirst().getId())
-                    .setPrice(newPlan.getStripePriceId())
+                    .setPrice(newPlan.getInternalPriceId())
                     .build())
             .setProrationBehavior(SubscriptionUpdateParams.ProrationBehavior.CREATE_PRORATIONS)
             .putMetadata("plan", newPlan.name())
