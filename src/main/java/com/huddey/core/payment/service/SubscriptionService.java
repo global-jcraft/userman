@@ -139,14 +139,14 @@ public class SubscriptionService {
                     .setId(subscription.getItems().getData().getFirst().getId())
                     .setPrice(newPlan.getInternalPriceId())
                     .build())
-            .setProrationBehavior(SubscriptionUpdateParams.ProrationBehavior.CREATE_PRORATIONS)
+            .setProrationBehavior(SubscriptionUpdateParams.ProrationBehavior.NONE)
             .putMetadata("plan", newPlan.name())
             .build();
 
     subscription.update(params);
 
-    // Update database
-    userSub.setPlan(newPlan);
+    // Keep current period dates unchanged - new plan takes effect at period end
+    // Don't update the plan in database yet, it will be updated via webhook when period ends
     userSub.setUpdatedAt(OffsetDateTime.now());
     subscriptionRepository.save(userSub);
 

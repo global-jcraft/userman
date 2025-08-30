@@ -64,7 +64,7 @@ public class ProductCatalogService {
                     .active(product.getActive())
                     .createdAt(product.getCreatedAt())
                     .updatedAt(product.getUpdatedAt())
-                    .prices(DtoConverter.convertToPriceDtos(product.getPrices()))
+                    .prices(DtoConverter.convertToPriceDto(product.getPrices()))
                     .features(
                         DtoConverter.convertToFeatureDtos(
                             featuresByProduct.getOrDefault(product.getId(), new ArrayList<>())))
