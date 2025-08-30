@@ -192,7 +192,13 @@ public class AuthController {
     var user = UserMapper.toDto(securityUser.getUser());
     var userSubscription = subscriptionService.getUserSubscription(user.getId());
     userSubscription.ifPresent(
-        subscription -> user.setUserSubscription(UserMapper.toSubscriptionDto(subscription)));
+        subscription -> {
+          var currentPlan =
+              subscriptionService.getCurrentPlan(userSubscription.get().getPlan().name());
+          assert currentPlan.orElse(null) != null;
+          user.setUserSubscription(
+              UserMapper.toSubscriptionDto(subscription, currentPlan.orElse(null)));
+        });
     return ResponseEntity.ok(
         ApiResponse.success(LocaleUtils.getMessage(PROFILE_FETCH_SUCCESS), user));
   }

@@ -2,6 +2,7 @@ package com.huddey.core.userman.data.dto;
 
 import java.time.OffsetDateTime;
 
+import com.huddey.core.payment.data.dto.ProductPriceDto;
 import com.huddey.core.payment.data.enums.SubscriptionPlan;
 import com.huddey.core.payment.data.enums.SubscriptionStatus;
 
@@ -16,6 +17,7 @@ public class UserSubscriptionDTO {
   private String stripeCustomerId;
   private String stripeSubscriptionId;
   private SubscriptionPlan plan;
+  private ProductPriceDto productPrice;
   private SubscriptionStatus status;
   private OffsetDateTime createdAt;
   private OffsetDateTime updatedAt;

@@ -14,6 +14,6 @@ public interface ProductCatalogRepository extends JpaRepository<Product, Long> {
 
   Optional<Product> findByStripeProductId(String stripeProductId);
 
-  @Query("SELECT p FROM Product p LEFT JOIN FETCH p.prices WHERE p.active = true")
+  @Query("SELECT DISTINCT p FROM Product p LEFT JOIN FETCH p.prices WHERE p.active = true")
   List<Product> findAllActiveWithPrices();
 }

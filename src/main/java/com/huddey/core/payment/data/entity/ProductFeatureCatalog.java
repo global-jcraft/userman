@@ -1,6 +1,5 @@
 package com.huddey.core.payment.data.entity;
 
-import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -14,35 +13,27 @@ import lombok.Setter;
 @Getter
 @Setter
 @NoArgsConstructor
-@Table(name = "product_prices", schema = "huddey_core")
-public class ProductPrice {
+@Table(name = "product_feature_catalog", schema = "huddey_core")
+public class ProductFeatureCatalog {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
-
-  @Column(name = "stripe_price_id", unique = true, nullable = false)
-  private String stripePriceId;
-
-  @Column(name = "plan_id")
-  private String planId;
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "product_id", nullable = false)
   @JsonIgnore
   private Product product;
 
-  @Column(name = "unit_amount", nullable = false)
-  private BigDecimal unitAmount;
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "feature_id", nullable = false)
+  private FeatureCatalog feature;
 
-  @Column(name = "currency", nullable = false)
-  private String currency;
+  @Column(name = "feature_value")
+  private String featureValue;
 
-  @Column(name = "recurring_interval")
-  private String recurringInterval;
-
-  @Column(name = "active", nullable = false)
-  private Boolean active = true;
+  @Column(name = "is_enabled", nullable = false)
+  private Boolean isEnabled = true;
 
   @Column(name = "created_at")
   private OffsetDateTime createdAt;

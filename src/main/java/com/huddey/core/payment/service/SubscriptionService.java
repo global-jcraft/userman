@@ -1,5 +1,7 @@
 package com.huddey.core.payment.service;
 
+import static com.huddey.core.payment.data.enums.SubscriptionPlan.*;
+
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
@@ -10,11 +12,13 @@ import org.springframework.stereotype.Service;
 import com.huddey.core.payment.data.dto.CancelSubscriptionResponse;
 import com.huddey.core.payment.data.dto.CreateCheckoutSessionRequest;
 import com.huddey.core.payment.data.dto.CreateDirectSubscriptionRequest;
+import com.huddey.core.payment.data.entity.ProductPrice;
 import com.huddey.core.payment.data.entity.UserSubscription;
 import com.huddey.core.payment.data.enums.SubscriptionPlan;
 import com.huddey.core.payment.data.enums.SubscriptionStatus;
 import com.huddey.core.payment.exception.StripeServiceException;
 import com.huddey.core.payment.exception.SubscriptionNotFoundException;
+import com.huddey.core.payment.repository.ProductPriceRepository;
 import com.huddey.core.payment.repository.UserSubscriptionRepository;
 import com.stripe.exception.StripeException;
 import com.stripe.model.Customer;
@@ -34,9 +38,13 @@ import lombok.extern.slf4j.Slf4j;
 public class SubscriptionService {
 
   private final UserSubscriptionRepository subscriptionRepository;
+  private final ProductPriceRepository productPriceRepository;
 
-  public SubscriptionService(UserSubscriptionRepository subscriptionRepository) {
+  public SubscriptionService(
+      UserSubscriptionRepository subscriptionRepository,
+      ProductPriceRepository productPriceRepository) {
     this.subscriptionRepository = subscriptionRepository;
+    this.productPriceRepository = productPriceRepository;
   }
 
   public String createCheckoutSession(
@@ -178,6 +186,10 @@ public class SubscriptionService {
 
   public Optional<UserSubscription> getUserSubscription(Long userId) {
     return subscriptionRepository.findByUserId(userId);
+  }
+
+  public Optional<List<ProductPrice>> getCurrentPlan(String planId) {
+    return productPriceRepository.findByPlanId(planId);
   }
 
   public UserSubscription createFreeSubscription(Long userId) {

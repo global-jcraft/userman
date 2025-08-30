@@ -1,0 +1,332 @@
+{
+  "individualPlans": [
+    {
+      "name": "Free",
+      "price": {
+        "monthly": 0,
+        "yearly": 0
+      },
+      "features": {
+        "Socials": {
+          "Social networks": 1,
+          "Scheduled Posts Per Month": 10,
+          "Calendar Reminders": true
+        },
+        "Analytics": {
+          "basic": ["likes", "reach"]
+        },
+        "CreativeAcademy": "Not included",
+        "AI": {
+          "trial": {
+            "contentIdeasWeekly": 3,
+            "hashtagsWeekly": 2
+          }
+        },
+        "Extras": [
+          "3 days rotating premium trials with limitations"
+        ]
+      }
+    },
+    {
+      "name": "Starter",
+      "price": {
+        "monthly": 15,
+        "yearly": 153
+      },
+      "features": {
+        "Socials": {
+          "inheritsFrom": "Free",
+          "networks": 3,
+          "scheduling": "Unlimited content scheduling and publishing"
+        },
+        "Analytics": {
+          "basic": [
+            "engagement",
+            "views",
+            "likes",
+            "engagement trends"
+          ]
+        },
+        "CreativeAcademy": "Group consultations only",
+        "AI": {
+          "starterPack": {
+            "contentIdeasPerMonth": 10,
+            "hashtagsPerMonth": 5
+          },
+          "bestPostingTime": "weekly analysis"
+        },
+        "TrendPulse": "Not included"
+      }
+    },
+    {
+      "name": "Pro",
+      "price": {
+        "monthly": 39,
+        "yearly": 374
+      },
+      "features": {
+        "Socials": {
+          "inheritsFrom": "Starter",
+          "networks": 7,
+          "extraCostPerPlatform": 5
+        },
+        "Analytics": {
+          "advanced": [
+            "audience demographics",
+            "peak performance times",
+            "weekly/monthly performance analytics"
+          ]
+        },
+        "CreativeAcademy": [
+          "Group consultations",
+          "1-on-1 consultations with experienced creators"
+        ],
+        "AI": {
+          "proPack": {
+            "contentIdeasPerMonth": 30,
+            "hashtagsPerMonth": 15
+          },
+          "advancedFeatures": {
+            "ContentIntelligence": {
+              "ideasPerMonth": 10,
+              "basicHashtagsPerPost": 5,
+              "captionVersionsPerPost": 1
+            },
+            "AudienceOptimisation": [
+              "Best posting times (weekly)",
+              "Competitor insights (monthly)",
+              "Manual A/B testing (2 variants)"
+            ],
+            "CreativeAcademyEnhancement": [
+              "AI mentor matching (basic)",
+              "Learning templates",
+              "Text-only summaries"
+            ],
+            "AdvancedAutomation": [
+              "Auto-respond to 50 comments/DMs",
+              "Brand mention alerts (daily digest)",
+              "Basic spam detection"
+            ],
+            "PredictiveFeatures": [
+              "Weekly performance predictions",
+              "Monthly growth forecasts",
+              "3 trending alerts/week"
+            ]
+          }
+        },
+        "TrendPulse": [
+          "Industry trend insights",
+          "Competitor trend insights"
+        ],
+        "Integrations": ["Figma view mode", "Google Docs", "Google Sheets"],
+        "Support": "Priority support"
+      }
+    },
+    {
+      "name": "Elite",
+      "price": {
+        "monthly": 99,
+        "yearly": 891
+      },
+      "features": {
+        "Socials": {
+          "inheritsFrom": "Pro",
+          "networks": "Unlimited"
+        },
+        "Analytics": {
+          "advancedPredictive": [
+            "demographics",
+            "trends",
+            "weekly/monthly reports"
+          ]
+        },
+        "CreativeAcademy": [
+          "1-on-1 consultations with established creators",
+          "Exclusive sessions with top-tier creators via partnerships",
+          "Ability to set own consultation rates",
+          "Monetization through Academy"
+        ],
+        "AI": {
+          "elitePack": {
+            "contentIdeasPerMonth": 50,
+            "hashtagsPerMonth": 30
+          },
+          "unlimitedAdvancedFeatures": {
+            "ContentIntelligence": [
+              "Unlimited ideas with trend analysis",
+              "Advanced hashtags",
+              "Multiple captions",
+              "Auto content calendars"
+            ],
+            "AudienceOptimisation": [
+              "Real-time posting recs",
+              "Deep competitor analysis",
+              "Unlimited A/B testing",
+              "Sentiment analysis"
+            ],
+            "CreativeAcademyEnhancement": [
+              "AI mentor matching (advanced)",
+              "Learning paths",
+              "Auto transcription/summaries",
+              "Course recommendations"
+            ],
+            "AdvancedAutomation": [
+              "Unlimited comment/DM responses",
+              "Real-time monitoring",
+              "Advanced moderation",
+              "Crisis alerts"
+            ],
+            "PredictiveFeatures": [
+              "Real-time predictions",
+              "Advanced forecasts with revenue",
+              "Instant trending alerts",
+              "Market analysis"
+            ]
+          }
+        },
+        "TrendPulse": [
+          "Full access",
+          "Real-time predictions",
+          "Daily updates"
+        ],
+        "CollaborationMonetization": [
+          "Apply for exclusive collabs with famous creators",
+          "Sponsored Content Marketplace"
+        ],
+        "Integrations": ["Google", "Dropbox", "Miro", "Figma"],
+        "AdsHubLite": {
+          "platforms": ["Facebook", "Instagram", "Google Ads", "YouTube"],
+          "features": [
+            "Boost posts with AI suggestions",
+            "Campaign creation (budget, targeting)",
+            "Basic performance dashboard (CTR, reach, spend)",
+            "AI 'Best Time to Boost' recommendations"
+          ],
+          "monthlySpendCap": 1000
+        },
+        "Support": "Priority+ support"
+      }
+    }
+  ],
+  "teamPlans": [
+    {
+      "name": "Teams",
+      "price": {
+        "seats": {
+          "2-10": 249,
+          "11-20": 429,
+          "21-30": 599,
+          "31-50": 899,
+          "50+": "custom"
+        }
+      },
+      "includes": "Everything in Elite (Individual)",
+      "features": {
+        "CollaborationWorkflow": [
+          "White-label portal (custom branding)",
+          "Shared content calendar (org-wide)",
+          "Approval workflows (draft → review → publish)",
+          "Team asset library",
+          "Slack/MS Teams integration",
+          "Notion wiki",
+          "Airtable dashboards",
+          "Miro workshops"
+        ],
+        "ReportingWhiteLabel": [
+          "Custom branded reports",
+          "Automated PDF/Excel reports",
+          "Cross-account performance dashboards"
+        ],
+        "SecurityAccess": [
+          "Google Workspace SSO",
+          "Dropbox Business",
+          "Audit logs + API access",
+          "Enterprise compliance (CCPA, SOC2, GDPR)"
+        ],
+        "OnboardingSupport": [
+          "Dedicated onboarding",
+          "Priority email + chat"
+        ],
+        "AI": [
+          "Content Generation at scale (batch)",
+          "Trend Forecasting (cross-client)",
+          "Competitor Benchmarking",
+          "Team Collaboration Insights"
+        ],
+        "AdsHubPro": [
+          "Multi-client ad management (FB + Google)",
+          "Cross-platform analytics (FB, Google, YouTube)",
+          "Team ad workflows",
+          "White-label reports",
+          "Unlimited spend"
+        ],
+        "Storage": {
+          "included": "2 TB",
+          "maxFile": "10 GB",
+          "retention": "90 days",
+          "addOn": "+1 TB @ €40/mo"
+        }
+      }
+    },
+    {
+      "name": "Teams Pro",
+      "price": {
+        "seats": {
+          "2-10": 425,
+          "11-20": 645,
+          "21-30": 845,
+          "31-50": 1185,
+          "50+": "custom"
+        }
+      },
+      "includes": "Everything in Teams",
+      "features": {
+        "AdvancedCollaboration": [
+          "Huddey built-in chat",
+          "Content Collaboration Rooms (real-time co-editing)",
+          "Client Co-Creation Mode",
+          "Advanced approval chains",
+          "Knowledge Base & Playbooks",
+          "Kanban task boards",
+          "Cross-team collaboration (multi-departments)"
+        ],
+        "ReportingDelivery": [
+          "ROI Tracking",
+          "Agency Analytics Rollup",
+          "White-label portals with custom domains",
+          "Branded PDF/Excel exports"
+        ],
+        "CreativeAcademyTeams": [
+          "Team Training Hub",
+          "Role-based learning paths",
+          "Performance dashboards",
+          "Guest Expert Sessions (monthly live)"
+        ],
+        "PremiumAgencyAI": [
+          "AI Campaign Brainstorming",
+          "AI Sentiment Analysis",
+          "AI Campaign Forecasting",
+          "AI Budget Reallocation",
+          "AI Media Planning"
+        ],
+        "AdsHubEnterprise": [
+          "Platforms: FB, Google, TikTok, LinkedIn",
+          "Client approval workflows",
+          "Cross-channel attribution (organic + paid ROI)",
+          "AI-driven campaign optimization"
+        ],
+        "Support": [
+          "SLA-backed 24/7 support",
+          "Dedicated account manager",
+          "Beta feature access"
+        ],
+        "Storage": {
+          "included": "10 TB",
+          "maxFile": "100 GB",
+          "retention": "120 days",
+          "addOn": "+5 TB @ €150/mo"
+        }
+      }
+    }
+  ]
+}

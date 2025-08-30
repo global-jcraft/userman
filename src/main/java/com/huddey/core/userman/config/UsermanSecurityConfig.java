@@ -96,7 +96,7 @@ public class UsermanSecurityConfig {
                       "/swagger-ui/**",
                       "/actuator/health",
                       "/api/webhook/**",
-                      "api/v1/webhook/stripe")
+                      "/api/v1/webhook/stripe")
                   .permitAll()
                   .requestMatchers("/api/v1/subscription/**", "/api/v1/setup/**")
                   .authenticated();

@@ -1,8 +1,10 @@
 package com.huddey.core.userman.mapper;
 
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 import java.util.stream.Collectors;
 
+import com.huddey.core.payment.data.entity.ProductPrice;
 import com.huddey.core.payment.data.entity.UserSubscription;
 import com.huddey.core.userman.data.dto.UserDTO;
 import com.huddey.core.userman.data.dto.UserSubscriptionDTO;
@@ -36,12 +38,14 @@ public class UserMapper {
         .build();
   }
 
-  public static UserSubscriptionDTO toSubscriptionDto(UserSubscription userSubscription) {
+  public static UserSubscriptionDTO toSubscriptionDto(
+      UserSubscription userSubscription, List<ProductPrice> currentPlanPrices) {
     return UserSubscriptionDTO.builder()
         .stripeCustomerId(
             userSubscription.getStripeSubscriptionId() != null
                 ? userSubscription.getStripeCustomerId()
                 : null)
+        .productPrice(ProductPriceMapper.toDto(currentPlanPrices.getFirst()))
         .stripeSubscriptionId(userSubscription.getStripeSubscriptionId())
         .plan(userSubscription.getPlan())
         .status(userSubscription.getStatus())
