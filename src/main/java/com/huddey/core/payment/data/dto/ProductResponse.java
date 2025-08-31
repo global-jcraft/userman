@@ -18,7 +18,7 @@ public class ProductResponse {
   private String planId;
   private String name;
   private String description;
-  private Boolean active = true;
+  private Boolean active;
   private OffsetDateTime createdAt;
   private OffsetDateTime updatedAt;
   private List<ProductPriceDto> prices;
