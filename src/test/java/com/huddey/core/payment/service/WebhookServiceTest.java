@@ -229,9 +229,11 @@ class WebhookServiceTest {
           .when(() -> SubscriptionPlan.fromStripePriceId("unknown_price_id"))
           .thenThrow(new IllegalArgumentException("Unknown price ID: unknown_price_id"));
 
-      assertThrows(IllegalArgumentException.class, () -> {
-        webhookService.updateSubscriptionInDatabase(mockSubscription);
-      });
+      assertThrows(
+          IllegalArgumentException.class,
+          () -> {
+            webhookService.updateSubscriptionInDatabase(mockSubscription);
+          });
     }
   }
 
@@ -283,8 +285,9 @@ class WebhookServiceTest {
     // Given: User has monthly subscription that just renewed
     mockUserSubscription.setPlan(SubscriptionPlan.PRO_MONTHLY);
     mockUserSubscription.setCurrentPeriodStart(OffsetDateTime.now().minusMonths(1));
-    mockUserSubscription.setCurrentPeriodEnd(OffsetDateTime.now().minusDays(1)); // Previous period ended
-    
+    mockUserSubscription.setCurrentPeriodEnd(
+        OffsetDateTime.now().minusDays(1)); // Previous period ended
+
     Subscription mockSubscription = mock(Subscription.class);
     SubscriptionItemCollection mockItems = mock(SubscriptionItemCollection.class);
     SubscriptionItem mockItem = mock(SubscriptionItem.class);
@@ -298,7 +301,7 @@ class WebhookServiceTest {
     when(mockItems.getData()).thenReturn(List.of(mockItem));
     // New monthly period dates after renewal
     when(mockItem.getCurrentPeriodStart()).thenReturn(1675209600L); // Start of new monthly period
-    when(mockItem.getCurrentPeriodEnd()).thenReturn(1677628800L);   // End of new monthly period
+    when(mockItem.getCurrentPeriodEnd()).thenReturn(1677628800L); // End of new monthly period
     when(mockItem.getPrice()).thenReturn(mockPrice);
     when(mockPrice.getId()).thenReturn("price_pro_monthly");
 
@@ -306,12 +309,13 @@ class WebhookServiceTest {
         .thenReturn(Optional.of(mockUserSubscription));
 
     try (MockedStatic<SubscriptionPlan> mockedPlan = mockStatic(SubscriptionPlan.class)) {
-      mockedPlan.when(() -> SubscriptionPlan.fromStripePriceId("price_pro_monthly"))
+      mockedPlan
+          .when(() -> SubscriptionPlan.fromStripePriceId("price_pro_monthly"))
           .thenReturn(SubscriptionPlan.PRO_MONTHLY);
-      
+
       // When: Webhook is triggered after monthly renewal
       webhookService.handleSubscriptionUpdated(mockEvent);
-      
+
       // Then: Subscription is renewed with new monthly period dates
       verify(subscriptionRepository).save(mockUserSubscription);
       assertEquals(SubscriptionPlan.PRO_MONTHLY, mockUserSubscription.getPlan());
