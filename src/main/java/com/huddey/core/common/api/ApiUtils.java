@@ -1,9 +1,8 @@
-package com.huddey.core.userman.utils;
+package com.huddey.core.common.api;
 
 import java.time.OffsetDateTime;
 
 import com.huddey.core.userman.auth.JwtTokenProvider;
-import com.huddey.core.userman.data.ApiResponse;
 import com.huddey.core.userman.data.dto.token.TokenData;
 import com.huddey.core.userman.token.TokenGenerationStrategy;
 

@@ -1,11 +1,11 @@
 package com.huddey.core.userman.token;
 
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.ResponseCookie;
 
 import com.huddey.core.userman.auth.JwtTokenProvider;
 import com.huddey.core.userman.data.SecurityUser;
 
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.Getter;
 
@@ -14,8 +14,8 @@ public class WebTokenGenerationStrategy implements TokenGenerationStrategy {
   private final JwtTokenProvider jwtTokenProvider;
   String accessToken;
   String refreshToken;
-  @Getter Cookie accessTokenCookie;
-  @Getter Cookie refreshTokenCookie;
+  @Getter ResponseCookie accessTokenCookie;
+  @Getter ResponseCookie refreshTokenCookie;
 
   public WebTokenGenerationStrategy(JwtTokenProvider jwtTokenProvider) {
     this.jwtTokenProvider = jwtTokenProvider;
@@ -28,29 +28,33 @@ public class WebTokenGenerationStrategy implements TokenGenerationStrategy {
     this.refreshToken = jwtTokenProvider.generateRefreshToken(user, rememberMe);
 
     // Set the access token as a secure HTTP-only cookie
-    accessTokenCookie = new Cookie("access_token", accessToken);
-    accessTokenCookie.setHttpOnly(true);
-    accessTokenCookie.setSecure(true);
-    accessTokenCookie.setPath("/");
-    accessTokenCookie.setMaxAge(
-        (int)
-            (rememberMe
-                ? jwtTokenProvider.getRememberMeAccessTokenValidity() / 1000
-                : jwtTokenProvider.getAccessTokenValidity() / 1000));
+    accessTokenCookie =
+        ResponseCookie.from("access_token", accessToken)
+            .httpOnly(true)
+            .secure(true) // Set to true in production with HTTPS
+            .path("/")
+            .maxAge(
+                rememberMe
+                    ? jwtTokenProvider.getRememberMeAccessTokenValidity() / 1000
+                    : jwtTokenProvider.getAccessTokenValidity() / 1000)
+            .sameSite("None")
+            .build();
 
     // Set the refresh token as a secure HTTP-only cookie
-    refreshTokenCookie = new Cookie("refresh_token", refreshToken);
-    refreshTokenCookie.setHttpOnly(true);
-    refreshTokenCookie.setSecure(true);
-    refreshTokenCookie.setPath("/");
-    refreshTokenCookie.setMaxAge(
-        (int)
-            (rememberMe
-                ? jwtTokenProvider.getRememberMeRefreshTokenValidity() / 1000
-                : jwtTokenProvider.getRefreshTokenValidity() / 1000));
+    refreshTokenCookie =
+        ResponseCookie.from("refresh_token", refreshToken)
+            .httpOnly(true)
+            .secure(true) // Set to true in production with HTTPS
+            .path("/")
+            .maxAge(
+                rememberMe
+                    ? jwtTokenProvider.getRememberMeRefreshTokenValidity() / 1000
+                    : jwtTokenProvider.getRefreshTokenValidity() / 1000)
+            .sameSite("None")
+            .build();
 
-    response.addCookie(accessTokenCookie);
-    response.addCookie(refreshTokenCookie);
+    response.addHeader("Set-Cookie", accessTokenCookie.toString());
+    response.addHeader("Set-Cookie", refreshTokenCookie.toString());
   }
 
   @Override

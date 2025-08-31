@@ -14,8 +14,10 @@ import org.springframework.security.core.Authentication;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import com.huddey.core.common.api.ApiResponse;
+import com.huddey.core.common.utils.LocaleUtils;
+import com.huddey.core.payment.service.SubscriptionService;
 import com.huddey.core.userman.auth.JwtTokenProvider;
-import com.huddey.core.userman.data.ApiResponse;
 import com.huddey.core.userman.data.SecurityUser;
 import com.huddey.core.userman.data.dto.*;
 import com.huddey.core.userman.data.dto.response.*;
@@ -24,7 +26,6 @@ import com.huddey.core.userman.exception.UserAlreadyExistsException;
 import com.huddey.core.userman.mapper.UserMapper;
 import com.huddey.core.userman.service.AuthService;
 import com.huddey.core.userman.service.CustomUserDetailsService;
-import com.huddey.core.userman.utils.LocaleUtils;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -39,14 +40,17 @@ public class AuthController {
 
   final AuthService authService;
   final CustomUserDetailsService customUserDetailsService;
+  final SubscriptionService subscriptionService;
 
   @Autowired
   public AuthController(
       AuthService authService,
       JwtTokenProvider jwtTokenProvider,
-      CustomUserDetailsService customUserDetailsService) {
+      CustomUserDetailsService customUserDetailsService,
+      SubscriptionService subscriptionService) {
     this.authService = authService;
     this.customUserDetailsService = customUserDetailsService;
+    this.subscriptionService = subscriptionService;
   }
 
   @PostMapping("/basic-auth")
@@ -185,9 +189,17 @@ public class AuthController {
       "isAuthenticated() and hasAnyAuthority('ROLE_USER', 'ROLE_CONTENT_CREATOR', 'ROLE_ADMIN')")
   public ResponseEntity<ApiResponse<UserDTO>> getCurrentUser(Authentication authentication) {
     SecurityUser securityUser = (SecurityUser) authentication.getPrincipal();
+    var user = UserMapper.toDto(securityUser.getUser());
+    var userSubscription = subscriptionService.getUserSubscription(user.getId());
+    userSubscription.ifPresent(
+        subscription -> {
+          var currentPlan =
+              subscriptionService.getCurrentPlan(userSubscription.get().getPlan().name());
+          assert currentPlan.orElse(null) != null;
+          user.setUserSubscription(
+              UserMapper.toSubscriptionDto(subscription, currentPlan.orElse(null)));
+        });
     return ResponseEntity.ok(
-        ApiResponse.success(
-            LocaleUtils.getMessage(PROFILE_FETCH_SUCCESS),
-            UserMapper.toDto(securityUser.getUser())));
+        ApiResponse.success(LocaleUtils.getMessage(PROFILE_FETCH_SUCCESS), user));
   }
 }

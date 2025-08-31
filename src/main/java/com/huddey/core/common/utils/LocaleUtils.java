@@ -1,4 +1,4 @@
-package com.huddey.core.userman.utils;
+package com.huddey.core.common.utils;
 
 import java.util.Locale;
 

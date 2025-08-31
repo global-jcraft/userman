@@ -1,9 +1,13 @@
 package com.huddey.core.userman.mapper;
 
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 import java.util.stream.Collectors;
 
+import com.huddey.core.payment.data.entity.ProductPrice;
+import com.huddey.core.payment.data.entity.UserSubscription;
 import com.huddey.core.userman.data.dto.UserDTO;
+import com.huddey.core.userman.data.dto.UserSubscriptionDTO;
 import com.huddey.core.userman.data.entity.User;
 
 import lombok.AccessLevel;
@@ -29,8 +33,25 @@ public class UserMapper {
                 .map(role -> role.getName().replace("ROLE_", ""))
                 .collect(Collectors.toSet()))
         .status(user.getStatus().toString())
-        .lastLoginAt(
-            user.getLastLoginAt() != null ? user.getLastLoginAt().format(DATE_FORMATTER) : null)
+        .build();
+  }
+
+  public static UserSubscriptionDTO toSubscriptionDto(
+      UserSubscription userSubscription, List<ProductPrice> currentPlanPrices) {
+    return UserSubscriptionDTO.builder()
+        .stripeCustomerId(
+            userSubscription.getStripeSubscriptionId() != null
+                ? userSubscription.getStripeCustomerId()
+                : null)
+        .productPrice(ProductPriceMapper.toDto(currentPlanPrices.getFirst()))
+        .stripeSubscriptionId(userSubscription.getStripeSubscriptionId())
+        .plan(userSubscription.getPlan())
+        .status(userSubscription.getStatus())
+        // .createdAt(userSubscription.getCreatedAt())
+        // .updatedAt(userSubscription.getUpdatedAt())
+        // .currentPeriodStart(userSubscription.getCurrentPeriodStart())
+        // .currentPeriodEnd(userSubscription.getCurrentPeriodEnd())
+        // .cancelAtPeriodEnd(userSubscription.isCancelAtPeriodEnd())
         .build();
   }
 }

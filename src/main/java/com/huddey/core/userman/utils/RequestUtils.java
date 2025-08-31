@@ -1,12 +1,13 @@
 package com.huddey.core.userman.utils;
 
+import static com.huddey.core.common.api.ApiUtils.buildTokenResponse;
 import static com.huddey.core.userman.constants.Message.GLOBAL_AUTH_SUCCESS;
 import static com.huddey.core.userman.constants.UsermanConstants.*;
-import static com.huddey.core.userman.utils.ApiUtils.buildTokenResponse;
 
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
+import com.huddey.core.common.utils.LocaleUtils;
 import com.huddey.core.userman.auth.JwtTokenProvider;
 import com.huddey.core.userman.data.SecurityUser;
 import com.huddey.core.userman.data.dto.response.LoginResponse;

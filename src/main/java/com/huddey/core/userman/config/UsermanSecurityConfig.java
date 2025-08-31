@@ -26,16 +26,15 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.huddey.core.common.api.ApiUtils;
+import com.huddey.core.common.utils.LocaleUtils;
 import com.huddey.core.notification.utils.SecurityUtils;
 import com.huddey.core.userman.auth.CustomAuthenticationEntryPoint;
 import com.huddey.core.userman.auth.JwtAuthenticationFilter;
 import com.huddey.core.userman.auth.oauth2.OAuth2AuthenticationFailureHandler;
 import com.huddey.core.userman.auth.oauth2.OAuth2AuthenticationSuccessHandler;
-import com.huddey.core.userman.data.ApiResponse;
 import com.huddey.core.userman.service.CustomOAuth2UserService;
 import com.huddey.core.userman.service.CustomUserDetailsService;
-import com.huddey.core.userman.utils.ApiUtils;
-import com.huddey.core.userman.utils.LocaleUtils;
 
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -95,8 +94,12 @@ public class UsermanSecurityConfig {
                       "/api/v1/auth/reset-password-request",
                       "/v3/api-docs/**",
                       "/swagger-ui/**",
-                      "/actuator/health")
-                  .permitAll();
+                      "/actuator/health",
+                      "/api/webhook/**",
+                      "/api/v1/webhook/stripe")
+                  .permitAll()
+                  .requestMatchers("/api/v1/subscription/**", "/api/v1/setup/**")
+                  .authenticated();
               auth.requestMatchers("/api/v1/admin/**").hasRole("ADMIN");
               auth.anyRequest().authenticated();
             })
@@ -130,7 +133,7 @@ public class UsermanSecurityConfig {
       response.setContentType("application/json");
       try {
         SecurityUtils.logout(request, response);
-        ApiResponse apiResponse =
+        var apiResponse =
             ApiUtils.buildApiResponse(true, LocaleUtils.getMessage(SIMPLE_AUTH_LOGOUT), null, null);
         response.getWriter().write(objectMapper.writeValueAsString(apiResponse));
         response.getWriter().flush();
@@ -147,10 +150,12 @@ public class UsermanSecurityConfig {
   @Bean
   public CorsConfigurationSource corsConfigurationSource() {
     CorsConfiguration configuration = new CorsConfiguration();
-    configuration.setAllowedOrigins(List.of("*")); // Configure appropriately for production
+    configuration.setAllowedOrigins(List.of("http://localhost:3000"));
+    configuration.setAllowedOriginPatterns(List.of("http://localhost:3000"));
     configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
     configuration.setAllowedHeaders(List.of("*"));
-    configuration.setExposedHeaders(List.of("Authorization"));
+    configuration.setExposedHeaders(List.of("Set-Cookie", "Authorization"));
+    configuration.setAllowCredentials(true);
 
     UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
     source.registerCorsConfiguration("/**", configuration);

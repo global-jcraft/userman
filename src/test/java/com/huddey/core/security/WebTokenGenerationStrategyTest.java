@@ -20,7 +20,6 @@ import com.huddey.core.userman.data.entity.Role;
 import com.huddey.core.userman.data.entity.User;
 import com.huddey.core.userman.token.WebTokenGenerationStrategy;
 
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 
 @ExtendWith(MockitoExtension.class)
@@ -65,28 +64,24 @@ class WebTokenGenerationStrategyTest {
     tokenStrategy.generateAndSetToken(response, testUser, false);
 
     // Assert
-    ArgumentCaptor<Cookie> cookieCaptor = ArgumentCaptor.forClass(Cookie.class);
-    verify(response, times(2)).addCookie(cookieCaptor.capture());
+    ArgumentCaptor<String> headerCaptor = ArgumentCaptor.forClass(String.class);
+    verify(response, times(2)).addHeader(eq("Set-Cookie"), headerCaptor.capture());
 
-    List<Cookie> capturedCookies = cookieCaptor.getAllValues();
-    Cookie accessCookie = capturedCookies.get(0);
-    Cookie refreshCookie = capturedCookies.get(1);
+    List<String> capturedHeaders = headerCaptor.getAllValues();
+    String accessCookieHeader = capturedHeaders.get(0);
+    String refreshCookieHeader = capturedHeaders.get(1);
 
-    // Verify access token cookie
-    assertEquals("access_token", accessCookie.getName());
-    assertEquals(TEST_ACCESS_TOKEN, accessCookie.getValue());
-    assertTrue(accessCookie.isHttpOnly());
-    assertTrue(accessCookie.getSecure());
-    assertEquals("/", accessCookie.getPath());
-    assertEquals((int) (ACCESS_TOKEN_VALIDITY / 1000), accessCookie.getMaxAge());
+    // Verify access token cookie header
+    assertTrue(accessCookieHeader.contains("access_token=" + TEST_ACCESS_TOKEN));
+    assertTrue(accessCookieHeader.contains("Path=/"));
+    assertTrue(accessCookieHeader.contains("HttpOnly"));
+    assertTrue(accessCookieHeader.contains("Max-Age=" + (ACCESS_TOKEN_VALIDITY / 1000)));
 
-    // Verify refresh token cookie
-    assertEquals("refresh_token", refreshCookie.getName());
-    assertEquals(TEST_REFRESH_TOKEN, refreshCookie.getValue());
-    assertTrue(refreshCookie.isHttpOnly());
-    assertTrue(refreshCookie.getSecure());
-    assertEquals("/", refreshCookie.getPath());
-    assertEquals((int) (REFRESH_TOKEN_VALIDITY / 1000), refreshCookie.getMaxAge());
+    // Verify refresh token cookie header
+    assertTrue(refreshCookieHeader.contains("refresh_token=" + TEST_REFRESH_TOKEN));
+    assertTrue(refreshCookieHeader.contains("Path=/"));
+    assertTrue(refreshCookieHeader.contains("HttpOnly"));
+    assertTrue(refreshCookieHeader.contains("Max-Age=" + (REFRESH_TOKEN_VALIDITY / 1000)));
 
     // Verify tokens are stored in the strategy
     assertEquals(TEST_ACCESS_TOKEN, tokenStrategy.getAccessToken());
@@ -107,17 +102,19 @@ class WebTokenGenerationStrategyTest {
     tokenStrategy.generateAndSetToken(response, testUser, true);
 
     // Assert
-    ArgumentCaptor<Cookie> cookieCaptor = ArgumentCaptor.forClass(Cookie.class);
-    verify(response, times(2)).addCookie(cookieCaptor.capture());
+    ArgumentCaptor<String> headerCaptor = ArgumentCaptor.forClass(String.class);
+    verify(response, times(2)).addHeader(eq("Set-Cookie"), headerCaptor.capture());
 
-    List<Cookie> capturedCookies = cookieCaptor.getAllValues();
-    Cookie accessCookie = capturedCookies.get(0);
-    Cookie refreshCookie = capturedCookies.get(1);
+    List<String> capturedHeaders = headerCaptor.getAllValues();
+    String accessCookieHeader = capturedHeaders.get(0);
+    String refreshCookieHeader = capturedHeaders.get(1);
 
     // Verify access token cookie with remember me duration
-    assertEquals((int) (REMEMBER_ME_ACCESS_TOKEN_VALIDITY / 1000), accessCookie.getMaxAge());
+    assertTrue(
+        accessCookieHeader.contains("Max-Age=" + (REMEMBER_ME_ACCESS_TOKEN_VALIDITY / 1000)));
     // Verify refresh token cookie with remember me duration
-    assertEquals((int) (REMEMBER_ME_REFRESH_TOKEN_VALIDITY / 1000), refreshCookie.getMaxAge());
+    assertTrue(
+        refreshCookieHeader.contains("Max-Age=" + (REMEMBER_ME_REFRESH_TOKEN_VALIDITY / 1000)));
   }
 
   @Test

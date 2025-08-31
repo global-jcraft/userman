@@ -19,8 +19,8 @@ import org.springframework.web.context.request.ServletWebRequest;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
+import com.huddey.core.common.utils.LocaleUtils;
 import com.huddey.core.userman.data.dto.response.ErrorResponse;
-import com.huddey.core.userman.utils.LocaleUtils;
 
 import lombok.extern.slf4j.Slf4j;
 

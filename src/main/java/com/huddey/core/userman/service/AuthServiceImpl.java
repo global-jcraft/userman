@@ -1,10 +1,10 @@
 package com.huddey.core.userman.service;
 
+import static com.huddey.core.common.api.ApiUtils.buildTokenResponse;
 import static com.huddey.core.notification.data.constants.NotificationConstants.EMAIL_NOTIFICATION;
 import static com.huddey.core.notification.data.constants.NotificationConstants.SMS_NOTIFICATION;
 import static com.huddey.core.userman.constants.Message.*;
 import static com.huddey.core.userman.constants.UsermanConstants.WEB_CLIENT_TYPE;
-import static com.huddey.core.userman.utils.ApiUtils.buildTokenResponse;
 import static com.huddey.core.userman.utils.RequestUtils.*;
 import static com.huddey.core.userman.utils.RequestUtils.getUserRegistrationResponse;
 
@@ -28,10 +28,12 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import com.huddey.core.common.utils.LocaleUtils;
 import com.huddey.core.notification.config.TokenService;
 import com.huddey.core.notification.data.DecodedTokenData;
 import com.huddey.core.notification.service.NotificationHandler;
 import com.huddey.core.notification.utils.SecurityUtils;
+import com.huddey.core.payment.service.SubscriptionService;
 import com.huddey.core.userman.auth.JwtAuthenticationFilter;
 import com.huddey.core.userman.auth.JwtTokenProvider;
 import com.huddey.core.userman.data.SecurityUser;
@@ -48,7 +50,6 @@ import com.huddey.core.userman.repository.RoleRepository;
 import com.huddey.core.userman.repository.UserCredentialRepository;
 import com.huddey.core.userman.repository.UserRepository;
 import com.huddey.core.userman.token.WebTokenGenerationStrategy;
-import com.huddey.core.userman.utils.LocaleUtils;
 import com.huddey.core.userman.utils.RequestUtils;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -75,6 +76,7 @@ public class AuthServiceImpl implements AuthService {
   private final NotificationHandler notificationHandler;
   private final TokenService tokenService;
   private final UserCredentialRepository userCredentialRepository;
+  private final SubscriptionService subscriptionService;
 
   @Value("${app.confirmation.baseUrl}")
   private String baseUrl;
@@ -117,7 +119,25 @@ public class AuthServiceImpl implements AuthService {
         securityUser.getUsername(),
         confirmationLink);
 
-    return getUserRegistrationResponse(servletResponse, clientType, securityUser, jwtTokenProvider);
+    var freeSubscription =
+        subscriptionService.createFreeSubscription(securityUser.getUser().getId());
+    var regResponse =
+        getUserRegistrationResponse(servletResponse, clientType, securityUser, jwtTokenProvider);
+    regResponse.setUserSubscription(
+        UserSubscriptionResponse.builder()
+            .id(freeSubscription.getId())
+            .userId(freeSubscription.getUserId())
+            .stripeCustomerId(freeSubscription.getStripeCustomerId())
+            .stripeSubscriptionId(freeSubscription.getStripeSubscriptionId())
+            .plan(freeSubscription.getPlan())
+            .status(freeSubscription.getStatus())
+            .createdAt(freeSubscription.getCreatedAt())
+            .updatedAt(freeSubscription.getUpdatedAt())
+            .currentPeriodStart(freeSubscription.getCurrentPeriodStart())
+            .currentPeriodEnd(freeSubscription.getCurrentPeriodEnd())
+            .cancelAtPeriodEnd(freeSubscription.isCancelAtPeriodEnd())
+            .build());
+    return regResponse;
   }
 
   @Override
@@ -260,8 +280,8 @@ public class AuthServiceImpl implements AuthService {
           new WebTokenGenerationStrategy(jwtTokenProvider);
       tokenGenerationStrategy.generateAndSetToken(response, securityUser, request.isRememberMe());
 
-      response.addCookie(tokenGenerationStrategy.getAccessTokenCookie());
-      response.addCookie(tokenGenerationStrategy.getRefreshTokenCookie());
+      response.addHeader("Set-Cookie", tokenGenerationStrategy.getAccessTokenCookie().toString());
+      response.addHeader("Set-Cookie", tokenGenerationStrategy.getRefreshTokenCookie().toString());
 
       return TokenRefreshResponse.builder()
           .tokenType("Bearer")

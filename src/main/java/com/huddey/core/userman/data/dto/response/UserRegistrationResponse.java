@@ -19,5 +19,6 @@ public class UserRegistrationResponse {
   private String status;
   private String message;
   private String role;
+  private UserSubscriptionResponse userSubscription;
   private TokenData tokenData;
 }

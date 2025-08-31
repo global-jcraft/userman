@@ -26,6 +26,10 @@ public class SecurityUtils {
     return MessageDigest.isEqual(aBytes, bBytes);
   }
 
+  public static boolean emailEquals(String a, String b) {
+    return a != null && b != null && a.trim().equalsIgnoreCase(b.trim());
+  }
+
   public static void logout(HttpServletRequest request, HttpServletResponse response)
       throws IOException, ServletException {
     if (request.getParameter("off") != null && request.getParameter("off").equals("true")) {
