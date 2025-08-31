@@ -327,7 +327,9 @@ public class WebhookService {
     if (userSubOpt.isPresent()) {
       UserSubscription userSub = userSubOpt.get();
 
-      userSub.setStatus(SubscriptionStatus.valueOf(subscription.getStatus().toUpperCase()));
+      if (subscription.getStatus() != null) {
+        userSub.setStatus(SubscriptionStatus.valueOf(subscription.getStatus().toUpperCase()));
+      }
       userSub.setCurrentPeriodStart(
           Instant.ofEpochSecond(
                   subscription.getItems().getData().getFirst().getCurrentPeriodStart())
@@ -343,12 +345,8 @@ public class WebhookService {
       // Update plan if changed
       if (subscription.getItems() != null && !subscription.getItems().getData().isEmpty()) {
         String priceId = subscription.getItems().getData().getFirst().getPrice().getId();
-        try {
-          SubscriptionPlan plan = SubscriptionPlan.fromStripePriceId(priceId);
-          userSub.setPlan(plan);
-        } catch (IllegalArgumentException e) {
-          System.err.println("Unknown price ID: " + priceId);
-        }
+        SubscriptionPlan plan = SubscriptionPlan.fromStripePriceId(priceId);
+        userSub.setPlan(plan);
       }
 
       subscriptionRepository.save(userSub);

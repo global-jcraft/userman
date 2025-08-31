@@ -33,8 +33,6 @@ public class UserMapper {
                 .map(role -> role.getName().replace("ROLE_", ""))
                 .collect(Collectors.toSet()))
         .status(user.getStatus().toString())
-        .lastLoginAt(
-            user.getLastLoginAt() != null ? user.getLastLoginAt().format(DATE_FORMATTER) : null)
         .build();
   }
 

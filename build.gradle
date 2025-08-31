@@ -114,6 +114,7 @@ jacocoTestReport {
 test {
     useJUnitPlatform()
     finalizedBy jacocoTestReport
+    jvmArgs '-javaagent:' + configurations.testRuntimeClasspath.find { it.name.contains('mockito-core') }
 }
 
 
