@@ -15,6 +15,7 @@ import com.huddey.core.notification.utils.SecurityUtils;
 import com.huddey.core.payment.data.dto.*;
 import com.huddey.core.payment.data.entity.UserSubscription;
 import com.huddey.core.payment.data.enums.SubscriptionPlan;
+import com.huddey.core.payment.service.BillingService;
 import com.huddey.core.payment.service.ProductCatalogService;
 import com.huddey.core.payment.service.SubscriptionService;
 import com.huddey.core.payment.utils.StripeUtils;
@@ -33,11 +34,15 @@ public class SubscriptionController {
 
   private final SubscriptionService subscriptionService;
   private final ProductCatalogService productCatalogService;
+  private final BillingService billingService;
 
   public SubscriptionController(
-      SubscriptionService subscriptionService, ProductCatalogService productCatalogService) {
+      SubscriptionService subscriptionService,
+      ProductCatalogService productCatalogService,
+      BillingService billingService) {
     this.subscriptionService = subscriptionService;
     this.productCatalogService = productCatalogService;
+    this.billingService = billingService;
   }
 
   @PostMapping("/create-checkout-session")
@@ -153,6 +158,7 @@ public class SubscriptionController {
   @GetMapping("/products")
   public ResponseEntity<ApiResponse<List<ProductResponse>>> getAllProductsWithPrices() {
     try {
+      log.debug("Retrieving all products with prices");
       return ResponseEntity.ok(
           ApiResponse.success(
               LocaleUtils.getMessage(STRIPE_PRODUCT_LIST_SUCCESS),
@@ -161,6 +167,117 @@ public class SubscriptionController {
       log.error("Stripe error syncing products", e);
       return ResponseEntity.badRequest()
           .body(ApiResponse.error(LocaleUtils.getMessage(STRIPE_PRODUCT_LIST_ERROR)));
+    }
+  }
+
+  @GetMapping("/billing/history")
+  public ResponseEntity<ApiResponse<BillingHistoryResponse>> getBillingHistory(
+      Authentication authentication,
+      @RequestParam(defaultValue = "10") Integer limit,
+      @RequestParam(required = false) String startingAfter) {
+
+    try {
+      SecurityUser securityUser = (SecurityUser) authentication.getPrincipal();
+      Long userId = securityUser.getUser().getId();
+
+      log.debug(
+          "Processing billing history request for user: {}, limit: {}, startingAfter: {}",
+          userId,
+          limit,
+          startingAfter);
+
+      BillingHistoryResponse history =
+          billingService.getBillingHistory(userId, limit, startingAfter);
+
+      log.debug(
+          "Successfully retrieved billing history for user: {} with {} invoices",
+          userId,
+          history.getInvoices().size());
+
+      return ResponseEntity.ok(
+          ApiResponse.success(LocaleUtils.getMessage(BILLING_HISTORY_SUCCESS), history));
+
+    } catch (StripeException e) {
+      log.error("Stripe error retrieving billing history", e);
+      return ResponseEntity.badRequest()
+          .body(ApiResponse.error(LocaleUtils.getMessage(BILLING_HISTORY_ERROR)));
+    } catch (Exception e) {
+      log.error("Error retrieving billing history", e);
+      return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+          .body(ApiResponse.error(LocaleUtils.getMessage(GLOBAL_INTERNAL_UNEXPECTED_ERROR)));
+    }
+  }
+
+  @GetMapping("/billing/invoice/{invoiceId}")
+  public ResponseEntity<ApiResponse<InvoiceDto>> getInvoice(
+      Authentication authentication, @PathVariable String invoiceId) {
+
+    try {
+      SecurityUser securityUser = (SecurityUser) authentication.getPrincipal();
+      Long userId = securityUser.getUser().getId();
+
+      log.debug(
+          "Processing invoice retrieval request for user: {}, invoiceId: {}", userId, invoiceId);
+
+      InvoiceDto invoice = billingService.getInvoice(userId, invoiceId);
+
+      log.debug(
+          "Successfully retrieved invoice: {} for user: {}, status: {}",
+          invoiceId,
+          userId,
+          invoice.getStatus());
+
+      return ResponseEntity.ok(
+          ApiResponse.success(LocaleUtils.getMessage(INVOICE_RETRIEVE_SUCCESS), invoice));
+
+    } catch (StripeException e) {
+      log.error("Stripe error retrieving invoice", e);
+      return ResponseEntity.badRequest()
+          .body(ApiResponse.error(LocaleUtils.getMessage(INVOICE_RETRIEVE_ERROR)));
+    } catch (IllegalArgumentException e) {
+      return ResponseEntity.status(HttpStatus.FORBIDDEN)
+          .body(ApiResponse.error(LocaleUtils.getMessage(GLOBAL_AUTH_ERROR)));
+    } catch (Exception e) {
+      log.error("Error retrieving invoice", e);
+      return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+          .body(ApiResponse.error(LocaleUtils.getMessage(GLOBAL_INTERNAL_UNEXPECTED_ERROR)));
+    }
+  }
+
+  @GetMapping("/billing/invoice/{invoiceId}/pdf")
+  public ResponseEntity<?> downloadInvoicePdf(
+      Authentication authentication, @PathVariable String invoiceId) {
+
+    try {
+      SecurityUser securityUser = (SecurityUser) authentication.getPrincipal();
+      Long userId = securityUser.getUser().getId();
+
+      log.debug("Processing PDF download request for user: {}, invoiceId: {}", userId, invoiceId);
+
+      String pdfUrl = billingService.getInvoicePdfUrl(userId, invoiceId);
+
+      if (pdfUrl == null) {
+        log.debug("No PDF URL available for invoice: {} and user: {}", invoiceId, userId);
+        return ResponseEntity.badRequest()
+            .body(ApiResponse.error(LocaleUtils.getMessage(INVOICE_PDF_ERROR)));
+      }
+
+      log.debug("Redirecting user: {} to PDF URL for invoice: {}", userId, invoiceId);
+
+      // Return redirect to Stripe's PDF URL
+      return ResponseEntity.status(HttpStatus.FOUND).header("Location", pdfUrl).build();
+
+    } catch (StripeException e) {
+      log.error("Stripe error retrieving invoice PDF", e);
+      return ResponseEntity.badRequest()
+          .body(ApiResponse.error(LocaleUtils.getMessage(INVOICE_PDF_ERROR)));
+    } catch (IllegalArgumentException e) {
+      return ResponseEntity.status(HttpStatus.FORBIDDEN)
+          .body(ApiResponse.error(LocaleUtils.getMessage(GLOBAL_AUTH_ERROR)));
+    } catch (Exception e) {
+      log.error("Error retrieving invoice PDF", e);
+      return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+          .body(ApiResponse.error(LocaleUtils.getMessage(GLOBAL_INTERNAL_UNEXPECTED_ERROR)));
     }
   }
 }

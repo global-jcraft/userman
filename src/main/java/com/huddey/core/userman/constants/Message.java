@@ -42,4 +42,11 @@ public class Message {
 
   public static final String STRIPE_PRODUCT_LIST_SUCCESS = "stripe.product.list.success";
   public static final String STRIPE_PRODUCT_LIST_ERROR = "stripe.product.list.error";
+
+  // Billing Messages
+  public static final String BILLING_HISTORY_SUCCESS = "billing.history.success";
+  public static final String BILLING_HISTORY_ERROR = "billing.history.error";
+  public static final String INVOICE_RETRIEVE_SUCCESS = "invoice.retrieve.success";
+  public static final String INVOICE_RETRIEVE_ERROR = "invoice.retrieve.error";
+  public static final String INVOICE_PDF_ERROR = "invoice.pdf.error";
 }
