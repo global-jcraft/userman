@@ -315,6 +315,40 @@ public class WebhookService {
     }
   }
 
+  public void handleSetupIntentCreated(Event event) {
+    try {
+      StripeUtils.logEventStart("setup intent created", event.getId());
+      // Setup intent created - typically no action needed
+    } catch (Exception e) {
+      StripeUtils.logEventError("setup intent created", event.getId(), e);
+    }
+  }
+
+  public void handleSetupIntentSucceeded(Event event) {
+    try {
+      StripeUtils.logEventStart("setup intent succeeded", event.getId());
+
+      EventDataObjectDeserializer dataObjectDeserializer = event.getDataObjectDeserializer();
+      com.stripe.model.SetupIntent setupIntent =
+          (com.stripe.model.SetupIntent) dataObjectDeserializer.getObject().orElse(null);
+
+      if (setupIntent != null && setupIntent.getPaymentMethod() != null) {
+        // Find user by customer ID
+        Optional<UserSubscription> userSub =
+            subscriptionRepository.findByStripeCustomerId(setupIntent.getCustomer());
+        // Payment method is now attached and ready to use
+        userSub.ifPresent(
+            userSubscription ->
+                log.info(
+                    "SetupIntent succeeded for user: {}, payment method: {}",
+                    userSubscription.getUserId(),
+                    setupIntent.getPaymentMethod()));
+      }
+    } catch (Exception e) {
+      StripeUtils.logEventError("setup intent succeeded", event.getId(), e);
+    }
+  }
+
   /**
    * Updates the subscription in the database with the latest information from Stripe.
    *

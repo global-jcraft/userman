@@ -49,4 +49,19 @@ public class Message {
   public static final String INVOICE_RETRIEVE_SUCCESS = "invoice.retrieve.success";
   public static final String INVOICE_RETRIEVE_ERROR = "invoice.retrieve.error";
   public static final String INVOICE_PDF_ERROR = "invoice.pdf.error";
+
+  // Payment Method Messages
+  public static final String PAYMENT_METHOD_LIST_SUCCESS = "payment.method.list.success";
+  public static final String PAYMENT_METHOD_ADD_SUCCESS = "payment.method.add.success";
+  public static final String PAYMENT_METHOD_UPDATE_SUCCESS = "payment.method.update.success";
+  public static final String PAYMENT_METHOD_REMOVE_SUCCESS = "payment.method.remove.success";
+  public static final String PAYMENT_METHOD_DEFAULT_SET_SUCCESS =
+      "payment.method.default.set.success";
+  public static final String PAYMENT_METHOD_BACKUP_SET_SUCCESS =
+      "payment.method.backup.set.success";
+  public static final String PAYMENT_METHOD_ADD_ERROR = "payment.method.add.error";
+  public static final String PAYMENT_METHOD_UPDATE_ERROR = "payment.method.update.error";
+  public static final String PAYMENT_METHOD_REMOVE_ERROR = "payment.method.remove.error";
+  public static final String PAYMENT_SERVICE_UNAVAILABLE = "payment.service.unavailable";
+  public static final String PAYMENT_SERVICE_ERROR = "payment.service.error";
 }

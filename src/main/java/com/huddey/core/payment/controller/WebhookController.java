@@ -116,6 +116,12 @@ public class WebhookController {
         case PAYMENT_INTENT_CREATED:
           webhookService.handlePaymentIntentCreated(event);
           break;
+        case SETUP_INTENT_CREATED:
+          webhookService.handleSetupIntentCreated(event);
+          break;
+        case SETUP_INTENT_SUCCEEDED:
+          webhookService.handleSetupIntentSucceeded(event);
+          break;
         default:
           log.error("Unhandled event type: {}", event.getType());
       }
