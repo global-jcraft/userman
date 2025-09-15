@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.huddey.core.payment.data.dto.AddPaymentMethodRequest;
+import com.huddey.core.payment.data.dto.CreatePaymentMethodCheckoutRequest;
 import com.huddey.core.payment.data.dto.PaymentMethodDto;
 import com.huddey.core.payment.data.dto.UpdatePaymentMethodRequest;
 import com.huddey.core.payment.data.entity.PaymentMethod;
@@ -21,7 +22,6 @@ import com.huddey.core.payment.data.enums.PaymentMethodType;
 import com.huddey.core.payment.exception.PaymentMethodNotFoundException;
 import com.huddey.core.payment.repository.PaymentMethodRepository;
 import com.huddey.core.payment.repository.UserSubscriptionRepository;
-import com.huddey.core.userman.exception.UserNotFoundException;
 import com.stripe.exception.StripeException;
 
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
@@ -37,8 +37,20 @@ public class PaymentMethodService {
   private final PaymentMethodRepository paymentMethodRepository;
   private final UserSubscriptionRepository subscriptionRepository;
 
+  public Page<PaymentMethodDto> getUserPaymentMethods(Long userId, int page, int size) {
+    log.debug("Fetching payment methods from database for user: {}", userId);
+
+    Pageable pageable = PageRequest.of(page, size);
+    Page<PaymentMethod> paymentMethods =
+        paymentMethodRepository.findByUserIdOrderByCreatedAtDesc(userId, pageable);
+
+    List<PaymentMethodDto> dtos = paymentMethods.getContent().stream().map(this::toDto).toList();
+
+    return new PageImpl<>(dtos, pageable, paymentMethods.getTotalElements());
+  }
+
   // @Cacheable(value = "paymentMethods", key = "#userId + '_' + #page + '_' + #size")
-  public Page<PaymentMethodDto> getUserPaymentMethods(Long userId, int page, int size)
+  public Page<PaymentMethodDto> syncUserPaymentMethodsWithStripe(Long userId, int page, int size)
       throws StripeException {
     log.debug("Fetching payment methods from Stripe for user: {}", userId);
 
@@ -228,11 +240,30 @@ public class PaymentMethodService {
     return expired;
   }
 
-  public String getCustomerIdForUser(Long userId) {
+  public String getCustomerIdForUser(Long userId) throws StripeException {
     Optional<UserSubscription> subscription = subscriptionRepository.findByUserId(userId);
-    return subscription
-        .map(UserSubscription::getStripeCustomerId)
-        .orElseThrow(() -> new UserNotFoundException("No subscription found for user " + userId));
+
+    if (subscription.isPresent() && subscription.get().getStripeCustomerId() != null) {
+      return subscription.get().getStripeCustomerId();
+    }
+
+    // Create Stripe customer if user doesn't have one yet
+    log.debug("Creating Stripe customer for user: {}", userId);
+    var customer =
+        com.stripe.model.Customer.create(
+            com.stripe.param.CustomerCreateParams.builder()
+                .putMetadata("userId", userId.toString())
+                .build());
+
+    log.debug("Created Stripe customer {} for user: {}", customer.getId(), userId);
+
+    // Save customer ID to avoid future duplicates
+    UserSubscription userSub = subscription.orElse(new UserSubscription());
+    userSub.setUserId(userId);
+    userSub.setStripeCustomerId(customer.getId());
+    subscriptionRepository.save(userSub);
+
+    return customer.getId();
   }
 
   private PaymentMethod getPaymentMethodForUser(Long userId, Long paymentMethodId) {
@@ -296,6 +327,34 @@ public class PaymentMethodService {
     }
 
     return dto;
+  }
+
+  public PaymentMethodDto createPaymentMethodCheckoutSession(
+      Long userId, CreatePaymentMethodCheckoutRequest request) throws StripeException {
+    log.debug(
+        "Creating checkout session for payment method setup - user: {}, type: {}",
+        userId,
+        request.getPaymentMethodType());
+
+    String customerId = getCustomerIdForUser(userId);
+
+    var session =
+        com.stripe.model.checkout.Session.create(
+            com.stripe.param.checkout.SessionCreateParams.builder()
+                .setMode(com.stripe.param.checkout.SessionCreateParams.Mode.SETUP)
+                .setCustomer(customerId)
+                .addPaymentMethodType(
+                    com.stripe.param.checkout.SessionCreateParams.PaymentMethodType.valueOf(
+                        request.getPaymentMethodType().getStripeType().toUpperCase()))
+                .setSuccessUrl(request.getSuccessUrl())
+                .setCancelUrl(request.getCancelUrl())
+                .putMetadata("userId", userId.toString())
+                .putMetadata("setAsDefault", String.valueOf(request.isSetAsDefault()))
+                .build());
+
+    log.debug("Created checkout session {} for user: {}", session.getId(), userId);
+
+    return createCheckoutSessionDto(session);
   }
 
   private PaymentMethodDto createCheckoutSessionDto(com.stripe.model.checkout.Session session) {

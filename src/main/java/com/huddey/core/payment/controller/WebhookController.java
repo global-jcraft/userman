@@ -89,7 +89,7 @@ public class WebhookController {
         case SUBSCRIPTION_DELETED:
           webhookService.handleSubscriptionDeleted(event);
           break;
-        case INVOICE_PAYMENT_OK:
+        case INVOICE_PAYMENT_OK, INVOICE_PAYMENT_PAID:
           webhookService.handleInvoicePaymentSucceeded(event);
           break;
         case INVOICE_PAYMENT_KO:

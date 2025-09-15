@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import com.huddey.core.common.api.ApiResponse;
 import com.huddey.core.common.utils.LocaleUtils;
 import com.huddey.core.payment.data.dto.AddPaymentMethodRequest;
+import com.huddey.core.payment.data.dto.CreatePaymentMethodCheckoutRequest;
 import com.huddey.core.payment.data.dto.PaymentMethodDto;
 import com.huddey.core.payment.data.dto.UpdatePaymentMethodRequest;
 import com.huddey.core.payment.data.enums.PaymentMethodType;
@@ -37,16 +38,24 @@ public class PaymentMethodController {
   public ResponseEntity<ApiResponse<Page<PaymentMethodDto>>> getPaymentMethods(
       Authentication authentication,
       @RequestParam(defaultValue = "0") int page,
-      @RequestParam(defaultValue = "10") int size) {
+      @RequestParam(defaultValue = "10") int size,
+      @RequestParam(defaultValue = "false") boolean sync) {
 
     try {
       SecurityUser securityUser = (SecurityUser) authentication.getPrincipal();
       Long userId = securityUser.getUser().getId();
 
-      log.debug("Retrieving payment methods for user: {}, page: {}, size: {}", userId, page, size);
+      log.debug(
+          "Retrieving payment methods for user: {}, page: {}, size: {}, sync: {}",
+          userId,
+          page,
+          size,
+          sync);
 
       Page<PaymentMethodDto> paymentMethods =
-          paymentMethodService.getUserPaymentMethods(userId, page, size);
+          sync
+              ? paymentMethodService.syncUserPaymentMethodsWithStripe(userId, page, size)
+              : paymentMethodService.getUserPaymentMethods(userId, page, size);
 
       log.debug(
           "Retrieved {} payment methods for user: {}", paymentMethods.getTotalElements(), userId);
@@ -56,7 +65,9 @@ public class PaymentMethodController {
     } catch (StripeException e) {
       log.error("Stripe error fetching payment methods", e);
       return ResponseEntity.badRequest()
-          .body(ApiResponse.error("Failed to fetch payment methods: " + e.getMessage()));
+          .body(
+              ApiResponse.error(
+                  LocaleUtils.getMessage(PAYMENT_METHOD_LIST_ERROR) + ": " + e.getMessage()));
     }
   }
 
@@ -215,6 +226,33 @@ public class PaymentMethodController {
     }
   }
 
+  @PostMapping("/create-checkout-session")
+  public ResponseEntity<ApiResponse<PaymentMethodDto>> createCheckoutSession(
+      Authentication authentication,
+      @Valid @RequestBody CreatePaymentMethodCheckoutRequest request) {
+
+    try {
+      SecurityUser securityUser = (SecurityUser) authentication.getPrincipal();
+      Long userId = securityUser.getUser().getId();
+
+      PaymentMethodDto response =
+          paymentMethodService.createPaymentMethodCheckoutSession(userId, request);
+
+      return ResponseEntity.ok(
+          ApiResponse.success(
+              LocaleUtils.getMessage(PAYMENT_METHOD_CHECKOUT_SESSION_SUCCESS), response));
+
+    } catch (StripeException e) {
+      log.error("Stripe error creating checkout session", e);
+      return ResponseEntity.badRequest()
+          .body(
+              ApiResponse.error(
+                  LocaleUtils.getMessage(PAYMENT_METHOD_CHECKOUT_SESSION_ERROR)
+                      + ": "
+                      + e.getMessage()));
+    }
+  }
+
   @PostMapping("/setup-intent")
   public ResponseEntity<ApiResponse<String>> createSetupIntent(
       Authentication authentication, @RequestParam PaymentMethodType type) {
@@ -231,12 +269,15 @@ public class PaymentMethodController {
       log.debug("Created SetupIntent {} for user: {}", setupIntent.getId(), userId);
 
       return ResponseEntity.ok(
-          ApiResponse.success("SetupIntent created successfully", setupIntent.getClientSecret()));
+          ApiResponse.success(
+              LocaleUtils.getMessage(SETUP_INTENT_CREATE_SUCCESS), setupIntent.getClientSecret()));
 
     } catch (StripeException e) {
       log.error("Stripe error creating SetupIntent", e);
       return ResponseEntity.badRequest()
-          .body(ApiResponse.error("Failed to create SetupIntent: " + e.getMessage()));
+          .body(
+              ApiResponse.error(
+                  LocaleUtils.getMessage(SETUP_INTENT_CREATE_ERROR) + ": " + e.getMessage()));
     }
   }
 }

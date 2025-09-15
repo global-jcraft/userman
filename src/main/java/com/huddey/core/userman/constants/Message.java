@@ -64,4 +64,12 @@ public class Message {
   public static final String PAYMENT_METHOD_REMOVE_ERROR = "payment.method.remove.error";
   public static final String PAYMENT_SERVICE_UNAVAILABLE = "payment.service.unavailable";
   public static final String PAYMENT_SERVICE_ERROR = "payment.service.error";
+
+  public static final String PAYMENT_METHOD_CHECKOUT_SESSION_SUCCESS =
+      "payment.method.checkout.session.success";
+  public static final String PAYMENT_METHOD_CHECKOUT_SESSION_ERROR =
+      "payment.method.checkout.session.error";
+  public static final String PAYMENT_METHOD_LIST_ERROR = "payment.method.list.error";
+  public static final String SETUP_INTENT_CREATE_SUCCESS = "setup.intent.create.success";
+  public static final String SETUP_INTENT_CREATE_ERROR = "setup.intent.create.error";
 }

@@ -26,9 +26,13 @@ import lombok.extern.slf4j.Slf4j;
 public class WebhookService {
 
   private final UserSubscriptionRepository subscriptionRepository;
+  private final PaymentMethodService paymentMethodService;
 
-  public WebhookService(UserSubscriptionRepository subscriptionRepository) {
+  public WebhookService(
+      UserSubscriptionRepository subscriptionRepository,
+      PaymentMethodService paymentMethodService) {
     this.subscriptionRepository = subscriptionRepository;
+    this.paymentMethodService = paymentMethodService;
   }
 
   /**
@@ -291,7 +295,25 @@ public class WebhookService {
   public void handlePaymentMethodAttached(Event event) {
     try {
       StripeUtils.logEventStart("payment method attached", event.getId());
-      // Payment method attached - typically no action needed
+
+      EventDataObjectDeserializer dataObjectDeserializer = event.getDataObjectDeserializer();
+      com.stripe.model.PaymentMethod paymentMethod =
+          (com.stripe.model.PaymentMethod) dataObjectDeserializer.getObject().orElse(null);
+
+      if (paymentMethod != null && paymentMethod.getCustomer() != null) {
+        Optional<UserSubscription> userSub =
+            subscriptionRepository.findByStripeCustomerId(paymentMethod.getCustomer());
+
+        if (userSub.isPresent()) {
+          Long userId = userSub.get().getUserId();
+          paymentMethodService.syncUserPaymentMethodsWithStripe(userId, 0, 100);
+          log.info("Synced payment methods for user: {} after payment method attached", userId);
+        } else {
+          log.warn(
+              "No user subscription found for customer: {} in payment_method.attached event",
+              paymentMethod.getCustomer());
+        }
+      }
     } catch (Exception e) {
       StripeUtils.logEventError("payment method attached", event.getId(), e);
     }
@@ -357,9 +379,17 @@ public class WebhookService {
   public void updateSubscriptionInDatabase(Subscription subscription) {
     Optional<UserSubscription> userSubOpt =
         subscriptionRepository.findByStripeSubscriptionId(subscription.getId());
+    
+    // If not found by subscription ID, try by customer ID (for subscription updates)
+    if (userSubOpt.isEmpty()) {
+      userSubOpt = subscriptionRepository.findByStripeCustomerId(subscription.getCustomer());
+    }
 
     if (userSubOpt.isPresent()) {
       UserSubscription userSub = userSubOpt.get();
+      
+      // Update subscription ID in case it changed
+      userSub.setStripeSubscriptionId(subscription.getId());
 
       if (subscription.getStatus() != null) {
         userSub.setStatus(SubscriptionStatus.valueOf(subscription.getStatus().toUpperCase()));
@@ -379,11 +409,19 @@ public class WebhookService {
       // Update plan if changed
       if (subscription.getItems() != null && !subscription.getItems().getData().isEmpty()) {
         String priceId = subscription.getItems().getData().getFirst().getPrice().getId();
-        SubscriptionPlan plan = SubscriptionPlan.fromStripePriceId(priceId);
-        userSub.setPlan(plan);
+        try {
+          SubscriptionPlan plan = SubscriptionPlan.fromStripePriceId(priceId);
+          userSub.setPlan(plan);
+          log.info("Updated subscription plan to {} for user {}", plan, userSub.getUserId());
+        } catch (IllegalArgumentException e) {
+          log.error("Unknown Stripe price ID: {} - Please update SubscriptionPlan enum", priceId);
+        }
       }
 
       subscriptionRepository.save(userSub);
+    } else {
+      log.warn("No user subscription found for subscription ID: {} or customer ID: {}", 
+               subscription.getId(), subscription.getCustomer());
     }
   }
 }
