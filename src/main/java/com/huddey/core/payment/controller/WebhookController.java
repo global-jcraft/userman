@@ -122,6 +122,9 @@ public class WebhookController {
         case SETUP_INTENT_SUCCEEDED:
           webhookService.handleSetupIntentSucceeded(event);
           break;
+        case FINANCIAL_CONNECTIONS_ACCOUNT_CREATED:
+          webhookService.handleFinancialConnectionsAccountCreated(event);
+          break;
         default:
           log.error("Unhandled event type: {}", event.getType());
       }

@@ -20,4 +20,6 @@ public class StripeConstants {
   public static final String PAYMENT_INTENT_CREATED = "payment_intent.created";
   public static final String SETUP_INTENT_CREATED = "setup_intent.created";
   public static final String SETUP_INTENT_SUCCEEDED = "setup_intent.succeeded";
+  public static final String FINANCIAL_CONNECTIONS_ACCOUNT_CREATED =
+      "financial_connections.account.created";
 }

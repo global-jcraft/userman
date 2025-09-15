@@ -371,6 +371,15 @@ public class WebhookService {
     }
   }
 
+  public void handleFinancialConnectionsAccountCreated(Event event) {
+    try {
+      StripeUtils.logEventStart("financial connections account created", event.getId());
+      // Financial connections account created - typically no action needed
+    } catch (Exception e) {
+      StripeUtils.logEventError("financial connections account created", event.getId(), e);
+    }
+  }
+
   /**
    * Updates the subscription in the database with the latest information from Stripe.
    *
@@ -379,7 +388,7 @@ public class WebhookService {
   public void updateSubscriptionInDatabase(Subscription subscription) {
     Optional<UserSubscription> userSubOpt =
         subscriptionRepository.findByStripeSubscriptionId(subscription.getId());
-    
+
     // If not found by subscription ID, try by customer ID (for subscription updates)
     if (userSubOpt.isEmpty()) {
       userSubOpt = subscriptionRepository.findByStripeCustomerId(subscription.getCustomer());
@@ -387,7 +396,7 @@ public class WebhookService {
 
     if (userSubOpt.isPresent()) {
       UserSubscription userSub = userSubOpt.get();
-      
+
       // Update subscription ID in case it changed
       userSub.setStripeSubscriptionId(subscription.getId());
 
@@ -420,8 +429,10 @@ public class WebhookService {
 
       subscriptionRepository.save(userSub);
     } else {
-      log.warn("No user subscription found for subscription ID: {} or customer ID: {}", 
-               subscription.getId(), subscription.getCustomer());
+      log.warn(
+          "No user subscription found for subscription ID: {} or customer ID: {}",
+          subscription.getId(),
+          subscription.getCustomer());
     }
   }
 }

@@ -38,24 +38,16 @@ public class PaymentMethodController {
   public ResponseEntity<ApiResponse<Page<PaymentMethodDto>>> getPaymentMethods(
       Authentication authentication,
       @RequestParam(defaultValue = "0") int page,
-      @RequestParam(defaultValue = "10") int size,
-      @RequestParam(defaultValue = "false") boolean sync) {
+      @RequestParam(defaultValue = "10") int size) {
 
     try {
       SecurityUser securityUser = (SecurityUser) authentication.getPrincipal();
       Long userId = securityUser.getUser().getId();
 
-      log.debug(
-          "Retrieving payment methods for user: {}, page: {}, size: {}, sync: {}",
-          userId,
-          page,
-          size,
-          sync);
+      log.debug("Retrieving payment methods for user: {}, page: {}, size: {}", userId, page, size);
 
       Page<PaymentMethodDto> paymentMethods =
-          sync
-              ? paymentMethodService.syncUserPaymentMethodsWithStripe(userId, page, size)
-              : paymentMethodService.getUserPaymentMethods(userId, page, size);
+          paymentMethodService.syncUserPaymentMethodsWithStripe(userId, page, size);
 
       log.debug(
           "Retrieved {} payment methods for user: {}", paymentMethods.getTotalElements(), userId);

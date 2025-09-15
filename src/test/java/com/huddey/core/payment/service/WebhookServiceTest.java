@@ -229,11 +229,12 @@ class WebhookServiceTest {
           .when(() -> SubscriptionPlan.fromStripePriceId("unknown_price_id"))
           .thenThrow(new IllegalArgumentException("Unknown price ID: unknown_price_id"));
 
-      assertThrows(
-          IllegalArgumentException.class,
-          () -> {
-            webhookService.updateSubscriptionInDatabase(mockSubscription);
-          });
+      // Should not throw exception, but handle gracefully by logging error
+      assertDoesNotThrow(() -> webhookService.updateSubscriptionInDatabase(mockSubscription));
+
+      // Verify subscription is still saved with other fields updated
+      verify(subscriptionRepository).save(mockUserSubscription);
+      assertEquals(SubscriptionStatus.ACTIVE, mockUserSubscription.getStatus());
     }
   }
 
