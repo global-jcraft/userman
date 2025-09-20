@@ -20,6 +20,7 @@ import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 import com.huddey.core.common.utils.LocaleUtils;
+import com.huddey.core.payment.exception.PaymentMethodNotFoundException;
 import com.huddey.core.userman.data.dto.response.ErrorResponse;
 
 import lombok.extern.slf4j.Slf4j;
@@ -126,6 +127,21 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
             .build();
 
     return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+  }
+
+  @ExceptionHandler(PaymentMethodNotFoundException.class)
+  public ResponseEntity<ErrorResponse> handlePaymentMethodNotFound(
+      PaymentMethodNotFoundException ex, WebRequest request) {
+    log.error("Payment method not found: ", ex);
+    ErrorResponse error =
+        ErrorResponse.builder()
+            .timestamp(LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME))
+            .status(HttpStatus.NOT_FOUND.value())
+            .error("Payment Method Not Found")
+            .message(ex.getMessage())
+            .path(((ServletWebRequest) request).getRequest().getRequestURI())
+            .build();
+    return new ResponseEntity<>(error, HttpStatus.NOT_FOUND);
   }
 
   @ExceptionHandler(Exception.class)

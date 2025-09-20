@@ -89,7 +89,7 @@ public class WebhookController {
         case SUBSCRIPTION_DELETED:
           webhookService.handleSubscriptionDeleted(event);
           break;
-        case INVOICE_PAYMENT_OK:
+        case INVOICE_PAYMENT_OK, INVOICE_PAYMENT_PAID:
           webhookService.handleInvoicePaymentSucceeded(event);
           break;
         case INVOICE_PAYMENT_KO:
@@ -115,6 +115,15 @@ public class WebhookController {
           break;
         case PAYMENT_INTENT_CREATED:
           webhookService.handlePaymentIntentCreated(event);
+          break;
+        case SETUP_INTENT_CREATED:
+          webhookService.handleSetupIntentCreated(event);
+          break;
+        case SETUP_INTENT_SUCCEEDED:
+          webhookService.handleSetupIntentSucceeded(event);
+          break;
+        case FINANCIAL_CONNECTIONS_ACCOUNT_CREATED:
+          webhookService.handleFinancialConnectionsAccountCreated(event);
           break;
         default:
           log.error("Unhandled event type: {}", event.getType());

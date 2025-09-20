@@ -211,6 +211,16 @@ public class SubscriptionService {
     // This method can be used for additional webhook processing logic
   }
 
+  private Customer getCustomerForUser(Long userId) throws StripeException {
+    Optional<UserSubscription> existingSub = subscriptionRepository.findByUserId(userId);
+
+    if (existingSub.isPresent() && existingSub.get().getStripeCustomerId() != null) {
+      return Customer.retrieve(existingSub.get().getStripeCustomerId());
+    }
+
+    throw new StripeServiceException("No customer found for user: " + userId, null);
+  }
+
   private Customer getOrCreateCustomer(Long userId, String email) throws StripeException {
     Optional<UserSubscription> existingSub = subscriptionRepository.findByUserId(userId);
 

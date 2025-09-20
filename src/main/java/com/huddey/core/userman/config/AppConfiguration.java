@@ -1,9 +1,14 @@
 package com.huddey.core.userman.config;
 
+import java.util.List;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.data.domain.PageImpl;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -18,6 +23,16 @@ public class AppConfiguration {
     mapper.setDefaultPropertyInclusion(JsonInclude.Include.ALWAYS);
     mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
     mapper.registerModule(new JavaTimeModule());
+    mapper.addMixIn(PageImpl.class, PageImplMixin.class);
     return mapper;
+  }
+
+  private abstract static class PageImplMixin<T> {
+    @JsonCreator
+    public PageImplMixin(
+        @JsonProperty("content") List<T> content,
+        @JsonProperty("number") int number,
+        @JsonProperty("size") int size,
+        @JsonProperty("totalElements") long totalElements) {}
   }
 }
