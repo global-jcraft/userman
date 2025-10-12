@@ -145,11 +145,11 @@ class SubscriptionServiceTest {
   }
 
   @Test
-  void createFreeSubscription_shouldCreateFreeSubscription() {
+  void createLocalFreeSubscription_shouldCreateFreeSubscription() {
     when(subscriptionRepository.save(any(UserSubscription.class)))
         .thenAnswer(i -> i.getArgument(0));
 
-    UserSubscription result = subscriptionService.createFreeSubscription(1L);
+    UserSubscription result = subscriptionService.createFreeSubscription(1L, "cus_123");
 
     assertEquals(1L, result.getUserId());
     assertEquals(SubscriptionPlan.FREE, result.getPlan());

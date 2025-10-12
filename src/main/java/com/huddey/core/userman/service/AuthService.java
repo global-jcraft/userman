@@ -6,6 +6,7 @@ import com.huddey.core.userman.data.dto.*;
 import com.huddey.core.userman.data.dto.response.*;
 import com.huddey.core.userman.data.dto.token.TokenRefreshResponse;
 import com.huddey.core.userman.exception.UserAlreadyExistsException;
+import com.stripe.exception.StripeException;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -20,7 +21,7 @@ public interface AuthService {
 
   UserRegistrationResponse completeRegistration(
       UserRegistrationRequest user, HttpServletRequest request, HttpServletResponse response)
-      throws RoleNotFoundException, UserAlreadyExistsException;
+      throws RoleNotFoundException, UserAlreadyExistsException, StripeException;
 
   LoginResponse login(
       LoginRequest request, HttpServletRequest servletRequest, HttpServletResponse servletResponse);

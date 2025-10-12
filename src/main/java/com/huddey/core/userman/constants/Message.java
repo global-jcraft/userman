@@ -72,4 +72,5 @@ public class Message {
   public static final String PAYMENT_METHOD_LIST_ERROR = "payment.method.list.error";
   public static final String SETUP_INTENT_CREATE_SUCCESS = "setup.intent.create.success";
   public static final String SETUP_INTENT_CREATE_ERROR = "setup.intent.create.error";
+  public static final String NO_PAYMENT_METHOD_ERROR = "no.customer.id.error";
 }

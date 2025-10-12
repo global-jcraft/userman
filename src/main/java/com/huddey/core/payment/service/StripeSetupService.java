@@ -22,6 +22,14 @@ public class StripeSetupService {
 
   public void createHuddeyProducts() throws StripeException {
 
+    // Create Free Plan Product
+    Product freeProduct =
+        createProduct(
+            "Free Plan",
+            "Ideal for individuals exploring social media management with basic features and limited access.");
+    createPrice(
+        freeProduct.getId(), 0L, MONTH, "Free Monthly", SubscriptionPlan.FREE.getInternalPriceId());
+
     // Create Starter Plan Product
     Product starterProduct =
         createProduct(

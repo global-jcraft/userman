@@ -1,7 +1,5 @@
 package com.huddey.core.payment.service;
 
-import static com.huddey.core.payment.data.enums.SubscriptionPlan.*;
-
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
@@ -117,7 +115,6 @@ public class SubscriptionService {
   }
 
   public void updateSubscription(Long userId, SubscriptionPlan newPlan) throws StripeException {
-    log.debug("Updating subscription for user {} to plan {}", userId, newPlan);
     UserSubscription userSub =
         subscriptionRepository
             .findByUserId(userId)
@@ -130,7 +127,12 @@ public class SubscriptionService {
       throw new StripeServiceException("Cannot update inactive subscription", null);
     }
 
+    if (userSub.getPlan() == newPlan) {
+      throw new StripeServiceException("User already has the requested plan: " + newPlan, null);
+    }
+
     Subscription subscription = Subscription.retrieve(userSub.getStripeSubscriptionId());
+    boolean isDowngrade = newPlan.getPrice() < userSub.getPlan().getPrice();
 
     SubscriptionUpdateParams params =
         SubscriptionUpdateParams.builder()
@@ -139,18 +141,24 @@ public class SubscriptionService {
                     .setId(subscription.getItems().getData().getFirst().getId())
                     .setPrice(newPlan.getInternalPriceId())
                     .build())
-            .setProrationBehavior(SubscriptionUpdateParams.ProrationBehavior.NONE)
+            .setProrationBehavior(
+                isDowngrade
+                    ? SubscriptionUpdateParams.ProrationBehavior.NONE
+                    : SubscriptionUpdateParams.ProrationBehavior.CREATE_PRORATIONS)
             .putMetadata("plan", newPlan.name())
             .build();
 
     subscription.update(params);
 
-    // Keep current period dates unchanged - new plan takes effect at period end
-    // Don't update the plan in database yet, it will be updated via webhook when period ends
+    if (isDowngrade) {
+      userSub.setPendingPlan(newPlan);
+      userSub.setPendingPlanEffectiveDate(userSub.getCurrentPeriodEnd());
+    } else {
+      userSub.setPlan(newPlan);
+    }
+
     userSub.setUpdatedAt(OffsetDateTime.now());
     subscriptionRepository.save(userSub);
-
-    log.debug("Successfully updated subscription for user {} to plan {}", userId, newPlan);
   }
 
   @Transactional
@@ -192,7 +200,7 @@ public class SubscriptionService {
     return productPriceRepository.findByPlanId(planId);
   }
 
-  public UserSubscription createFreeSubscription(Long userId) {
+  public UserSubscription createFreeSubscription(Long userId, String stripeCustomerId) {
     UserSubscription freeSubscription = new UserSubscription();
     freeSubscription.setUserId(userId);
     freeSubscription.setPlan(SubscriptionPlan.FREE);
@@ -202,7 +210,7 @@ public class SubscriptionService {
     freeSubscription.setCancelAtPeriodEnd(false);
     freeSubscription.setCreatedAt(OffsetDateTime.now());
     freeSubscription.setUpdatedAt(OffsetDateTime.now());
-    freeSubscription.setStripeCustomerId("free-" + userId);
+    freeSubscription.setStripeCustomerId(stripeCustomerId);
     return subscriptionRepository.save(freeSubscription);
   }
 
@@ -221,7 +229,7 @@ public class SubscriptionService {
     throw new StripeServiceException("No customer found for user: " + userId, null);
   }
 
-  private Customer getOrCreateCustomer(Long userId, String email) throws StripeException {
+  public Customer getOrCreateCustomer(Long userId, String email) throws StripeException {
     Optional<UserSubscription> existingSub = subscriptionRepository.findByUserId(userId);
 
     if (existingSub.isPresent()
@@ -238,12 +246,6 @@ public class SubscriptionService {
 
     Customer customer = Customer.create(params);
     log.debug("Created Stripe customer {} for user {}", customer.getId(), userId);
-
-    UserSubscription userSub = existingSub.orElse(new UserSubscription());
-    userSub.setUserId(userId);
-    userSub.setStripeCustomerId(customer.getId());
-    subscriptionRepository.save(userSub);
-
     return customer;
   }
 

@@ -21,6 +21,8 @@ public class SubscriptionStatusResponse {
   private OffsetDateTime currentPeriodStart;
   private OffsetDateTime currentPeriodEnd;
   private boolean cancelAtPeriodEnd;
+  private SubscriptionPlan pendingPlan;
+  private OffsetDateTime pendingPlanEffectiveDate;
   private Double nextChargeAmount;
   private String stripeCustomerId;
   private OffsetDateTime createdAt;
@@ -39,6 +41,8 @@ public class SubscriptionStatusResponse {
     response.currentPeriodStart = subscription.getCurrentPeriodStart();
     response.currentPeriodEnd = subscription.getCurrentPeriodEnd();
     response.cancelAtPeriodEnd = subscription.isCancelAtPeriodEnd();
+    response.pendingPlan = subscription.getPendingPlan();
+    response.pendingPlanEffectiveDate = subscription.getPendingPlanEffectiveDate();
     response.stripeCustomerId = subscription.getStripeCustomerId();
     response.createdAt = subscription.getCreatedAt();
     response.updatedAt = subscription.getUpdatedAt();

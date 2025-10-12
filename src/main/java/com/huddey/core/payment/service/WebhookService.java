@@ -415,13 +415,25 @@ public class WebhookService {
       userSub.setCancelAtPeriodEnd(subscription.getCancelAtPeriodEnd());
       userSub.setUpdatedAt(OffsetDateTime.now());
 
-      // Update plan if changed
+      // Handle plan changes when period transitions
       if (subscription.getItems() != null && !subscription.getItems().getData().isEmpty()) {
         String priceId = subscription.getItems().getData().getFirst().getPrice().getId();
         try {
-          SubscriptionPlan plan = SubscriptionPlan.fromStripePriceId(priceId);
-          userSub.setPlan(plan);
-          log.info("Updated subscription plan to {} for user {}", plan, userSub.getUserId());
+          SubscriptionPlan newPlan = SubscriptionPlan.fromStripePriceId(priceId);
+
+          if (userSub.getPendingPlan() == newPlan) {
+            // Pending change is now effective
+            userSub.setPlan(newPlan);
+            userSub.setPendingPlan(null);
+            userSub.setPendingPlanEffectiveDate(null);
+            log.info(
+                "Activated pending plan change to {} for user {}", newPlan, userSub.getUserId());
+          } else if (userSub.getPlan() != newPlan) {
+            // Direct plan change (upgrade)
+            userSub.setPlan(newPlan);
+            log.info("Updated subscription plan to {} for user {}", newPlan, userSub.getUserId());
+          }
+
         } catch (IllegalArgumentException e) {
           log.error("Unknown Stripe price ID: {} - Please update SubscriptionPlan enum", priceId);
         }

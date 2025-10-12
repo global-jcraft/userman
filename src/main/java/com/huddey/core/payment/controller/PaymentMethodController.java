@@ -48,6 +48,10 @@ public class PaymentMethodController {
 
       Page<PaymentMethodDto> paymentMethods =
           paymentMethodService.syncUserPaymentMethodsWithStripe(userId, page, size);
+      if (paymentMethods.isEmpty()) {
+        return ResponseEntity.ok(
+            ApiResponse.success(LocaleUtils.getMessage(NO_PAYMENT_METHOD_ERROR)));
+      }
 
       log.debug(
           "Retrieved {} payment methods for user: {}", paymentMethods.getTotalElements(), userId);
@@ -256,6 +260,10 @@ public class PaymentMethodController {
       log.debug("Creating SetupIntent for user: {} with type: {}", userId, type);
 
       String customerId = paymentMethodService.getCustomerIdForUser(userId);
+      if (customerId == null) {
+        return ResponseEntity.badRequest()
+            .body(ApiResponse.error(LocaleUtils.getMessage(NO_PAYMENT_METHOD_ERROR)));
+      }
       var setupIntent = stripeSetupIntentService.createSetupIntent(customerId, type);
 
       log.debug("Created SetupIntent {} for user: {}", setupIntent.getId(), userId);

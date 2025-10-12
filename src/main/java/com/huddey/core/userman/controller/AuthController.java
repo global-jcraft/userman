@@ -26,6 +26,7 @@ import com.huddey.core.userman.exception.UserAlreadyExistsException;
 import com.huddey.core.userman.mapper.UserMapper;
 import com.huddey.core.userman.service.AuthService;
 import com.huddey.core.userman.service.CustomUserDetailsService;
+import com.stripe.exception.StripeException;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -76,7 +77,7 @@ public class AuthController {
       @Valid @RequestBody UserRegistrationRequest userRegistrationRequest,
       HttpServletRequest request,
       HttpServletResponse response)
-      throws RoleNotFoundException, UserAlreadyExistsException {
+      throws RoleNotFoundException, UserAlreadyExistsException, StripeException {
     log.debug(
         "AuthController.registerBasicFlowComplete() -> Update user missing info - Start time: {}",
         OffsetDateTime.now().format(DateTimeFormatter.ISO_OFFSET_DATE_TIME));

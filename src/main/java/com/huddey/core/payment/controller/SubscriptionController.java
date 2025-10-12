@@ -130,10 +130,13 @@ public class SubscriptionController {
   }
 
   @GetMapping("/status/{userId}")
-  public ResponseEntity<UserSubscription> getSubscriptionStatus(@PathVariable Long userId) {
+  public ResponseEntity<SubscriptionStatusResponse> getSubscriptionStatus(
+      @PathVariable Long userId) {
     Optional<UserSubscription> subscription = subscriptionService.getUserSubscription(userId);
-
-    return subscription.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
+    return subscription
+        .map(SubscriptionStatusResponse::fromUserSubscription)
+        .map(ResponseEntity::ok)
+        .orElse(ResponseEntity.notFound().build());
   }
 
   @GetMapping("/plans")

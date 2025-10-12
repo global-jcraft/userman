@@ -107,7 +107,7 @@ public class CustomUserDetailsService implements UserDetailsService {
   @CacheEvict(value = "user-cache", key = "#request.email")
   public SecurityUser createNewUserBasicFlow(UserRegistrationBasicFlowRequest request)
       throws RoleNotFoundException {
-    Optional<User> user = checkIfUserExists(request.getEmail());
+    Optional<User> user = userRepository.findByEmail(request.getEmail());
     if (user.isPresent()) {
       throw new UserAlreadyExistsException("User already exists with email: " + request.getEmail());
     }
@@ -129,7 +129,8 @@ public class CustomUserDetailsService implements UserDetailsService {
   @CacheEvict(value = "user-cache", key = "#request.email")
   public SecurityUser updateUserInfo(UserRegistrationRequest request) throws RoleNotFoundException {
     User existingUser =
-        checkIfUserExists(request.getEmail())
+        userRepository
+            .findByEmail(request.getEmail())
             .orElseThrow(
                 () ->
                     new UserNotFoundException(
@@ -159,15 +160,6 @@ public class CustomUserDetailsService implements UserDetailsService {
     userRepository.save(existingUser);
 
     return new SecurityUser(existingUser);
-  }
-
-  /**
-   * Check if a user with the given email exists.
-   *
-   * @param email the email
-   */
-  private Optional<User> checkIfUserExists(String email) {
-    return userRepository.findByEmail(email);
   }
 
   /**
