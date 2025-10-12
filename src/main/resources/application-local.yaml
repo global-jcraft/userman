@@ -263,6 +263,9 @@ stripe:
   webhook:
     secret: ${STRIPE_WEBHOOK_KEY}
   products:
+    free_plan: prod_TAENr8KnyzLi8I
+    free_plan_price:
+        monthly: price_1SDtutCsPWgUOsg2TEJg6VVE
     starter_plan: prod_SulaUk9xDSjvEX
     starter_plan_price:
         monthly: price_1Ryw3LCsPWgUOsg20ShZ4uLn

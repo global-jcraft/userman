@@ -55,6 +55,13 @@ public class UserSubscription {
   @Column(name = "cancel_at_period_end")
   private boolean cancelAtPeriodEnd;
 
+  @Enumerated(EnumType.STRING)
+  @Column(name = "pending_plan")
+  private SubscriptionPlan pendingPlan;
+
+  @Column(name = "pending_plan_effective_date")
+  private OffsetDateTime pendingPlanEffectiveDate;
+
   public UserSubscription(
       Long userId,
       String stripeCustomerId,

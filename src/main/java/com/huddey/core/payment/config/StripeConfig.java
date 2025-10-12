@@ -25,6 +25,9 @@ public class StripeConfig {
   @Value("${stripe.webhook.secret}")
   private String webhookSecret;
 
+  @Value("${stripe.products.free_plan}")
+  private String freePlanProductId;
+
   @Value("${stripe.products.starter_plan}")
   private String starterPlanProductId;
 
@@ -57,6 +60,9 @@ public class StripeConfig {
 
   @Value("${stripe.products.team_pro_plan_50}")
   private String teamProPlan50ProductId;
+
+  @Value("${stripe.products.free_plan_price.monthly}")
+  private String freePlanMonthlyPriceId;
 
   @Value("${stripe.products.starter_plan_price.monthly}")
   private String starterPlanMonthlyPriceId;

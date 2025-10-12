@@ -51,6 +51,7 @@ import com.huddey.core.userman.repository.UserCredentialRepository;
 import com.huddey.core.userman.repository.UserRepository;
 import com.huddey.core.userman.token.WebTokenGenerationStrategy;
 import com.huddey.core.userman.utils.RequestUtils;
+import com.stripe.exception.StripeException;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -59,7 +60,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Service
-@Transactional
 @RequiredArgsConstructor
 @Slf4j
 public class AuthServiceImpl implements AuthService {
@@ -99,12 +99,13 @@ public class AuthServiceImpl implements AuthService {
   }
 
   @Override
+  @Transactional
   @CacheEvict(value = "user-cache", key = "#request.email")
   public UserRegistrationResponse completeRegistration(
       UserRegistrationRequest request,
       HttpServletRequest servletRequest,
       HttpServletResponse servletResponse)
-      throws RoleNotFoundException, UserAlreadyExistsException {
+      throws RoleNotFoundException, UserAlreadyExistsException, StripeException {
 
     SecurityUser securityUser = customUserDetailsService.updateUserInfo(request);
     String clientType = determineClientType(servletRequest);
@@ -119,8 +120,12 @@ public class AuthServiceImpl implements AuthService {
         securityUser.getUsername(),
         confirmationLink);
 
+    var customer =
+        subscriptionService.getOrCreateCustomer(
+            securityUser.getUser().getId(), securityUser.getUser().getEmail());
     var freeSubscription =
-        subscriptionService.createFreeSubscription(securityUser.getUser().getId());
+        subscriptionService.createFreeSubscription(
+            securityUser.getUser().getId(), customer.getId());
     var regResponse =
         getUserRegistrationResponse(servletResponse, clientType, securityUser, jwtTokenProvider);
     regResponse.setUserSubscription(
@@ -246,6 +251,7 @@ public class AuthServiceImpl implements AuthService {
   }
 
   @Async("loginTaskExecutor")
+  @Transactional
   protected void updateLastLogin(User user) {
     user.setLastLoginAt(OffsetDateTime.now());
     user.setLastLoginIp(RequestUtils.getClientIp());
@@ -299,6 +305,7 @@ public class AuthServiceImpl implements AuthService {
   }
 
   @Override
+  @Transactional
   public ResetPasswordResponse resetPasswordRequest(
       ResetPasswordRequest request,
       HttpServletRequest servletRequest,
@@ -347,6 +354,7 @@ public class AuthServiceImpl implements AuthService {
   }
 
   @Override
+  @Transactional
   public void resetPasswordComplete(
       ResetPasswordCompleteRequest request,
       HttpServletRequest servletRequest,
@@ -377,6 +385,7 @@ public class AuthServiceImpl implements AuthService {
   }
 
   @Override
+  @Transactional
   public PhoneNumberVerificationResponse requestPhoneNumberVerification(
       PhoneNumberVerificationRequest request, HttpServletRequest servletRequest) {
     log.debug("Received request for phone number verification for email: {}", request.getEmail());
