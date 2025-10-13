@@ -132,16 +132,7 @@ jobs:
       - name: Extract version
         id: version
         run: |
-          echo "sha_short=$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_OUTPUT
-          echo "branch=$(echo ${GITHUB_REF#refs/heads/} | sed 's/\//-/g')" >> $GITHUB_OUTPUT
           echo "app_version=$(grep "version = '" build.gradle | cut -d "'" -f 2 | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
-      
-      - name: Debug outputs
-        run: |
-          echo "Docker username: ${{ secrets.DOCKER_USERNAME }}"
-          echo "SHA short: ${{ steps.version.outputs.sha_short }}"
-          echo "Branch: ${{ steps.version.outputs.branch }}"
-          echo "App version: ${{ steps.version.outputs.app_version }}"
       
       - name: Build & Push Image
         id: docker_build
@@ -150,11 +141,7 @@ jobs:
           context: .
           file: ./Dockerfile
           push: true
-          tags: |
-            ${{ secrets.DOCKER_USERNAME }}/huddey-core:${{ steps.version.outputs.app_version }}
-            ${{ secrets.DOCKER_USERNAME }}/huddey-core:${{ steps.version.outputs.sha_short }}
-            ${{ secrets.DOCKER_USERNAME }}/huddey-core:${{ steps.version.outputs.branch }}
-            ${{ secrets.DOCKER_USERNAME }}/huddey-core:latest
+          tags: ${{ secrets.DOCKER_USERNAME }}/huddey-core:${{ steps.version.outputs.app_version }}
 
   # 8a. Snyk: dependencies scan
   snyk-deps:
@@ -193,7 +180,7 @@ jobs:
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         with:
-          image: ${{ secrets.DOCKER_USERNAME }}/huddey-core:latest
+          image: ${{ secrets.DOCKER_USERNAME }}/huddey-core:${{ steps.version.outputs.app_version }}
           args: --file=Dockerfile
 
 
