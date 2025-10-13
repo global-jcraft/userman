@@ -135,7 +135,7 @@ jobs:
         run: |
           echo "sha_short=$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_OUTPUT
           echo "branch=$(echo ${GITHUB_REF#refs/heads/} | sed 's/\//-/g')" >> $GITHUB_OUTPUT
-          echo "app_version=$(grep "version = '" build.gradle | cut -d "'" -f 2)" >> $GITHUB_OUTPUT
+          echo "app_version=$(grep "version = '" build.gradle | cut -d "'" -f 2 | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
       
       - name: Build & Push Image
         id: docker_build
