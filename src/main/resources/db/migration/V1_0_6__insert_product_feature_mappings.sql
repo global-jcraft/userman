@@ -15,8 +15,7 @@ INSERT INTO huddey_core.products (stripe_product_id, name, description, active) 
 
 -- Insert Free Plan prices
 INSERT INTO huddey_core.product_prices (stripe_price_id, product_id, plan_id, unit_amount, currency, recurring_interval, active) VALUES
-('price_free_monthly', (SELECT id FROM huddey_core.products WHERE stripe_product_id = 'prod_free'), 'FREE', 0.00, 'eur', 'month', true),
-('price_free_yearly', (SELECT id FROM huddey_core.products WHERE stripe_product_id = 'prod_free'), 'FREE', 0.00, 'eur', 'year', true);
+('price_1SDtutCsPWgUOsg2TEJg6VVE', (SELECT id FROM huddey_core.products WHERE stripe_product_id = 'prod_free'), 'FREE_MONTHLY', 0.00, 'eur', 'month', true);
 -- Insert Starter Plan prices
 INSERT INTO huddey_core.product_prices (stripe_price_id, product_id, plan_id, unit_amount, currency, recurring_interval, active) VALUES
 ('price_1Ryw3LCsPWgUOsg20ShZ4uLn', (SELECT id FROM huddey_core.products WHERE stripe_product_id = 'prod_SulaUk9xDSjvEX'), 'STARTER_MONTHLY', 15.00, 'eur', 'month', true),

@@ -152,7 +152,7 @@ class SubscriptionServiceTest {
     UserSubscription result = subscriptionService.createFreeSubscription(1L, "cus_123");
 
     assertEquals(1L, result.getUserId());
-    assertEquals(SubscriptionPlan.FREE, result.getPlan());
+    assertEquals(SubscriptionPlan.FREE_MONTHLY, result.getPlan());
     assertEquals(SubscriptionStatus.ACTIVE, result.getStatus());
     assertFalse(result.isCancelAtPeriodEnd());
     verify(subscriptionRepository).save(any(UserSubscription.class));

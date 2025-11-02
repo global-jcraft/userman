@@ -9,7 +9,6 @@ import org.springframework.stereotype.Service;
 
 import com.huddey.core.payment.data.dto.CancelSubscriptionResponse;
 import com.huddey.core.payment.data.dto.CreateCheckoutSessionRequest;
-import com.huddey.core.payment.data.dto.CreateDirectSubscriptionRequest;
 import com.huddey.core.payment.data.entity.ProductPrice;
 import com.huddey.core.payment.data.entity.UserSubscription;
 import com.huddey.core.payment.data.enums.SubscriptionPlan;
@@ -24,7 +23,6 @@ import com.stripe.model.Price;
 import com.stripe.model.Subscription;
 import com.stripe.model.checkout.Session;
 import com.stripe.param.CustomerCreateParams;
-import com.stripe.param.SubscriptionCreateParams;
 import com.stripe.param.SubscriptionUpdateParams;
 import com.stripe.param.checkout.SessionCreateParams;
 
@@ -61,7 +59,7 @@ public class SubscriptionService {
       }
     }
 
-    Customer customer = getOrCreateCustomer(userId, email);
+    Customer customer = getStripeCustomer(userId);
 
     var lineItem =
         SessionCreateParams.LineItem.builder()
@@ -84,34 +82,6 @@ public class SubscriptionService {
     log.debug("Created checkout session {} for user {}", session.getId(), userId);
 
     return session.getUrl();
-  }
-
-  public void createSubscription(Long userId, String email, CreateDirectSubscriptionRequest request)
-      throws StripeException {
-
-    // Create or get customer
-    Customer customer = getOrCreateCustomer(userId, email);
-
-    // Create subscription
-    SubscriptionCreateParams params =
-        SubscriptionCreateParams.builder()
-            .setCustomer(customer.getId())
-            .setDefaultPaymentMethod(request.getPaymentMethodId())
-            .addItem(
-                SubscriptionCreateParams.Item.builder()
-                    .setPrice(request.getPriceId())
-                    .setQuantity(1L)
-                    .build())
-            .setPaymentBehavior(SubscriptionCreateParams.PaymentBehavior.DEFAULT_INCOMPLETE)
-            // .setExpandListValue("latest_invoice.payment_intent")
-            .putMetadata("userId", userId.toString())
-            .putMetadata("plan", request.getPlan().name())
-            .build();
-
-    Subscription subscription = Subscription.create(params);
-
-    // Save a subscription to a database
-    saveSubscriptionToDatabase(userId, customer.getId(), subscription, request.getPlan());
   }
 
   public void updateSubscription(Long userId, SubscriptionPlan newPlan) throws StripeException {
@@ -203,7 +173,7 @@ public class SubscriptionService {
   public UserSubscription createFreeSubscription(Long userId, String stripeCustomerId) {
     UserSubscription freeSubscription = new UserSubscription();
     freeSubscription.setUserId(userId);
-    freeSubscription.setPlan(SubscriptionPlan.FREE);
+    freeSubscription.setPlan(SubscriptionPlan.FREE_MONTHLY);
     freeSubscription.setStatus(SubscriptionStatus.ACTIVE);
     freeSubscription.setCurrentPeriodStart(OffsetDateTime.now());
     freeSubscription.setCurrentPeriodEnd(OffsetDateTime.now().plusYears(100));
@@ -229,15 +199,18 @@ public class SubscriptionService {
     throw new StripeServiceException("No customer found for user: " + userId, null);
   }
 
-  public Customer getOrCreateCustomer(Long userId, String email) throws StripeException {
+  public Customer getStripeCustomer(Long userId) throws StripeException {
     Optional<UserSubscription> existingSub = subscriptionRepository.findByUserId(userId);
 
-    if (existingSub.isPresent()
-        && existingSub.get().getStripeCustomerId() != null
-        && existingSub.get().getStripeSubscriptionId() != null) {
-      return Customer.retrieve(existingSub.get().getStripeCustomerId());
+    if (existingSub.isEmpty()) {
+      throw new StripeServiceException("No customer found for user: " + userId, null);
     }
 
+    log.debug("Get Stripe customer {} for user {}", existingSub.get().getId(), userId);
+    return Customer.retrieve(existingSub.get().getStripeCustomerId());
+  }
+
+  public Customer createStripeCustomer(Long userId, String email) throws StripeException {
     CustomerCreateParams params =
         CustomerCreateParams.builder()
             .setEmail(email)

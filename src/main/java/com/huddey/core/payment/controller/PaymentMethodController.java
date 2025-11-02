@@ -196,6 +196,13 @@ public class PaymentMethodController {
 
     } catch (PaymentMethodNotFoundException e) {
       return ResponseEntity.notFound().build();
+    } catch (StripeException e) {
+      return ResponseEntity.badRequest()
+          .body(
+              ApiResponse.error(
+                  LocaleUtils.getMessage(PAYMENT_METHOD_DEFAULT_SET_ERROR)
+                      + ": "
+                      + e.getMessage()));
     }
   }
 

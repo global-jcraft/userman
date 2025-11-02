@@ -4,7 +4,7 @@ import lombok.Getter;
 
 @Getter
 public enum SubscriptionPlan {
-  FREE("free_starter_plan", "Free", 00.00, "month"),
+  FREE_MONTHLY("free_starter_plan", "Free", 00.00, "month"),
   STARTER_MONTHLY("price_starter_monthly", "Starter Monthly", 15.00, "month"),
   STARTER_YEARLY("price_starter_yearly", "Starter Yearly", 153.00, "year"),
   PRO_MONTHLY("price_pro_monthly", "Pro Monthly", 39.00, "month"),

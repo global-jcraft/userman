@@ -28,7 +28,11 @@ public class StripeSetupService {
             "Free Plan",
             "Ideal for individuals exploring social media management with basic features and limited access.");
     createPrice(
-        freeProduct.getId(), 0L, MONTH, "Free Monthly", SubscriptionPlan.FREE.getInternalPriceId());
+        freeProduct.getId(),
+        0L,
+        MONTH,
+        "Free Monthly",
+        SubscriptionPlan.FREE_MONTHLY.getInternalPriceId());
 
     // Create Starter Plan Product
     Product starterProduct =

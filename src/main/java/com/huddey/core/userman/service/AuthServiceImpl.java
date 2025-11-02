@@ -121,7 +121,7 @@ public class AuthServiceImpl implements AuthService {
         confirmationLink);
 
     var customer =
-        subscriptionService.getOrCreateCustomer(
+        subscriptionService.createStripeCustomer(
             securityUser.getUser().getId(), securityUser.getUser().getEmail());
     var freeSubscription =
         subscriptionService.createFreeSubscription(

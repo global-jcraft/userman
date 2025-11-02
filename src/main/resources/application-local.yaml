@@ -228,8 +228,8 @@ management:
 
 app:
   frontend:
-    successUrl: http://localhost:8080/payment-methods?success=true
-    cancelUrl: http://localhost:8080/payment-methods?canceled=true
+    successUrl: http://localhost:3000/payment-methods?success=true
+    cancelUrl: http://localhost:3000/payment-methods?canceled=true
   confirmation:
     baseUrl: https://localhost:8080/huddey/api/v1/auth/
   security:
