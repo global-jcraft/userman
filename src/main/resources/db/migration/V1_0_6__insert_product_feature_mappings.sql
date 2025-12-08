@@ -1,6 +1,6 @@
 -- Insert all products
 INSERT INTO huddey_core.products (stripe_product_id, name, description, active) VALUES
-('prod_free', 'Free Plan', 'Ideal for beginners and hobbyist creators', true),
+('prod_TAENr8KnyzLi8I', 'Free Plan', 'Ideal for beginners and hobbyist creators', true),
 ('prod_SulaUk9xDSjvEX', 'Starter Plan', 'Perfect for growing creators', true),
 ('prod_SulaIh9gvfvSRN', 'Pro Plan', 'Advanced features for professional creators', true),
 ('prod_SulawnaPRdY6xG', 'Elite Plan', 'Ultimate plan for elite creators', true),
@@ -15,7 +15,7 @@ INSERT INTO huddey_core.products (stripe_product_id, name, description, active) 
 
 -- Insert Free Plan prices
 INSERT INTO huddey_core.product_prices (stripe_price_id, product_id, plan_id, unit_amount, currency, recurring_interval, active) VALUES
-('price_1SDtutCsPWgUOsg2TEJg6VVE', (SELECT id FROM huddey_core.products WHERE stripe_product_id = 'prod_free'), 'FREE_MONTHLY', 0.00, 'eur', 'month', true);
+('price_1SDtutCsPWgUOsg2TEJg6VVE', (SELECT id FROM huddey_core.products WHERE stripe_product_id = 'prod_TAENr8KnyzLi8I'), 'HUDDEY_FREE', 0.00, 'eur', 'month', true);
 -- Insert Starter Plan prices
 INSERT INTO huddey_core.product_prices (stripe_price_id, product_id, plan_id, unit_amount, currency, recurring_interval, active) VALUES
 ('price_1Ryw3LCsPWgUOsg20ShZ4uLn', (SELECT id FROM huddey_core.products WHERE stripe_product_id = 'prod_SulaUk9xDSjvEX'), 'STARTER_MONTHLY', 15.00, 'eur', 'month', true),

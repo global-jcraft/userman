@@ -262,54 +262,66 @@ stripe:
     key: ${STRIPE_PUBLISHABLE_KEY}
   webhook:
     secret: ${STRIPE_WEBHOOK_KEY}
+
+billing:
+  currencyCodes: [EUR, USD, GBP]
+  taxBehavior: EXCLUSIVE      # or INCLUSIVE based on your invoicing
+  taxCode: txcd_10103001      # Stripe SaaS tax code (Software-as-a-Service)
   products:
-    free_plan: prod_TAENr8KnyzLi8I
-    free_plan_price:
-        monthly: price_1SDtutCsPWgUOsg2TEJg6VVE
-    starter_plan: prod_SulaUk9xDSjvEX
-    starter_plan_price:
-        monthly: price_1Ryw3LCsPWgUOsg20ShZ4uLn
-        yearly: price_1Ryw3MCsPWgUOsg21bcOiCkR
-    pro_plan: prod_SulaIh9gvfvSRN
-    pro_plan_price:
-      monthly: price_1Ryw3MCsPWgUOsg2PuITEfyW
-      yearly: price_1Ryw3NCsPWgUOsg214wC4gpo
-    elite_plan: prod_SulawnaPRdY6xG
-    elite_plan_price:
-      monthly: price_1Ryw3NCsPWgUOsg2lgsmS3p1
-      yearly: price_1Ryw3OCsPWgUOsg2UXvFZdJS
-    team_plan_10: prod_Sulayyf6qf6sEH
-    team_plan_10_price:
-      monthly: price_1Ryw3OCsPWgUOsg2TESdXzdA
-      yearly: price_1Ryw3PCsPWgUOsg27rbRJzOr
-    team_plan_20: prod_Sulapoa2aXyAxi
-    team_plan_20_price:
-      monthly: price_1Ryw3PCsPWgUOsg2NlBBcYfp
-      yearly: price_1Ryw3QCsPWgUOsg2OObTQ13i
-    team_plan_30: prod_SulaeqrhOF1eh7
-    team_plan_30_price:
-      monthly: price_1Ryw3QCsPWgUOsg2QKEghbhv
-      yearly: price_1Ryw3RCsPWgUOsg2uYDc6YRD
-    team_plan_50: prod_Sula7iopS6mVjn
-    team_plan_50_price:
-      monthly: price_1Ryw3RCsPWgUOsg2TZ2ZN0wg
-      yearly: price_1Ryw3SCsPWgUOsg2FwapBiQI
-    team_pro_plan_10: prod_SulaseY63WPgq9
-    team_pro_plan_10_price:
-      monthly: price_1Ryw3SCsPWgUOsg25mrojs1g
-      yearly: price_1Ryw3SCsPWgUOsg2lE3tsuIq
-    team_pro_plan_20: prod_SulaeOc7dYgYAh
-    team_pro_plan_20_price:
-      monthly: price_1Ryw3TCsPWgUOsg2haaW4Gfs
-      yearly: price_1Ryw3TCsPWgUOsg2jwKWDPR9
-    team_pro_plan_30: prod_SulaXHipbLtCMM
-    team_pro_plan_30_price:
-      monthly: price_1Ryw3UCsPWgUOsg2pCXs99GV
-      yearly: price_1Ryw3UCsPWgUOsg2Gn8ZqToD
-    team_pro_plan_50: prod_SuladTSJgv69nt
-    team_pro_plan_50_price:
-      monthly: price_1Ryw3VCsPWgUOsg2WGKsNinm
-      yearly: price_1Ryw3VCsPWgUOsg2efo5hQZ9
+    - key: huddey_free
+      name: Free
+      description: Free plan for individuals exploring Huddey
+      recurring:
+        - interval: month
+          amounts: { EUR: 0, USD: 0, GBP: 0 }
+
+    - key: huddey_starter
+      name: Starter
+      description: Starter plan for automation & essentials
+      recurring:
+        - interval: month
+          amounts: { EUR: 1500, USD: 1500, GBP: 1300 }    # minor units
+        - interval: year
+          amounts: { EUR: 15300, USD: 15300, GBP: 13200 }
+
+    - key: huddey_pro
+      name: Pro
+      description: Pro plan for growth and analytics
+      recurring:
+        - interval: month
+          amounts: { EUR: 3900, USD: 3900, GBP: 3400 }
+        - interval: year
+          amounts: { EUR: 37400, USD: 37400, GBP: 32700 }
+
+    - key: huddey_elite
+      name: Elite
+      description: Elite plan with advanced AI & Ads Hub Lite
+      recurring:
+        - interval: month
+          amounts: { EUR: 9900, USD: 9900, GBP: 8600 }
+        - interval: year
+          amounts: { EUR: 89100, USD: 89100, GBP: 77200 }
+
+    - key: huddey_teams
+      name: Teams
+      description: Teams plan (seat-based)
+      seatBased: true
+      # If you want a base bundle, add baseSeats + basePrice and a separate extraSeat price.
+      recurring:
+        - interval: month
+          amounts: { EUR: 2490, USD: 2490, GBP: 2190 }    # price PER SEAT / month
+        - interval: year
+          amounts: { EUR: 25390, USD: 25390, GBP: 22490 } # PER SEAT / year
+
+    - key: huddey_teams_pro
+      name: Teams Pro
+      description: Teams Pro (seat-based, enterprise features)
+      seatBased: true
+      recurring:
+        - interval: month
+          amounts: { EUR: 4250, USD: 4250, GBP: 3690 }    # PER SEAT / month
+        - interval: year
+          amounts: { EUR: 42330, USD: 42330, GBP: 36700 } # PER SEAT / year
 
 logging:
   level:

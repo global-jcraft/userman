@@ -43,15 +43,16 @@ public class UserMapper {
             userSubscription.getStripeSubscriptionId() != null
                 ? userSubscription.getStripeCustomerId()
                 : null)
-        .productPrice(ProductPriceMapper.toDto(currentPlanPrices.getFirst()))
+        .productPrice(
+            currentPlanPrices.isEmpty()
+                ? null
+                : ProductPriceMapper.toDto(currentPlanPrices.getFirst()))
         .stripeSubscriptionId(userSubscription.getStripeSubscriptionId())
-        .plan(userSubscription.getPlan())
+        .planKey(userSubscription.getPlanKey())
+        .billingInterval(userSubscription.getBillingInterval())
+        .currency(userSubscription.getCurrency())
+        .seatCount(userSubscription.getSeatCount())
         .status(userSubscription.getStatus())
-        // .createdAt(userSubscription.getCreatedAt())
-        // .updatedAt(userSubscription.getUpdatedAt())
-        // .currentPeriodStart(userSubscription.getCurrentPeriodStart())
-        // .currentPeriodEnd(userSubscription.getCurrentPeriodEnd())
-        // .cancelAtPeriodEnd(userSubscription.isCancelAtPeriodEnd())
         .build();
   }
 }

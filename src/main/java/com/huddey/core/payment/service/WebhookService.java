@@ -8,7 +8,6 @@ import java.util.Optional;
 import org.springframework.stereotype.Service;
 
 import com.huddey.core.payment.data.entity.UserSubscription;
-import com.huddey.core.payment.data.enums.SubscriptionPlan;
 import com.huddey.core.payment.data.enums.SubscriptionStatus;
 import com.huddey.core.payment.repository.UserSubscriptionRepository;
 import com.huddey.core.payment.utils.StripeUtils;
@@ -41,68 +40,69 @@ public class WebhookService {
    * @param event The Stripe event object
    */
   public void handleCheckoutSessionCompleted(Event event) {
-    EventDataObjectDeserializer dataObjectDeserializer = event.getDataObjectDeserializer();
-    Session session = (Session) dataObjectDeserializer.getObject().orElse(null);
+    EventDataObjectDeserializer d = event.getDataObjectDeserializer();
+    Session session = (Session) d.getObject().orElse(null);
 
-    if (session != null && session.getMode().equals("subscription")) {
-      String userId = session.getMetadata().get("userId");
-      String planName = session.getMetadata().get("plan");
+    if (session != null && "subscription".equals(session.getMode())) {
+      String userIdStr = session.getMetadata().get("userId");
+      String planKey = session.getMetadata().get("planKey");
+      String interval = session.getMetadata().get("interval");
+      String currency = session.getMetadata().get("currency");
+      String seatsStr = session.getMetadata().get("seats");
 
-      if (userId != null && planName != null) {
+      if (userIdStr != null) {
         try {
-          SubscriptionPlan plan = SubscriptionPlan.valueOf(planName);
-          Long userIdLong = Long.valueOf(userId);
-
-          Optional<UserSubscription> existingSub = subscriptionRepository.findByUserId(userIdLong);
-
-          // Fetch subscription details from Stripe to get period dates
+          Long userId = Long.valueOf(userIdStr);
           Subscription subscription = Subscription.retrieve(session.getSubscription());
 
-          UserSubscription userSub;
-          if (existingSub.isPresent()) {
-            userSub = existingSub.get();
-            userSub.setStripeCustomerId(session.getCustomer());
-            userSub.setStripeSubscriptionId(session.getSubscription());
-            userSub.setPlan(plan);
-            userSub.setStatus(SubscriptionStatus.ACTIVE);
-            userSub.setUpdatedAt(OffsetDateTime.now());
-          } else {
-            userSub =
-                new UserSubscription(
-                    userIdLong,
-                    session.getCustomer(),
-                    session.getSubscription(),
-                    plan,
-                    SubscriptionStatus.ACTIVE);
+          var item = subscription.getItems().getData().get(0);
+          var quantity = item.getQuantity() == null ? 1L : item.getQuantity();
+          if (seatsStr != null) {
+            try {
+              quantity = Math.max(quantity, Long.parseLong(seatsStr));
+            } catch (NumberFormatException ignored) {
+            }
           }
 
+          Optional<UserSubscription> existingSub = subscriptionRepository.findByUserId(userId);
+          UserSubscription userSub = existingSub.orElseGet(UserSubscription::new);
+
+          userSub.setUserId(userId);
+          userSub.setStripeCustomerId(session.getCustomer());
+          userSub.setStripeSubscriptionId(subscription.getId());
+          userSub.setStatus(SubscriptionStatus.ACTIVE);
+          userSub.setCancelAtPeriodEnd(false);
+
+          if (planKey != null) userSub.setPlanKey(planKey);
+          if (interval != null) userSub.setBillingInterval(interval.toLowerCase());
+          if (currency != null) userSub.setCurrency(currency.toUpperCase());
+          userSub.setSeatCount(quantity);
+
           userSub.setCurrentPeriodStart(
-              Instant.ofEpochSecond(
-                      subscription.getItems().getData().getFirst().getCurrentPeriodStart())
+              Instant.ofEpochSecond(item.getCurrentPeriodStart())
                   .atZone(ZoneId.systemDefault())
                   .toOffsetDateTime());
           userSub.setCurrentPeriodEnd(
-              Instant.ofEpochSecond(
-                      subscription.getItems().getData().getFirst().getCurrentPeriodEnd())
+              Instant.ofEpochSecond(item.getCurrentPeriodEnd())
                   .atZone(ZoneId.systemDefault())
                   .toOffsetDateTime());
+          userSub.setUpdatedAt(OffsetDateTime.now());
 
           subscriptionRepository.save(userSub);
         } catch (StripeException e) {
-          log.error("Failed to retrieve subscription from Stripe: {}", e.getMessage());
+          log.error("Failed to retrieve subscription from Stripe: {}", e.getMessage(), e);
         } catch (Exception e) {
-          log.error("Error processing checkout session: {}", e.getMessage());
+          log.error("Error processing checkout session: {}", e.getMessage(), e);
         }
       }
     }
   }
 
   public void handleSubscriptionCreated(Event event) {
-    EventDataObjectDeserializer dataObjectDeserializer = event.getDataObjectDeserializer();
-    Subscription subscription = (Subscription) dataObjectDeserializer.getObject().orElse(null);
-
+    var data = event.getDataObjectDeserializer();
+    Subscription subscription = (Subscription) data.getObject().orElse(null);
     if (subscription != null) {
-      updateSubscriptionInDatabase(subscription);
+      updateSubscriptionInDatabase(subscription); // <— unchanged call, now uses new logic above
     }
   }
 
@@ -112,27 +112,45 @@ public class WebhookService {
    * @param event The Stripe event object
    */
   public void handleSubscriptionUpdated(Event event) {
-    EventDataObjectDeserializer dataObjectDeserializer = event.getDataObjectDeserializer();
-    Subscription subscription = (Subscription) dataObjectDeserializer.getObject().orElse(null);
-
+    var data = event.getDataObjectDeserializer();
+    Subscription subscription = (Subscription) data.getObject().orElse(null);
     if (subscription != null) {
-      updateSubscriptionInDatabase(subscription);
+      updateSubscriptionInDatabase(subscription); // <— unchanged call, now uses new logic above
     }
   }
 
   public void handleSubscriptionDeleted(Event event) {
-    EventDataObjectDeserializer dataObjectDeserializer = event.getDataObjectDeserializer();
-    Subscription subscription = (Subscription) dataObjectDeserializer.getObject().orElse(null);
+    EventDataObjectDeserializer d = event.getDataObjectDeserializer();
+    Subscription subscription = (Subscription) d.getObject().orElse(null);
 
     if (subscription != null) {
-      Optional<UserSubscription> userSub =
+      Optional<UserSubscription> userSubOpt =
           subscriptionRepository.findByStripeSubscriptionId(subscription.getId());
+      if (userSubOpt.isEmpty()) {
+        userSubOpt = subscriptionRepository.findByStripeCustomerId(subscription.getCustomer());
+      }
+      if (userSubOpt.isPresent()) {
+        UserSubscription sub = userSubOpt.get();
 
-      if (userSub.isPresent()) {
-        UserSubscription sub = userSub.get();
-        sub.setStatus(SubscriptionStatus.CANCELED);
+        // Downgrade to local Free (no Stripe sub)
+        String currency = sub.getCurrency() != null ? sub.getCurrency() : "EUR";
+        sub.setStripeSubscriptionId(null);
+        sub.setPlanKey("huddey_free");
+        sub.setBillingInterval("month");
+        sub.setCurrency(currency);
+        sub.setSeatCount(1L);
+        sub.setStatus(SubscriptionStatus.ACTIVE); // Free is active locally
+        sub.setCancelAtPeriodEnd(false);
+        sub.setCurrentPeriodStart(OffsetDateTime.now());
+        sub.setCurrentPeriodEnd(OffsetDateTime.now().plusYears(100));
         sub.setUpdatedAt(OffsetDateTime.now());
+
         subscriptionRepository.save(sub);
+        log.info(
+            "Downgraded customer {} to Free after subscription deletion",
+            subscription.getCustomer());
+      } else {
+        log.warn("No user subscription found for deleted subscription {}", subscription.getId());
       }
     }
   }
@@ -417,29 +435,65 @@ public class WebhookService {
 
       // Handle plan changes when period transitions
       if (subscription.getItems() != null && !subscription.getItems().getData().isEmpty()) {
-        String priceId = subscription.getItems().getData().getFirst().getPrice().getId();
-        try {
-          SubscriptionPlan newPlan = SubscriptionPlan.fromStripePriceId(priceId);
+        var item = subscription.getItems().getData().getFirst();
 
-          if (userSub.getPendingPlan() == newPlan) {
-            // Pending change is now effective
-            userSub.setPlan(newPlan);
-            userSub.setPendingPlan(null);
-            userSub.setPendingPlanEffectiveDate(null);
-            log.info(
-                "Activated pending plan change to {} for user {}", newPlan, userSub.getUserId());
-          } else if (userSub.getPlan() != newPlan) {
-            // Direct plan change (upgrade)
-            userSub.setPlan(newPlan);
-            log.info("Updated subscription plan to {} for user {}", newPlan, userSub.getUserId());
+        // Periods / cancel flag
+        userSub.setCurrentPeriodStart(
+            Instant.ofEpochSecond(item.getCurrentPeriodStart())
+                .atZone(ZoneId.systemDefault())
+                .toOffsetDateTime());
+        userSub.setCurrentPeriodEnd(
+            Instant.ofEpochSecond(item.getCurrentPeriodEnd())
+                .atZone(ZoneId.systemDefault())
+                .toOffsetDateTime());
+        userSub.setCancelAtPeriodEnd(subscription.getCancelAtPeriodEnd());
+
+        // Derive planKey:interval:CURRENCY
+        String lookupKey = item.getPrice() != null ? item.getPrice().getLookupKey() : null;
+
+        // Fallback if lookup_key is missing: build from product.metadata.key + interval + currency
+        if ((lookupKey == null || lookupKey.isBlank()) && item.getPrice() != null) {
+          try {
+            var price = item.getPrice();
+            var recurring = price.getRecurring();
+            String interval =
+                recurring != null ? recurring.getInterval().toString().toLowerCase() : "month";
+            String currency =
+                price.getCurrency() != null ? price.getCurrency().toUpperCase() : "EUR";
+
+            String productKey = null;
+            if (price.getProductObject() != null
+                && price.getProductObject().getMetadata() != null) {
+              productKey = price.getProductObject().getMetadata().get("key");
+            }
+            if (productKey != null) {
+              lookupKey = productKey + ":" + interval + ":" + currency;
+            }
+          } catch (Exception ignored) {
           }
-
-        } catch (IllegalArgumentException e) {
-          log.error("Unknown Stripe price ID: {} - Please update SubscriptionPlan enum", priceId);
         }
-      }
 
-      subscriptionRepository.save(userSub);
+        if (lookupKey != null && !lookupKey.isBlank()) {
+          String[] parts = lookupKey.split(":");
+          if (parts.length == 3) {
+            userSub.setPlanKey(parts[0]);
+            userSub.setBillingInterval(parts[1].toLowerCase());
+            userSub.setCurrency(parts[2].toUpperCase());
+          } else {
+            log.warn("Unexpected lookup_key format: {}", lookupKey);
+          }
+        } else {
+          log.warn("Missing lookup_key and fallback for subscription {}", subscription.getId());
+        }
+
+        // Seats / quantity
+        if (item.getQuantity() != null) {
+          userSub.setSeatCount(item.getQuantity());
+        }
+
+        userSub.setUpdatedAt(OffsetDateTime.now());
+        subscriptionRepository.save(userSub);
+      }
     } else {
       log.warn(
           "No user subscription found for subscription ID: {} or customer ID: {}",

@@ -1,7 +1,5 @@
 package com.huddey.core.payment.data.dto;
 
-import com.huddey.core.payment.data.enums.SubscriptionPlan;
-
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -14,11 +12,17 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class CreateCheckoutSessionRequest {
 
-  @NotNull(message = "Plan is required")
-  private SubscriptionPlan plan;
+  @NotNull(message = "Plan predefined key is required")
+  private String planKey; // e.g. "huddey_teams" or "huddey_pro"
 
-  @NotNull(message = "Price ID is required")
-  private String priceId;
+  @NotNull(message = "Interval is required")
+  private String interval; // "month" | "year"
+
+  @NotNull(message = "Currency is required")
+  private String currency; // "EUR" | "USD" | "GBP"
+
+  @NotNull(message = "Seats is required")
+  private long seats; // 1 for individuals, N for Teams; client sends current seat count
 
   @NotBlank(message = "Success URL is required")
   private String successUrl;
@@ -26,7 +30,6 @@ public class CreateCheckoutSessionRequest {
   @NotBlank(message = "Cancel URL is required")
   private String cancelUrl;
 
-  // Optional: Override user email for checkout
   @Email(message = "Invalid email format")
   private String customerEmail;
 }
