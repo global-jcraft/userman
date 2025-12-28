@@ -77,6 +77,10 @@ public class SubscriptionService {
             .setSuccessUrl(req.getSuccessUrl() + "?session_id={CHECKOUT_SESSION_ID}")
             .setCancelUrl(req.getCancelUrl())
             .setAutomaticTax(SessionCreateParams.AutomaticTax.builder().setEnabled(true).build())
+            .setCustomerUpdate(
+                SessionCreateParams.CustomerUpdate.builder()
+                    .setAddress(SessionCreateParams.CustomerUpdate.Address.AUTO)
+                    .build())
             .setAllowPromotionCodes(true)
             .addLineItem(
                 SessionCreateParams.LineItem.builder()
