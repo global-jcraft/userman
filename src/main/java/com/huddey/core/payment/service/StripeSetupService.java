@@ -97,8 +97,7 @@ public class StripeSetupService {
       // If amount, currency, or interval changed, create a new price (Stripe forbids edits).
       boolean sameCurrency = currency.equalsIgnoreCase(existing.getCurrency());
       boolean sameInterval =
-          interval.equalsIgnoreCase(
-              existing.getRecurring().getInterval().toLowerCase(ROOT));
+          interval.equalsIgnoreCase(existing.getRecurring().getInterval().toLowerCase(ROOT));
       boolean sameAmount = Objects.equals(existing.getUnitAmount(), unitAmount);
 
       if (sameCurrency && sameInterval && sameAmount && Boolean.TRUE.equals(existing.getActive())) {
