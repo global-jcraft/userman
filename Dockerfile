@@ -1,12 +1,12 @@
-FROM openjdk:21-slim AS builder
+FROM eclipse-temurin:21-jdk-alpine AS builder
 WORKDIR /build
 COPY . .
 RUN ./gradlew clean bootJar --no-daemon
 
-FROM openjdk:21-slim
+FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
 
-RUN addgroup --system appuser && adduser --system --group appuser
+RUN addgroup -S appuser && adduser -S -G appuser appuser
 
 COPY --from=builder /build/build/libs/*.jar app.jar
 
