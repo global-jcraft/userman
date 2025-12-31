@@ -150,6 +150,7 @@ jobs:
           context: .
           file: ./Dockerfile
           push: true
+          no-cache: true
           tags: ${{ secrets.DOCKER_USERNAME }}/huddey-core:${{ steps.version.outputs.app_version }}
 
   # 8a. Snyk: dependencies scan
