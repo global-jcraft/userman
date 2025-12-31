@@ -1,4 +1,4 @@
-FROM openjdk:21-jdk-slim AS builder
+FROM eclipse-temurin:21-jdk-alpine AS builder
 WORKDIR /build
 COPY . .
 RUN ./gradlew clean bootJar --no-daemon
