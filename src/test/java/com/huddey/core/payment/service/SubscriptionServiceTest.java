@@ -7,8 +7,6 @@ import static org.mockito.Mockito.*;
 import java.time.OffsetDateTime;
 import java.util.Optional;
 
-import com.huddey.core.payment.config.PlanKey;
-import com.stripe.exception.StripeException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -24,6 +22,7 @@ import com.huddey.core.payment.exception.StripeServiceException;
 import com.huddey.core.payment.exception.SubscriptionNotFoundException;
 import com.huddey.core.payment.repository.ProductPriceRepository;
 import com.huddey.core.payment.repository.UserSubscriptionRepository;
+import com.stripe.exception.StripeException;
 import com.stripe.model.Subscription;
 import com.stripe.model.SubscriptionItem;
 import com.stripe.model.SubscriptionItemCollection;
@@ -68,20 +67,24 @@ class SubscriptionServiceTest {
     when(subscriptionRepository.findByUserId(1L)).thenReturn(Optional.of(mockUserSubscription));
 
     try (MockedStatic<Subscription> mockedSubscription = mockStatic(Subscription.class);
-         MockedStatic<com.stripe.model.Price> mockedPrice = mockStatic(com.stripe.model.Price.class)) {
-      
+        MockedStatic<com.stripe.model.Price> mockedPrice =
+            mockStatic(com.stripe.model.Price.class)) {
+
       Subscription mockStripeSubscription = createMockStripeSubscription();
       mockedSubscription
           .when(() -> Subscription.retrieve("sub_123"))
           .thenReturn(mockStripeSubscription);
 
-      com.stripe.model.PriceCollection mockPriceCollection = mock(com.stripe.model.PriceCollection.class);
+      com.stripe.model.PriceCollection mockPriceCollection =
+          mock(com.stripe.model.PriceCollection.class);
       com.stripe.model.Price mockPrice = mock(com.stripe.model.Price.class);
       when(mockPriceCollection.getData()).thenReturn(java.util.List.of(mockPrice));
       when(mockPrice.getId()).thenReturn("price_123");
-      
+
       mockedPrice.when(() -> com.stripe.model.Price.list(anyMap())).thenReturn(mockPriceCollection);
-      mockedPrice.when(() -> com.stripe.model.Price.list(any(com.stripe.param.PriceListParams.class))).thenReturn(mockPriceCollection);
+      mockedPrice
+          .when(() -> com.stripe.model.Price.list(any(com.stripe.param.PriceListParams.class)))
+          .thenReturn(mockPriceCollection);
       mockedPrice.when(() -> com.stripe.model.Price.retrieve("price_123")).thenReturn(mockPrice);
       when(mockPrice.getUnitAmount()).thenReturn(1500L);
 
@@ -164,7 +167,9 @@ class SubscriptionServiceTest {
     when(subscriptionRepository.save(any(UserSubscription.class)))
         .thenAnswer(i -> i.getArgument(0));
 
-    UserSubscription result = subscriptionService.createFreeLocalSubscription(1L, "cus_123", PlanKey.FREE.getKey(), "month", "EUR", 1L);
+    UserSubscription result =
+        subscriptionService.createFreeLocalSubscription(
+            1L, "cus_123", PlanKey.FREE.getKey(), "month", "EUR", 1L);
 
     assertEquals(1L, result.getUserId());
     assertEquals(PlanKey.FREE.getKey(), result.getPlanKey());
@@ -183,7 +188,8 @@ class SubscriptionServiceTest {
           .when(() -> Subscription.retrieve("sub_123"))
           .thenReturn(mockStripeSubscription);
 
-      subscriptionService.changeSeatCount(1L, 5L, com.stripe.param.SubscriptionUpdateParams.ProrationBehavior.CREATE_PRORATIONS);
+      subscriptionService.changeSeatCount(
+          1L, 5L, com.stripe.param.SubscriptionUpdateParams.ProrationBehavior.CREATE_PRORATIONS);
 
       verify(subscriptionRepository).save(mockUserSubscription);
     }
