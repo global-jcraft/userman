@@ -121,20 +121,32 @@ public class AuthServiceImpl implements AuthService {
         confirmationLink);
 
     var customer =
-        subscriptionService.getOrCreateCustomer(
+        subscriptionService.getOrCreateStripeCustomer(
             securityUser.getUser().getId(), securityUser.getUser().getEmail());
     var freeSubscription =
-        subscriptionService.createFreeSubscription(
-            securityUser.getUser().getId(), customer.getId());
+        subscriptionService.createFreeLocalSubscription(
+            securityUser.getUser().getId(),
+            customer.getId(),
+            "huddey_free", // planKey
+            "month", // billing interval
+            "EUR", // default currency (adjust if you detect from user/locale)
+            1L // seats
+            );
+
     var regResponse =
         getUserRegistrationResponse(servletResponse, clientType, securityUser, jwtTokenProvider);
+
     regResponse.setUserSubscription(
         UserSubscriptionResponse.builder()
             .id(freeSubscription.getId())
             .userId(freeSubscription.getUserId())
             .stripeCustomerId(freeSubscription.getStripeCustomerId())
-            .stripeSubscriptionId(freeSubscription.getStripeSubscriptionId())
-            .plan(freeSubscription.getPlan())
+            .stripeSubscriptionId(
+                freeSubscription.getStripeSubscriptionId()) // will be null for Free
+            .planKey(freeSubscription.getPlanKey())
+            .billingInterval(freeSubscription.getBillingInterval())
+            .currency(freeSubscription.getCurrency())
+            .seatCount(1L)
             .status(freeSubscription.getStatus())
             .createdAt(freeSubscription.getCreatedAt())
             .updatedAt(freeSubscription.getUpdatedAt())
@@ -142,6 +154,7 @@ public class AuthServiceImpl implements AuthService {
             .currentPeriodEnd(freeSubscription.getCurrentPeriodEnd())
             .cancelAtPeriodEnd(freeSubscription.isCancelAtPeriodEnd())
             .build());
+
     return regResponse;
   }
 

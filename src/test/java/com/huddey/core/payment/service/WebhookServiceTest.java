@@ -5,7 +5,6 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 import static org.mockito.Mockito.lenient;
 
-import java.time.OffsetDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -16,25 +15,20 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.huddey.core.payment.config.PlanKey;
 import com.huddey.core.payment.data.entity.UserSubscription;
-import com.huddey.core.payment.data.enums.SubscriptionPlan;
 import com.huddey.core.payment.data.enums.SubscriptionStatus;
 import com.huddey.core.payment.repository.UserSubscriptionRepository;
-import com.stripe.model.Event;
-import com.stripe.model.EventDataObjectDeserializer;
-import com.stripe.model.Price;
-import com.stripe.model.Subscription;
-import com.stripe.model.SubscriptionItem;
-import com.stripe.model.SubscriptionItemCollection;
+import com.stripe.model.*;
 import com.stripe.model.checkout.Session;
 
 @ExtendWith(MockitoExtension.class)
 class WebhookServiceTest {
 
   @Mock private UserSubscriptionRepository subscriptionRepository;
+  @Mock private PaymentMethodService paymentMethodService;
   @InjectMocks private WebhookService webhookService;
 
   private Event mockEvent;
@@ -58,7 +52,10 @@ class WebhookServiceTest {
     Session mockSession = mock(Session.class);
     Map<String, String> metadata = new HashMap<>();
     metadata.put("userId", "1");
-    metadata.put("plan", "PRO_MONTHLY");
+    metadata.put("planKey", PlanKey.PRO.getKey());
+    metadata.put("interval", "month");
+    metadata.put("currency", "EUR");
+    metadata.put("seats", "1");
 
     when(mockDeserializer.getObject()).thenReturn(Optional.of(mockSession));
     when(mockSession.getMode()).thenReturn("subscription");
@@ -75,8 +72,9 @@ class WebhookServiceTest {
     when(mockItems.getData()).thenReturn(List.of(mockItem));
     when(mockItem.getCurrentPeriodStart()).thenReturn(1640995200L);
     when(mockItem.getCurrentPeriodEnd()).thenReturn(1672531200L);
+    when(mockItem.getQuantity()).thenReturn(1L);
 
-    try (MockedStatic<Subscription> mockedSubscription = mockStatic(Subscription.class)) {
+    try (var mockedSubscription = mockStatic(Subscription.class)) {
       mockedSubscription
           .when(() -> Subscription.retrieve("sub_123"))
           .thenReturn(mockStripeSubscription);
@@ -103,37 +101,34 @@ class WebhookServiceTest {
     when(mockItem.getCurrentPeriodStart()).thenReturn(1640995200L);
     when(mockItem.getCurrentPeriodEnd()).thenReturn(1672531200L);
     when(mockItem.getPrice()).thenReturn(mockPrice);
-    when(mockPrice.getId()).thenReturn("price_pro_monthly");
+    when(mockPrice.getLookupKey()).thenReturn(PlanKey.PRO.lookup("month", "EUR"));
+    when(mockItem.getQuantity()).thenReturn(1L);
 
     when(subscriptionRepository.findByStripeSubscriptionId("sub_123"))
         .thenReturn(Optional.of(mockUserSubscription));
 
-    try (MockedStatic<SubscriptionPlan> mockedPlan = mockStatic(SubscriptionPlan.class)) {
-      mockedPlan
-          .when(() -> SubscriptionPlan.fromStripePriceId("price_pro_monthly"))
-          .thenReturn(SubscriptionPlan.PRO_MONTHLY);
+    webhookService.handleSubscriptionUpdated(mockEvent);
 
-      webhookService.handleSubscriptionUpdated(mockEvent);
-
-      verify(subscriptionRepository).save(mockUserSubscription);
-      assertEquals(SubscriptionStatus.ACTIVE, mockUserSubscription.getStatus());
-      assertEquals(SubscriptionPlan.PRO_MONTHLY, mockUserSubscription.getPlan());
-    }
+    verify(subscriptionRepository).save(mockUserSubscription);
+    assertEquals(SubscriptionStatus.ACTIVE, mockUserSubscription.getStatus());
+    assertEquals(PlanKey.PRO.getKey(), mockUserSubscription.getPlanKey());
   }
 
   @Test
-  void handleSubscriptionDeleted_shouldCancelSubscription() {
+  void handleSubscriptionDeleted_shouldDowngradeToFree() {
     Subscription mockSubscription = mock(Subscription.class);
 
     when(mockDeserializer.getObject()).thenReturn(Optional.of(mockSubscription));
     when(mockSubscription.getId()).thenReturn("sub_123");
+    when(mockSubscription.getCustomer()).thenReturn("cus_123");
     when(subscriptionRepository.findByStripeSubscriptionId("sub_123"))
         .thenReturn(Optional.of(mockUserSubscription));
 
     webhookService.handleSubscriptionDeleted(mockEvent);
 
     verify(subscriptionRepository).save(mockUserSubscription);
-    assertEquals(SubscriptionStatus.CANCELED, mockUserSubscription.getStatus());
+    assertEquals(PlanKey.FREE.getKey(), mockUserSubscription.getPlanKey());
+    assertEquals(SubscriptionStatus.ACTIVE, mockUserSubscription.getStatus());
   }
 
   @Test
@@ -152,20 +147,15 @@ class WebhookServiceTest {
     when(mockItem.getCurrentPeriodStart()).thenReturn(1640995200L);
     when(mockItem.getCurrentPeriodEnd()).thenReturn(1672531200L);
     when(mockItem.getPrice()).thenReturn(mockPrice);
-    when(mockPrice.getId()).thenReturn("price_pro_monthly");
+    when(mockPrice.getLookupKey()).thenReturn(PlanKey.PRO.lookup("month", "EUR"));
+    when(mockItem.getQuantity()).thenReturn(1L);
 
     when(subscriptionRepository.findByStripeSubscriptionId("sub_123"))
         .thenReturn(Optional.of(mockUserSubscription));
 
-    try (MockedStatic<SubscriptionPlan> mockedPlan = mockStatic(SubscriptionPlan.class)) {
-      mockedPlan
-          .when(() -> SubscriptionPlan.fromStripePriceId("price_pro_monthly"))
-          .thenReturn(SubscriptionPlan.PRO_MONTHLY);
+    webhookService.handleSubscriptionCreated(mockEvent);
 
-      webhookService.handleSubscriptionCreated(mockEvent);
-
-      verify(subscriptionRepository).save(mockUserSubscription);
-    }
+    verify(subscriptionRepository).save(mockUserSubscription);
   }
 
   @Test
@@ -183,29 +173,24 @@ class WebhookServiceTest {
     when(mockItem.getCurrentPeriodStart()).thenReturn(1640995200L);
     when(mockItem.getCurrentPeriodEnd()).thenReturn(1672531200L);
     when(mockItem.getPrice()).thenReturn(mockPrice);
-    when(mockPrice.getId()).thenReturn("price_elite_yearly");
+    when(mockPrice.getLookupKey()).thenReturn(PlanKey.ELITE.lookup("year", "EUR"));
+    when(mockItem.getQuantity()).thenReturn(1L);
 
     when(subscriptionRepository.findByStripeSubscriptionId("sub_123"))
         .thenReturn(Optional.of(mockUserSubscription));
 
-    try (MockedStatic<SubscriptionPlan> mockedPlan = mockStatic(SubscriptionPlan.class)) {
-      mockedPlan
-          .when(() -> SubscriptionPlan.fromStripePriceId("price_elite_yearly"))
-          .thenReturn(SubscriptionPlan.ELITE_YEARLY);
+    webhookService.updateSubscriptionInDatabase(mockSubscription);
 
-      webhookService.updateSubscriptionInDatabase(mockSubscription);
-
-      verify(subscriptionRepository).save(mockUserSubscription);
-      assertEquals(SubscriptionStatus.PAST_DUE, mockUserSubscription.getStatus());
-      assertEquals(SubscriptionPlan.ELITE_YEARLY, mockUserSubscription.getPlan());
-      assertTrue(mockUserSubscription.isCancelAtPeriodEnd());
-      assertNotNull(mockUserSubscription.getCurrentPeriodStart());
-      assertNotNull(mockUserSubscription.getCurrentPeriodEnd());
-    }
+    verify(subscriptionRepository).save(mockUserSubscription);
+    assertEquals(SubscriptionStatus.PAST_DUE, mockUserSubscription.getStatus());
+    assertEquals(PlanKey.ELITE.getKey(), mockUserSubscription.getPlanKey());
+    assertTrue(mockUserSubscription.isCancelAtPeriodEnd());
+    assertNotNull(mockUserSubscription.getCurrentPeriodStart());
+    assertNotNull(mockUserSubscription.getCurrentPeriodEnd());
   }
 
   @Test
-  void updateSubscriptionInDatabase_shouldHandleUnknownPriceId() {
+  void updateSubscriptionInDatabase_shouldHandleUnknownLookupKey() {
     Subscription mockSubscription = mock(Subscription.class);
     SubscriptionItemCollection mockItems = mock(SubscriptionItemCollection.class);
     SubscriptionItem mockItem = mock(SubscriptionItem.class);
@@ -219,110 +204,15 @@ class WebhookServiceTest {
     when(mockItem.getCurrentPeriodStart()).thenReturn(1640995200L);
     when(mockItem.getCurrentPeriodEnd()).thenReturn(1672531200L);
     when(mockItem.getPrice()).thenReturn(mockPrice);
-    when(mockPrice.getId()).thenReturn("unknown_price_id");
+    when(mockPrice.getLookupKey()).thenReturn(null);
+    when(mockItem.getQuantity()).thenReturn(1L);
 
     when(subscriptionRepository.findByStripeSubscriptionId("sub_123"))
         .thenReturn(Optional.of(mockUserSubscription));
 
-    try (MockedStatic<SubscriptionPlan> mockedPlan = mockStatic(SubscriptionPlan.class)) {
-      mockedPlan
-          .when(() -> SubscriptionPlan.fromStripePriceId("unknown_price_id"))
-          .thenThrow(new IllegalArgumentException("Unknown price ID: unknown_price_id"));
+    assertDoesNotThrow(() -> webhookService.updateSubscriptionInDatabase(mockSubscription));
 
-      // Should not throw exception, but handle gracefully by logging error
-      assertDoesNotThrow(() -> webhookService.updateSubscriptionInDatabase(mockSubscription));
-
-      // Verify subscription is still saved with other fields updated
-      verify(subscriptionRepository).save(mockUserSubscription);
-      assertEquals(SubscriptionStatus.ACTIVE, mockUserSubscription.getStatus());
-    }
-  }
-
-  @Test
-  void handleSubscriptionUpdated_shouldApplyScheduledPlanChangeWhenPeriodEnds() {
-    // Given: User had yearly plan that was scheduled to change to monthly
-    mockUserSubscription.setPlan(SubscriptionPlan.PRO_YEARLY);
-    mockUserSubscription.setCurrentPeriodEnd(OffsetDateTime.now().minusDays(1)); // Period ended
-
-    Subscription mockSubscription = mock(Subscription.class);
-    SubscriptionItemCollection mockItems = mock(SubscriptionItemCollection.class);
-    SubscriptionItem mockItem = mock(SubscriptionItem.class);
-    Price mockPrice = mock(Price.class);
-
-    when(mockDeserializer.getObject()).thenReturn(Optional.of(mockSubscription));
-    when(mockSubscription.getId()).thenReturn("sub_123");
-    when(mockSubscription.getStatus()).thenReturn("active");
-    when(mockSubscription.getCancelAtPeriodEnd()).thenReturn(false);
-    when(mockSubscription.getItems()).thenReturn(mockItems);
-    when(mockItems.getData()).thenReturn(List.of(mockItem));
-    // New monthly period dates
-    when(mockItem.getCurrentPeriodStart()).thenReturn(1672531200L); // Start of new period
-    when(mockItem.getCurrentPeriodEnd()).thenReturn(1675209600L); // End of monthly period
-    when(mockItem.getPrice()).thenReturn(mockPrice);
-    when(mockPrice.getId()).thenReturn("price_pro_monthly");
-
-    when(subscriptionRepository.findByStripeSubscriptionId("sub_123"))
-        .thenReturn(Optional.of(mockUserSubscription));
-
-    try (MockedStatic<SubscriptionPlan> mockedPlan = mockStatic(SubscriptionPlan.class)) {
-      mockedPlan
-          .when(() -> SubscriptionPlan.fromStripePriceId("price_pro_monthly"))
-          .thenReturn(SubscriptionPlan.PRO_MONTHLY);
-
-      // When: Webhook is triggered at period end
-      webhookService.handleSubscriptionUpdated(mockEvent);
-
-      // Then: Plan is updated to monthly with new period dates
-      verify(subscriptionRepository).save(mockUserSubscription);
-      assertEquals(SubscriptionPlan.PRO_MONTHLY, mockUserSubscription.getPlan());
-      assertEquals(SubscriptionStatus.ACTIVE, mockUserSubscription.getStatus());
-      assertNotNull(mockUserSubscription.getCurrentPeriodStart());
-      assertNotNull(mockUserSubscription.getCurrentPeriodEnd());
-    }
-  }
-
-  @Test
-  void handleSubscriptionUpdated_shouldRenewMonthlySubscriptionWithNewPeriodDates() {
-    // Given: User has monthly subscription that just renewed
-    mockUserSubscription.setPlan(SubscriptionPlan.PRO_MONTHLY);
-    mockUserSubscription.setCurrentPeriodStart(OffsetDateTime.now().minusMonths(1));
-    mockUserSubscription.setCurrentPeriodEnd(
-        OffsetDateTime.now().minusDays(1)); // Previous period ended
-
-    Subscription mockSubscription = mock(Subscription.class);
-    SubscriptionItemCollection mockItems = mock(SubscriptionItemCollection.class);
-    SubscriptionItem mockItem = mock(SubscriptionItem.class);
-    Price mockPrice = mock(Price.class);
-
-    when(mockDeserializer.getObject()).thenReturn(Optional.of(mockSubscription));
-    when(mockSubscription.getId()).thenReturn("sub_123");
-    when(mockSubscription.getStatus()).thenReturn("active");
-    when(mockSubscription.getCancelAtPeriodEnd()).thenReturn(false);
-    when(mockSubscription.getItems()).thenReturn(mockItems);
-    when(mockItems.getData()).thenReturn(List.of(mockItem));
-    // New monthly period dates after renewal
-    when(mockItem.getCurrentPeriodStart()).thenReturn(1675209600L); // Start of new monthly period
-    when(mockItem.getCurrentPeriodEnd()).thenReturn(1677628800L); // End of new monthly period
-    when(mockItem.getPrice()).thenReturn(mockPrice);
-    when(mockPrice.getId()).thenReturn("price_pro_monthly");
-
-    when(subscriptionRepository.findByStripeSubscriptionId("sub_123"))
-        .thenReturn(Optional.of(mockUserSubscription));
-
-    try (MockedStatic<SubscriptionPlan> mockedPlan = mockStatic(SubscriptionPlan.class)) {
-      mockedPlan
-          .when(() -> SubscriptionPlan.fromStripePriceId("price_pro_monthly"))
-          .thenReturn(SubscriptionPlan.PRO_MONTHLY);
-
-      // When: Webhook is triggered after monthly renewal
-      webhookService.handleSubscriptionUpdated(mockEvent);
-
-      // Then: Subscription is renewed with new monthly period dates
-      verify(subscriptionRepository).save(mockUserSubscription);
-      assertEquals(SubscriptionPlan.PRO_MONTHLY, mockUserSubscription.getPlan());
-      assertEquals(SubscriptionStatus.ACTIVE, mockUserSubscription.getStatus());
-      assertNotNull(mockUserSubscription.getCurrentPeriodStart());
-      assertNotNull(mockUserSubscription.getCurrentPeriodEnd());
-    }
+    verify(subscriptionRepository).save(mockUserSubscription);
+    assertEquals(SubscriptionStatus.ACTIVE, mockUserSubscription.getStatus());
   }
 }

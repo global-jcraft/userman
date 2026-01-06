@@ -57,6 +57,7 @@ public class Message {
   public static final String PAYMENT_METHOD_REMOVE_SUCCESS = "payment.method.remove.success";
   public static final String PAYMENT_METHOD_DEFAULT_SET_SUCCESS =
       "payment.method.default.set.success";
+  public static final String PAYMENT_METHOD_DEFAULT_SET_ERROR = "payment.method.default.set.error";
   public static final String PAYMENT_METHOD_BACKUP_SET_SUCCESS =
       "payment.method.backup.set.success";
   public static final String PAYMENT_METHOD_ADD_ERROR = "payment.method.add.error";

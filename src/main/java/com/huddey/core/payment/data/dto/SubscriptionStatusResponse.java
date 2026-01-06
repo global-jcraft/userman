@@ -3,7 +3,6 @@ package com.huddey.core.payment.data.dto;
 import java.time.OffsetDateTime;
 
 import com.huddey.core.payment.data.entity.UserSubscription;
-import com.huddey.core.payment.data.enums.SubscriptionPlan;
 import com.huddey.core.payment.data.enums.SubscriptionStatus;
 
 import lombok.AllArgsConstructor;
@@ -15,13 +14,15 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class SubscriptionStatusResponse {
 
+  private String planKey;
+  private String billingInterval;
+  private String currency;
+  private Long seatCount;
   private boolean hasActiveSubscription;
-  private SubscriptionPlan currentPlan;
   private SubscriptionStatus status;
   private OffsetDateTime currentPeriodStart;
   private OffsetDateTime currentPeriodEnd;
   private boolean cancelAtPeriodEnd;
-  private SubscriptionPlan pendingPlan;
   private OffsetDateTime pendingPlanEffectiveDate;
   private Double nextChargeAmount;
   private String stripeCustomerId;
@@ -36,21 +37,18 @@ public class SubscriptionStatusResponse {
 
     SubscriptionStatusResponse response = new SubscriptionStatusResponse();
     response.hasActiveSubscription = subscription.getStatus() == SubscriptionStatus.ACTIVE;
-    response.currentPlan = subscription.getPlan();
     response.status = subscription.getStatus();
     response.currentPeriodStart = subscription.getCurrentPeriodStart();
     response.currentPeriodEnd = subscription.getCurrentPeriodEnd();
     response.cancelAtPeriodEnd = subscription.isCancelAtPeriodEnd();
-    response.pendingPlan = subscription.getPendingPlan();
+    response.planKey = subscription.getPlanKey();
+    response.billingInterval = subscription.getBillingInterval();
+    response.currency = subscription.getCurrency();
+    response.seatCount = subscription.getSeatCount();
     response.pendingPlanEffectiveDate = subscription.getPendingPlanEffectiveDate();
     response.stripeCustomerId = subscription.getStripeCustomerId();
     response.createdAt = subscription.getCreatedAt();
     response.updatedAt = subscription.getUpdatedAt();
-
-    // Calculate next charge amount
-    if (subscription.getPlan() != null) {
-      response.nextChargeAmount = subscription.getPlan().getPrice();
-    }
 
     return response;
   }

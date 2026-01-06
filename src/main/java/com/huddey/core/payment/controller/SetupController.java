@@ -33,7 +33,7 @@ public class SetupController {
     try {
       SecurityUser securityUser = (SecurityUser) authentication.getPrincipal();
       if (securityUser != null) {
-        stripeSetupService.createHuddeyProducts();
+        stripeSetupService.upsertCatalog();
       }
 
       Map<String, String> response = new HashMap<>();

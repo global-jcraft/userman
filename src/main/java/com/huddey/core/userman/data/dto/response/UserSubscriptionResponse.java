@@ -2,7 +2,6 @@ package com.huddey.core.userman.data.dto.response;
 
 import java.time.OffsetDateTime;
 
-import com.huddey.core.payment.data.enums.SubscriptionPlan;
 import com.huddey.core.payment.data.enums.SubscriptionStatus;
 
 import lombok.AllArgsConstructor;
@@ -19,7 +18,10 @@ public class UserSubscriptionResponse {
   private Long userId;
   private String stripeCustomerId;
   private String stripeSubscriptionId;
-  private SubscriptionPlan plan;
+  private String planKey;
+  private String billingInterval;
+  private String currency;
+  private Long seatCount;
   private SubscriptionStatus status;
   private OffsetDateTime createdAt;
   private OffsetDateTime updatedAt;

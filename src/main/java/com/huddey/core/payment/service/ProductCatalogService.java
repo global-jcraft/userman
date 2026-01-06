@@ -58,7 +58,7 @@ public class ProductCatalogService {
                     .planId(
                         product.getPrices().isEmpty()
                             ? null
-                            : product.getPrices().get(0).getPlanId())
+                            : product.getPrices().getFirst().getPlanId())
                     .name(product.getName())
                     .description(product.getDescription())
                     .active(product.getActive())

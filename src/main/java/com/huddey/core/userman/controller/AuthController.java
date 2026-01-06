@@ -4,6 +4,7 @@ import static com.huddey.core.userman.constants.Message.*;
 
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 
 import javax.management.relation.RoleNotFoundException;
 
@@ -194,11 +195,22 @@ public class AuthController {
     var userSubscription = subscriptionService.getUserSubscription(user.getId());
     userSubscription.ifPresent(
         subscription -> {
-          var currentPlan =
-              subscriptionService.getCurrentPlan(userSubscription.get().getPlan().name());
-          assert currentPlan.orElse(null) != null;
-          user.setUserSubscription(
-              UserMapper.toSubscriptionDto(subscription, currentPlan.orElse(null)));
+          String planKey = subscription.getPlanKey();
+          String interval = subscription.getBillingInterval();
+          String currency = subscription.getCurrency();
+          var productPriceOpt = subscriptionService.getCurrentPrice(planKey, interval, currency);
+
+          if (productPriceOpt.isPresent()) {
+            user.setUserSubscription(
+                UserMapper.toSubscriptionDto(subscription, List.of(productPriceOpt.get())));
+          } else {
+            log.warn(
+                "No price found for planKey: {}, interval: {}, currency: {} - skipping price data",
+                planKey,
+                interval,
+                currency);
+            user.setUserSubscription(UserMapper.toSubscriptionDto(subscription, List.of()));
+          }
         });
     return ResponseEntity.ok(
         ApiResponse.success(LocaleUtils.getMessage(PROFILE_FETCH_SUCCESS), user));

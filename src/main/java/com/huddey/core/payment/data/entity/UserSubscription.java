@@ -2,7 +2,6 @@ package com.huddey.core.payment.data.entity;
 
 import java.time.OffsetDateTime;
 
-import com.huddey.core.payment.data.enums.SubscriptionPlan;
 import com.huddey.core.payment.data.enums.SubscriptionStatus;
 
 import jakarta.persistence.*;
@@ -32,9 +31,23 @@ public class UserSubscription {
   @Column(name = "stripe_subscription_id")
   private String stripeSubscriptionId;
 
-  @Enumerated(EnumType.STRING)
-  @Column(name = "plan")
-  private SubscriptionPlan plan;
+  @Column(name = "plan_key")
+  private String planKey;
+
+  @Column(name = "pending_plan_key")
+  private String pendingPlanKey;
+
+  @Column(name = "interval")
+  private String interval;
+
+  @Column(name = "currency")
+  private String currency;
+
+  @Column(name = "billing_interval")
+  private String billingInterval;
+
+  @Column(name = "seat_count")
+  private Long seatCount;
 
   @Enumerated(EnumType.STRING)
   @Column(name = "status")
@@ -55,27 +68,8 @@ public class UserSubscription {
   @Column(name = "cancel_at_period_end")
   private boolean cancelAtPeriodEnd;
 
-  @Enumerated(EnumType.STRING)
-  @Column(name = "pending_plan")
-  private SubscriptionPlan pendingPlan;
-
   @Column(name = "pending_plan_effective_date")
   private OffsetDateTime pendingPlanEffectiveDate;
-
-  public UserSubscription(
-      Long userId,
-      String stripeCustomerId,
-      String stripeSubscriptionId,
-      SubscriptionPlan plan,
-      SubscriptionStatus status) {
-    this.userId = userId;
-    this.stripeCustomerId = stripeCustomerId;
-    this.stripeSubscriptionId = stripeSubscriptionId;
-    this.plan = plan;
-    this.status = status;
-    this.createdAt = OffsetDateTime.now();
-    this.updatedAt = OffsetDateTime.now();
-  }
 
   @PrePersist
   protected void onCreate() {

@@ -196,11 +196,23 @@ public class PaymentMethodService {
 
   @Transactional
   @CacheEvict(value = "paymentMethods", key = "#userId + '*'")
-  public PaymentMethodDto setAsDefault(Long userId, Long paymentMethodId) {
+  @Retry(name = "stripe-api")
+  @CircuitBreaker(name = "stripe-api", fallbackMethod = "fallbackSetAsDefault")
+  public PaymentMethodDto setAsDefault(Long userId, Long paymentMethodId) throws StripeException {
     log.debug("Setting payment method {} as default for user: {}", paymentMethodId, userId);
 
     PaymentMethod paymentMethod = getPaymentMethodForUser(userId, paymentMethodId);
-    log.debug("Clearing existing default payment methods for user: {}", userId);
+    String customerId = getCustomerIdForUser(userId);
+
+    var customer = com.stripe.model.Customer.retrieve(customerId);
+    customer.update(
+        com.stripe.param.CustomerUpdateParams.builder()
+            .setInvoiceSettings(
+                com.stripe.param.CustomerUpdateParams.InvoiceSettings.builder()
+                    .setDefaultPaymentMethod(paymentMethod.getStripePaymentMethodId())
+                    .build())
+            .build());
+    log.debug("Updated default payment method in Stripe for customer: {}", customerId);
 
     paymentMethodRepository.clearDefaultForUser(userId);
     paymentMethod.setDefault(true);
@@ -240,6 +252,7 @@ public class PaymentMethodService {
     return expired;
   }
 
+  @Transactional
   public String getCustomerIdForUser(Long userId) throws StripeException {
     Optional<UserSubscription> subscription = subscriptionRepository.findByUserId(userId);
 
@@ -303,6 +316,17 @@ public class PaymentMethodService {
     log.error(
         "Circuit breaker activated for addPaymentMethod - userId: {}, error: {}",
         userId,
+        ex.getMessage());
+    PaymentMethodDto fallbackDto = new PaymentMethodDto();
+    fallbackDto.setId(-1L);
+    return fallbackDto;
+  }
+
+  public PaymentMethodDto fallbackSetAsDefault(Long userId, Long paymentMethodId, Exception ex) {
+    log.error(
+        "Circuit breaker activated for setAsDefault - userId: {}, paymentMethodId: {}, error: {}",
+        userId,
+        paymentMethodId,
         ex.getMessage());
     PaymentMethodDto fallbackDto = new PaymentMethodDto();
     fallbackDto.setId(-1L);
