@@ -6,6 +6,7 @@ import java.util.List;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -19,13 +20,12 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.authentication.logout.LogoutSuccessHandler;
-import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.huddey.core.common.api.ApiUtils;
 import com.huddey.core.common.utils.LocaleUtils;
 import com.huddey.core.notification.utils.SecurityUtils;
@@ -117,7 +117,9 @@ public class UsermanSecurityConfig {
             logout ->
                 logout
                     .logoutUrl("/api/v1/auth/logout")
-                    .logoutRequestMatcher(new AntPathRequestMatcher("/api/v1/auth/logout", "POST"))
+                    .logoutRequestMatcher(
+                        PathPatternRequestMatcher.pathPattern(
+                            HttpMethod.POST, "/api/v1/auth/logout"))
                     .deleteCookies("access_token", "refresh_token")
                     .logoutSuccessHandler(customLogoutSuccessHandler())
                     .permitAll());
@@ -126,7 +128,6 @@ public class UsermanSecurityConfig {
   }
 
   private LogoutSuccessHandler customLogoutSuccessHandler() {
-    objectMapper.registerModule(new JavaTimeModule());
 
     return (request, response, authentication) -> {
       response.setStatus(HttpServletResponse.SC_OK);
@@ -165,8 +166,7 @@ public class UsermanSecurityConfig {
   @Bean
   public AuthenticationProvider authenticationProvider(
       CustomUserDetailsService userDetailsService) {
-    DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
-    authProvider.setUserDetailsService(userDetailsService);
+    DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider(userDetailsService);
     authProvider.setPasswordEncoder(securityConfig.passwordEncoder());
     return authProvider;
   }

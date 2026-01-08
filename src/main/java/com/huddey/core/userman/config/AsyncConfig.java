@@ -11,10 +11,6 @@ import org.springframework.scheduling.annotation.EnableAsync;
 @Configuration
 @EnableAsync
 public class AsyncConfig implements AsyncConfigurer {
-  @Override
-  public Executor getAsyncExecutor() {
-    return Executors.newVirtualThreadPerTaskExecutor();
-  }
 
   @Bean(name = "loginTaskExecutor")
   public Executor loginTaskExecutor() {

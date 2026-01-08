@@ -17,7 +17,6 @@ import java.util.stream.Collectors;
 import javax.management.relation.RoleNotFoundException;
 
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -85,7 +84,6 @@ public class AuthServiceImpl implements AuthService {
   private long phoneTokenExpiryMinutes;
 
   @Override
-  @CacheEvict(value = "user-cache", key = "#user.email")
   public UserRegistrationResponse registerBasicFlow(
       UserRegistrationBasicFlowRequest user,
       HttpServletRequest servletRequest,
@@ -100,7 +98,6 @@ public class AuthServiceImpl implements AuthService {
 
   @Override
   @Transactional
-  @CacheEvict(value = "user-cache", key = "#request.email")
   public UserRegistrationResponse completeRegistration(
       UserRegistrationRequest request,
       HttpServletRequest servletRequest,
@@ -159,7 +156,6 @@ public class AuthServiceImpl implements AuthService {
   }
 
   @Override
-  @CacheEvict(value = "user-cache", key = "#result.email")
   public UserVerificationResponse userAccountVerification(
       String token, HttpServletRequest request, HttpServletResponse response) {
     log.debug("Verifying user by email with token: {}", token);
@@ -442,7 +438,6 @@ public class AuthServiceImpl implements AuthService {
   }
 
   @Override
-  @CacheEvict(value = "user-cache", key = "#request.email")
   public VerifyPhoneNumberResponse verifyPhoneNumber(
       VerifyPhoneNumberRequest request, HttpServletRequest servletRequest) {
     User user =

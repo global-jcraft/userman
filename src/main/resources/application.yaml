@@ -2,19 +2,6 @@ spring:
   threads:
     virtual:
       enabled: true
-  web:
-    server:
-      tomcat:
-        threads:
-          virtual: true
-  task:
-    execution:
-      pool:
-        core-size: 50
-        max-size: 100
-        queue-capacity: 500
-        keep-alive: 60s
-      thread-name-prefix: huddey-core-
   thymeleaf:
     cache: false
     mode: HTML
@@ -65,19 +52,8 @@ spring:
       keepalive-time: 60000             # 1 minute
       validation-timeout: 5000          # 5 seconds
       leak-detection-threshold: 60000   # 1 minute
-  data:
-    redis:
-      host: ${REDIS_HOST:localhost}
-      port: ${REDIS_PORT:6379}
-      password: ${REDIS_PASSWORD:}
-  cache:
-    type: redis
-    cache-names:
-      - user-cache
-      - user-login-cache
-    redis:
-      time-to-live: 300000  # 5 minutes for login cache
-      cache-null-values: false
+
+
   jpa:
     hibernate:
       ddl-auto: validate

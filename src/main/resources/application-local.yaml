@@ -2,19 +2,6 @@ spring:
   threads:
     virtual:
       enabled: true
-  web:
-    server:
-      tomcat:
-        threads:
-          virtual: true
-  task:
-    execution:
-      pool:
-        core-size: 50
-        max-size: 100
-        queue-capacity: 500
-        keep-alive: 60s
-      thread-name-prefix: huddey-core-
   thymeleaf:
     cache: false
     mode: HTML
@@ -152,47 +139,14 @@ spring:
     postgresql:
       transactional-lock: false
 
-  data:
-    redis:
-      host: ${REDIS_HOST:localhost}
-      port: ${REDIS_PORT:6379}
-      password: ${REDIS_PASSWORD:}
-  cache:
-    type: redis
-    redis:
-      time-to-live: 3600000  # 1 hour
-      cache-null-values: false
-      enable-statistics: true
-
-# Additional performance tuning with virtual threads
-spring.task.execution.pool:
-  core-size: 0  # Not needed with virtual threads
-  max-size: 1000000000  # Unlimited with virtual threads
-  queue-capacity: 0  # Not needed with virtual threads
-  thread-name-prefix: "virtual-exec-"
-  use-virtual-threads: true
-
-# Virtual thread scheduler configuration
-spring.threads.virtual:
-  enabled: true
-  scheduler:
-    core-pool-size: 8  # Number of carrier threads
-    max-pool-size: 256
-    keep-alive-seconds: 60
-
 server:
   port: 8080
   tomcat:
-    threads:
-      max: 300  # Optimized for performance
-      min-spare: 100
     accept-count: 100
     max-connections: 8000
     connection-timeout: 5000
     keep-alive-timeout: 10000
     max-keep-alive-requests: 50
-    # Use virtual threads for request processing
-    use-virtual-threads: true
   compression:
     enabled: true
     mime-types: application/json,application/xml,text/html,text/xml,text/plain
