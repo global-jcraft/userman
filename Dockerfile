@@ -1,19 +1,32 @@
-FROM eclipse-temurin:21-jdk-alpine AS builder
+# ---------- builder ----------
+FROM eclipse-temurin:25-jdk AS builder
 WORKDIR /build
-COPY . .
+
+# Better build caching: copy only Gradle metadata first
+COPY gradlew settings.gradle* build.gradle* gradle.properties* /build/
+COPY gradle /build/gradle
+RUN ./gradlew --no-daemon -v
+
+# Now copy sources
+COPY . /build
+
+# Build
 RUN ./gradlew clean bootJar --no-daemon
 
-FROM eclipse-temurin:21-jre-alpine
+# ---------- runtime ----------
+FROM eclipse-temurin:25-jre
 WORKDIR /app
 
-RUN addgroup -S appuser && adduser -S -G appuser appuser
+# Create non-root user (Debian/Ubuntu style)
+RUN groupadd -r appuser && useradd -r -g appuser appuser
 
-COPY --from=builder /build/build/libs/*.jar app.jar
+# Copy the jar and set ownership
+COPY --from=builder --chown=appuser:appuser /build/build/libs/*.jar /app/app.jar
 
 USER appuser
-
 EXPOSE 8080
 
-ENV JAVA_OPTS="-Xms512m -Xmx1024m -XX:+UseG1GC -XX:MaxRAMPercentage=75.0"
+# Prefer JAVA_TOOL_OPTIONS so you can use exec-form ENTRYPOINT (no shell)
+ENV JAVA_TOOL_OPTIONS="-Xms512m -Xmx1024m -XX:+UseG1GC -XX:MaxRAMPercentage=75.0"
 
-ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]
+ENTRYPOINT ["java", "-jar", "/app/app.jar"]
