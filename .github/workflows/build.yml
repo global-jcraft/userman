@@ -84,7 +84,7 @@ jobs:
           ./gradlew sonar \
             -Dsonar.host.url=https://sonarcloud.io \
             -Dsonar.organization=global-jcraft \
-            -Dsonar.projectKey=global-jcraft_huddey-core
+            -Dsonar.projectKey=global-jcraft_userman
   
 
   # 4. Spotless (format) check
