@@ -127,7 +127,7 @@ test {
 
 sonar {
     properties {
-        property "sonar.projectKey", "global-jcraft_userman"
+        property "sonar.projectKey", "global-jcraft_huddey-core"
         property "sonar.organization", "global-jcraft"
         property "sonar.host.url", "https://sonarcloud.io"
     }
