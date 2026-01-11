@@ -32,12 +32,12 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Set up JDK 21
+      - name: Set up JDK 25
         id: setup-java
         uses: actions/setup-java@v4.2.1
         with:
-          java-version: '21'
-          distribution: 'temurin'
+          java-version: '25'
+          distribution: 'oracle'
           cache: 'gradle'
 
       - name: Grant execute permission for gradlew
@@ -66,15 +66,18 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Set up JDK 21
+      - name: Set up JDK 25
         uses: actions/setup-java@v4.2.1
         with:
-          java-version: '21'
-          distribution: 'temurin'
+          java-version: '25'
+          distribution: 'oracle'
           cache: 'gradle'
 
       - name: Grant execute permission for gradlew
         run: chmod +x ./gradlew
+
+      - name: Compile code
+        run: ./gradlew compileJava
 
       - name: SonarCloud Scan
         env:
@@ -84,7 +87,7 @@ jobs:
           ./gradlew sonar \
             -Dsonar.host.url=https://sonarcloud.io \
             -Dsonar.organization=global-jcraft \
-            -Dsonar.projectKey=global-jcraft_huddey-core
+            -Dsonar.projectKey=global-jcraft_userman
   
 
   # 4. Spotless (format) check
@@ -161,11 +164,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4.1.6
 
-      - name: Set up JDK 21
+      - name: Set up JDK 25
         uses: actions/setup-java@v4
         with:
-          java-version: '21'
-          distribution: 'temurin'
+          java-version: '25'
+          distribution: 'oracle'
 
       - name: Install Snyk CLI
         uses: snyk/actions/setup@master

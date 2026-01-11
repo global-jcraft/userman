@@ -4,7 +4,6 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
-import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
@@ -49,7 +48,6 @@ public class PaymentMethodService {
     return new PageImpl<>(dtos, pageable, paymentMethods.getTotalElements());
   }
 
-  // @Cacheable(value = "paymentMethods", key = "#userId + '_' + #page + '_' + #size")
   public Page<PaymentMethodDto> syncUserPaymentMethodsWithStripe(Long userId, int page, int size)
       throws StripeException {
     log.debug("Fetching payment methods from Stripe for user: {}", userId);
@@ -109,7 +107,6 @@ public class PaymentMethodService {
   }
 
   @Transactional
-  @CacheEvict(value = "paymentMethods", key = "#userId + '*'")
   @Retry(name = "stripe-api")
   @CircuitBreaker(name = "stripe-api", fallbackMethod = "fallbackAddPaymentMethod")
   public PaymentMethodDto addPaymentMethod(Long userId, AddPaymentMethodRequest request)
@@ -140,7 +137,6 @@ public class PaymentMethodService {
   }
 
   @Transactional
-  @CacheEvict(value = "paymentMethods", key = "#userId + '*'")
   public PaymentMethodDto updatePaymentMethod(
       Long userId, Long paymentMethodId, UpdatePaymentMethodRequest request)
       throws StripeException {
@@ -170,7 +166,6 @@ public class PaymentMethodService {
   }
 
   @Transactional
-  @CacheEvict(value = "paymentMethods", key = "#userId + '*'")
   @Retry(name = "stripe-api")
   @CircuitBreaker(name = "stripe-api", fallbackMethod = "fallbackRemovePaymentMethod")
   public boolean removePaymentMethod(Long userId, Long paymentMethodId) throws StripeException {
@@ -195,7 +190,6 @@ public class PaymentMethodService {
   }
 
   @Transactional
-  @CacheEvict(value = "paymentMethods", key = "#userId + '*'")
   @Retry(name = "stripe-api")
   @CircuitBreaker(name = "stripe-api", fallbackMethod = "fallbackSetAsDefault")
   public PaymentMethodDto setAsDefault(Long userId, Long paymentMethodId) throws StripeException {
@@ -224,7 +218,6 @@ public class PaymentMethodService {
   }
 
   @Transactional
-  @CacheEvict(value = "paymentMethods", key = "#userId + '*'")
   public PaymentMethodDto setAsBackup(Long userId, Long paymentMethodId) {
     log.debug("Setting payment method {} as backup for user: {}", paymentMethodId, userId);
 

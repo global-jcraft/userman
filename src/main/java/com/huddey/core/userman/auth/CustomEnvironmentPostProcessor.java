@@ -3,8 +3,9 @@ package com.huddey.core.userman.auth;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.jspecify.annotations.NonNull;
+import org.springframework.boot.EnvironmentPostProcessor;
 import org.springframework.boot.SpringApplication;
-import org.springframework.boot.env.EnvironmentPostProcessor;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.MapPropertySource;
 
@@ -12,7 +13,7 @@ public class CustomEnvironmentPostProcessor implements EnvironmentPostProcessor 
 
   @Override
   public void postProcessEnvironment(
-      ConfigurableEnvironment environment, SpringApplication application) {
+      @NonNull ConfigurableEnvironment environment, @NonNull SpringApplication application) {
     String activeProfile = System.getenv("SPRING_PROFILES_ACTIVE");
     if (activeProfile == null || activeProfile.isEmpty()) {
       activeProfile = "local";
