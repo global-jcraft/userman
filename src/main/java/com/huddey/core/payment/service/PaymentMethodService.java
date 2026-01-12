@@ -307,7 +307,6 @@ public class PaymentMethodService {
     return false;
   }
 
-
   private PaymentMethodDto toDto(PaymentMethod paymentMethod) {
     PaymentMethodDto dto = new PaymentMethodDto();
     dto.setId(paymentMethod.getId());
