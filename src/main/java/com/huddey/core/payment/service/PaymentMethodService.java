@@ -8,6 +8,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.resilience.annotation.ConcurrencyLimit;
+import org.springframework.resilience.annotation.EnableResilientMethods;
+import org.springframework.resilience.annotation.Retryable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,13 +26,12 @@ import com.huddey.core.payment.repository.PaymentMethodRepository;
 import com.huddey.core.payment.repository.UserSubscriptionRepository;
 import com.stripe.exception.StripeException;
 
-import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
-import io.github.resilience4j.retry.annotation.Retry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Service
+@EnableResilientMethods
 @RequiredArgsConstructor
 public class PaymentMethodService {
 
@@ -48,6 +50,7 @@ public class PaymentMethodService {
     return new PageImpl<>(dtos, pageable, paymentMethods.getTotalElements());
   }
 
+  @Transactional
   public Page<PaymentMethodDto> syncUserPaymentMethodsWithStripe(Long userId, int page, int size)
       throws StripeException {
     log.debug("Fetching payment methods from Stripe for user: {}", userId);
@@ -107,8 +110,8 @@ public class PaymentMethodService {
   }
 
   @Transactional
-  @Retry(name = "stripe-api")
-  @CircuitBreaker(name = "stripe-api", fallbackMethod = "fallbackAddPaymentMethod")
+  @ConcurrencyLimit(50)
+  @Retryable(maxRetries = 3)
   public PaymentMethodDto addPaymentMethod(Long userId, AddPaymentMethodRequest request)
       throws StripeException {
     log.debug("Starting addPaymentMethod for user: {}, type: {}", userId, request.getType());
@@ -166,8 +169,8 @@ public class PaymentMethodService {
   }
 
   @Transactional
-  @Retry(name = "stripe-api")
-  @CircuitBreaker(name = "stripe-api", fallbackMethod = "fallbackRemovePaymentMethod")
+  @ConcurrencyLimit(50)
+  @Retryable(maxRetries = 3)
   public boolean removePaymentMethod(Long userId, Long paymentMethodId) throws StripeException {
     log.debug(
         "Starting removePaymentMethod for user: {}, paymentMethodId: {}", userId, paymentMethodId);
@@ -190,8 +193,8 @@ public class PaymentMethodService {
   }
 
   @Transactional
-  @Retry(name = "stripe-api")
-  @CircuitBreaker(name = "stripe-api", fallbackMethod = "fallbackSetAsDefault")
+  @ConcurrencyLimit(50)
+  @Retryable(maxRetries = 3)
   public PaymentMethodDto setAsDefault(Long userId, Long paymentMethodId) throws StripeException {
     log.debug("Setting payment method {} as default for user: {}", paymentMethodId, userId);
 
@@ -302,28 +305,6 @@ public class PaymentMethodService {
         paymentMethodId,
         ex.getMessage());
     return false;
-  }
-
-  public PaymentMethodDto fallbackAddPaymentMethod(
-      Long userId, AddPaymentMethodRequest request, Exception ex) {
-    log.error(
-        "Circuit breaker activated for addPaymentMethod - userId: {}, error: {}",
-        userId,
-        ex.getMessage());
-    PaymentMethodDto fallbackDto = new PaymentMethodDto();
-    fallbackDto.setId(-1L);
-    return fallbackDto;
-  }
-
-  public PaymentMethodDto fallbackSetAsDefault(Long userId, Long paymentMethodId, Exception ex) {
-    log.error(
-        "Circuit breaker activated for setAsDefault - userId: {}, paymentMethodId: {}, error: {}",
-        userId,
-        paymentMethodId,
-        ex.getMessage());
-    PaymentMethodDto fallbackDto = new PaymentMethodDto();
-    fallbackDto.setId(-1L);
-    return fallbackDto;
   }
 
   private PaymentMethodDto toDto(PaymentMethod paymentMethod) {
