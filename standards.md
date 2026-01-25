@@ -1,11 +1,10 @@
-# 🔹 Spring Boot 3.4 Java 21 Monolithic Backend Standards & Best Practices
+# 🔹 Spring Boot 4.0.1 Java 25 Monolithic Backend Standards & Best Practices
 
-Based on your project stack (Spring Boot 3.4, Java 21, PostgreSQL, Redis, AWS, Stripe, OAuth2, Resilience4j), enforce these standards for monolithic backend development with third-party integrations:
 
 ---
 
-## 1. Code Quality & Readability (Java 21 + Spring Boot 3.4)
-- **Java 21 Features**: Use virtual threads, pattern matching, string templates, and switch expressions
+## 1. Code Quality & Readability (Java 25 + Spring Boot 4.0.1)
+- **Java 25 Features**: Use virtual threads, pattern matching, string templates, and switch expressions
 - **Google Java Format**: Enforced via Spotless plugin (already configured)
 - **Import Organization**: Follow `java`, `javax`, `org`, `com` order (configured in Spotless)
 - Use **record classes** for DTOs, configuration properties, and API responses
@@ -94,7 +93,7 @@ Based on your project stack (Spring Boot 3.4, Java 21, PostgreSQL, Redis, AWS, S
 - **Multi-Level Caching**:
     - L1: Spring Cache (in-memory) for frequently accessed data
     - L2: Redis for distributed caching and session storage
-- **Virtual Threads**: Use Java 21 virtual threads for I/O-intensive operations
+- **Virtual Threads**: Use Java 25 virtual threads for I/O-intensive operations
 - **Connection Pooling**: Configure HikariCP for PostgreSQL connections
 - **Database Optimization**:
     - Use Flyway migrations for schema versioning
