@@ -26,12 +26,15 @@ public class WebhookService {
 
   private final UserSubscriptionRepository subscriptionRepository;
   private final PaymentMethodService paymentMethodService;
+  private final RefundDisputeService refundDisputeService;
 
   public WebhookService(
       UserSubscriptionRepository subscriptionRepository,
-      PaymentMethodService paymentMethodService) {
+      PaymentMethodService paymentMethodService,
+      RefundDisputeService refundDisputeService) {
     this.subscriptionRepository = subscriptionRepository;
     this.paymentMethodService = paymentMethodService;
+    this.refundDisputeService = refundDisputeService;
   }
 
   /**
@@ -55,7 +58,7 @@ public class WebhookService {
           Long userId = Long.valueOf(userIdStr);
           Subscription subscription = Subscription.retrieve(session.getSubscription());
 
-          var item = subscription.getItems().getData().get(0);
+          var item = subscription.getItems().getData().getFirst();
           var quantity = item.getQuantity() == null ? 1L : item.getQuantity();
           if (seatsStr != null) {
             try {
@@ -398,6 +401,82 @@ public class WebhookService {
     }
   }
 
+  public void handleChargeRefunded(Event event) {
+    try {
+      StripeUtils.logEventStart("charge refunded", event.getId());
+      var dataObjectDeserializer = event.getDataObjectDeserializer();
+      var charge = (com.stripe.model.Charge) dataObjectDeserializer.getObject().orElse(null);
+
+      if (charge != null && charge.getRefunded() && !charge.getRefunds().getData().isEmpty()) {
+        for (com.stripe.model.Refund refund : charge.getRefunds().getData()) {
+          refundDisputeService.handleRefund(refund);
+        }
+      }
+    } catch (Exception e) {
+      StripeUtils.logEventError("charge refunded", event.getId(), e);
+    }
+  }
+
+  public void handleDisputeCreated(Event event) {
+    try {
+      StripeUtils.logEventStart("dispute created", event.getId());
+      var dataObjectDeserializer = event.getDataObjectDeserializer();
+      var dispute = (com.stripe.model.Dispute) dataObjectDeserializer.getObject().orElse(null);
+
+      if (dispute != null) {
+        refundDisputeService.handleDisputeCreated(dispute);
+      }
+    } catch (Exception e) {
+      StripeUtils.logEventError("dispute created", event.getId(), e);
+    }
+  }
+
+  public void handleDisputeUpdated(Event event) {
+    try {
+      StripeUtils.logEventStart("dispute updated", event.getId());
+      var dataObjectDeserializer = event.getDataObjectDeserializer();
+      var dispute = (com.stripe.model.Dispute) dataObjectDeserializer.getObject().orElse(null);
+
+      if (dispute != null) {
+        refundDisputeService.handleDisputeUpdated(dispute);
+      }
+    } catch (Exception e) {
+      StripeUtils.logEventError("dispute updated", event.getId(), e);
+    }
+  }
+
+  public void handleDisputeClosed(Event event) {
+    try {
+      StripeUtils.logEventStart("dispute closed", event.getId());
+      var dataObjectDeserializer = event.getDataObjectDeserializer();
+      var dispute = (com.stripe.model.Dispute) dataObjectDeserializer.getObject().orElse(null);
+
+      if (dispute != null) {
+        refundDisputeService.handleDisputeClosed(dispute);
+      }
+    } catch (Exception e) {
+      StripeUtils.logEventError("dispute closed", event.getId(), e);
+    }
+  }
+
+  public void handleDisputeFundsWithdrawn(Event event) {
+    try {
+      StripeUtils.logEventStart("dispute funds withdrawn", event.getId());
+      // Funds withdrawn - typically handled by dispute updated
+    } catch (Exception e) {
+      StripeUtils.logEventError("dispute funds withdrawn", event.getId(), e);
+    }
+  }
+
+  public void handleDisputeFundsReinstated(Event event) {
+    try {
+      StripeUtils.logEventStart("dispute funds reinstated", event.getId());
+      // Funds reinstated - typically handled by dispute closed
+    } catch (Exception e) {
+      StripeUtils.logEventError("dispute funds reinstated", event.getId(), e);
+    }
+  }
+
   /**
    * Updates the subscription in the database with the latest information from Stripe.
    *
@@ -456,8 +535,7 @@ public class WebhookService {
           try {
             var price = item.getPrice();
             var recurring = price.getRecurring();
-            String interval =
-                recurring != null ? recurring.getInterval().toString().toLowerCase() : "month";
+            String interval = recurring != null ? recurring.getInterval().toLowerCase() : "month";
             String currency =
                 price.getCurrency() != null ? price.getCurrency().toUpperCase() : "EUR";
 

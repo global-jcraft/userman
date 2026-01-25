@@ -77,9 +77,11 @@ dependencies {
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
 
     // Tests
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.boot:spring-boot-starter-security-test'
     testImplementation 'org.springframework.boot:spring-boot-starter-data-jpa-test'
     testImplementation 'org.springframework.boot:spring-boot-starter-flyway-test'
+    testImplementation 'com.h2database:h2'
     testImplementation "org.testcontainers:testcontainers:${testContainersVersion}"
     testImplementation "org.testcontainers:junit-jupiter:${testJupiterContainersVersion}"
     testImplementation "org.testcontainers:postgresql:${testJupiterContainersVersion}"

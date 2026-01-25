@@ -22,4 +22,14 @@ public class StripeConstants {
   public static final String SETUP_INTENT_SUCCEEDED = "setup_intent.succeeded";
   public static final String FINANCIAL_CONNECTIONS_ACCOUNT_CREATED =
       "financial_connections.account.created";
+
+  // Refund events
+  public static final String CHARGE_REFUNDED = "charge.refunded";
+
+  // Dispute events
+  public static final String DISPUTE_CREATED = "charge.dispute.created";
+  public static final String DISPUTE_UPDATED = "charge.dispute.updated";
+  public static final String DISPUTE_CLOSED = "charge.dispute.closed";
+  public static final String DISPUTE_FUNDS_WITHDRAWN = "charge.dispute.funds_withdrawn";
+  public static final String DISPUTE_FUNDS_REINSTATED = "charge.dispute.funds_reinstated";
 }

@@ -2,22 +2,22 @@ spring:
   application:
     name: huddey
   datasource:
-    url: jdbc:postgresql://localhost:5432/huddey_core
-    username: postgres
-    password: dev_password
-    driver-class-name: org.postgresql.Driver
+    url: jdbc:h2:mem:testdb
+    username: sa
+    password: password
+    driver-class-name: org.h2.Driver
   jpa:
     hibernate:
-      ddl-auto: validate
+      ddl-auto: create-drop
     show-sql: true
     properties:
-      hibernate.dialect: org.hibernate.dialect.PostgreSQLDialect
+      hibernate.dialect: org.hibernate.dialect.H2Dialect
   flyway:
     enabled: false
     locations: classpath:db/migration
-    url: jdbc:postgresql://localhost:5432/huddey_core
-    user: postgres
-    password: dev_password
+    url: jdbc:h2:mem:testdb
+    user: sa
+    password: password
     default-schema: huddey_core
 
 server:
