@@ -4,19 +4,20 @@ import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
-@Testcontainers
 @TestConfiguration
 public class TestConfig {
 
-  @Container
-  static PostgreSQLContainer<?> postgres =
-      new PostgreSQLContainer<>("postgres:14-alpine")
-          .withDatabaseName("userman")
-          .withUsername("postgres")
-          .withPassword("dev_password");
+  static PostgreSQLContainer<?> postgres;
+
+  static {
+    postgres =
+        new PostgreSQLContainer<>("postgres:14-alpine")
+            .withDatabaseName("userman")
+            .withUsername("postgres")
+            .withPassword("dev_password");
+    postgres.start();
+  }
 
   @DynamicPropertySource
   static void configureProperties(DynamicPropertyRegistry registry) {
