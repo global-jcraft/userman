@@ -26,6 +26,7 @@ import com.huddey.core.payment.repository.RefundRepository;
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @Transactional
 @Sql(scripts = "/test-data.sql", executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
+@org.springframework.test.context.ActiveProfiles("test")
 class RefundDisputeRepositoryTest {
 
   @Autowired private RefundRepository refundRepository;
