@@ -14,4 +14,6 @@ public interface DisputeRepository extends JpaRepository<Dispute, Long> {
   Optional<Dispute> findByStripeDisputeId(String stripeDisputeId);
 
   List<Dispute> findByUserId(Long userId);
+
+  List<Dispute> findByStatus(String warningNeedsResponse);
 }

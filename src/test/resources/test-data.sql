@@ -1,0 +1,2 @@
+INSERT INTO huddey_core.users (id, email, created_at, updated_at) VALUES (1, 'test1@example.com', NOW(), NOW());
+INSERT INTO huddey_core.users (id, email, created_at, updated_at) VALUES (2, 'test2@example.com', NOW(), NOW());

@@ -131,5 +131,9 @@ sonar {
         property "sonar.organization", "global-jcraft"
         property "sonar.host.url", "https://sonarcloud.io"
         property "sonar.java.binaries", "build/classes"
+        property "sonar.java.test.binaries", "build/classes/java/test"
+        property "sonar.tests", "src/test/java"
+        property "sonar.coverage.jacoco.xmlReportPaths", "build/reports/jacoco/test/jacocoTestReport.xml"
+        property "sonar.junit.reportPaths", "build/test-results/test"
     }
 }
