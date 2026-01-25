@@ -77,9 +77,11 @@ dependencies {
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
 
     // Tests
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.boot:spring-boot-starter-security-test'
     testImplementation 'org.springframework.boot:spring-boot-starter-data-jpa-test'
     testImplementation 'org.springframework.boot:spring-boot-starter-flyway-test'
+    testImplementation 'com.h2database:h2'
     testImplementation "org.testcontainers:testcontainers:${testContainersVersion}"
     testImplementation "org.testcontainers:junit-jupiter:${testJupiterContainersVersion}"
     testImplementation "org.testcontainers:postgresql:${testJupiterContainersVersion}"
@@ -129,5 +131,9 @@ sonar {
         property "sonar.organization", "global-jcraft"
         property "sonar.host.url", "https://sonarcloud.io"
         property "sonar.java.binaries", "build/classes"
+        property "sonar.java.test.binaries", "build/classes/java/test"
+        property "sonar.tests", "src/test/java"
+        property "sonar.coverage.jacoco.xmlReportPaths", "build/reports/jacoco/test/jacocoTestReport.xml"
+        property "sonar.junit.reportPaths", "build/test-results/test"
     }
 }

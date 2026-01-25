@@ -34,8 +34,7 @@ public class WebhookController {
 
   @PostMapping("/stripe")
   public ResponseEntity<String> handleStripeWebhook(
-      @RequestBody String payload,
-      @RequestHeader(value = "Stripe-Signature", required = true) String sigHeader) {
+      @RequestBody String payload, @RequestHeader(value = "Stripe-Signature") String sigHeader) {
 
     log.debug(
         "Received Stripe webhook with payload length: {}", payload != null ? payload.length() : 0);
@@ -124,6 +123,24 @@ public class WebhookController {
           break;
         case FINANCIAL_CONNECTIONS_ACCOUNT_CREATED:
           webhookService.handleFinancialConnectionsAccountCreated(event);
+          break;
+        case CHARGE_REFUNDED:
+          webhookService.handleChargeRefunded(event);
+          break;
+        case DISPUTE_CREATED:
+          webhookService.handleDisputeCreated(event);
+          break;
+        case DISPUTE_UPDATED:
+          webhookService.handleDisputeUpdated(event);
+          break;
+        case DISPUTE_CLOSED:
+          webhookService.handleDisputeClosed(event);
+          break;
+        case DISPUTE_FUNDS_WITHDRAWN:
+          webhookService.handleDisputeFundsWithdrawn(event);
+          break;
+        case DISPUTE_FUNDS_REINSTATED:
+          webhookService.handleDisputeFundsReinstated(event);
           break;
         default:
           log.error("Unhandled event type: {}", event.getType());

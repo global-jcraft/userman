@@ -1,36 +1,32 @@
 package com.huddey.core.config;
 
-import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.context.annotation.Bean;
-import org.springframework.test.context.DynamicPropertyRegistry;
-import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.boot.test.util.TestPropertyValues;
+import org.springframework.context.ApplicationContextInitializer;
+import org.springframework.context.ConfigurableApplicationContext;
 import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+public class TestConfig implements ApplicationContextInitializer<ConfigurableApplicationContext> {
 
-@Testcontainers
-@TestConfiguration
-public class TestConfig {
-
-  @Container
-  static PostgreSQLContainer<?> postgres =
+  private static final PostgreSQLContainer<?> POSTGRES_CONTAINER =
       new PostgreSQLContainer<>("postgres:14-alpine")
-          .withDatabaseName("userman")
+          .withDatabaseName("huddey_core")
           .withUsername("postgres")
           .withPassword("dev_password");
 
-  @DynamicPropertySource
-  static void configureProperties(DynamicPropertyRegistry registry) {
-    registry.add("spring.datasource.url", postgres::getJdbcUrl);
-    registry.add("spring.datasource.username", postgres::getUsername);
-    registry.add("spring.datasource.password", postgres::getPassword);
-    registry.add("spring.flyway.enabled", () -> "false");
+  static {
+    POSTGRES_CONTAINER.start();
   }
 
-  @Bean
-  public ObjectMapper objectMapper() {
-    return new ObjectMapper();
+  @Override
+  public void initialize(ConfigurableApplicationContext applicationContext) {
+    TestPropertyValues.of(
+            "spring.datasource.url=" + POSTGRES_CONTAINER.getJdbcUrl(),
+            "spring.datasource.username=" + POSTGRES_CONTAINER.getUsername(),
+            "spring.datasource.password=" + POSTGRES_CONTAINER.getPassword(),
+            "spring.flyway.enabled=true",
+            "spring.flyway.url=" + POSTGRES_CONTAINER.getJdbcUrl(),
+            "spring.flyway.user=" + POSTGRES_CONTAINER.getUsername(),
+            "spring.flyway.password=" + POSTGRES_CONTAINER.getPassword())
+        .applyTo(applicationContext.getEnvironment());
   }
 }
