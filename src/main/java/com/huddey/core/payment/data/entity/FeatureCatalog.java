@@ -1,6 +1,7 @@
 package com.huddey.core.payment.data.entity;
 
 import java.time.OffsetDateTime;
+import java.util.List;
 
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -44,6 +45,13 @@ public class FeatureCatalog {
 
   @Column(name = "updated_at")
   private OffsetDateTime updatedAt;
+
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "parent_id")
+  private FeatureCatalog parent;
+
+  @OneToMany(mappedBy = "parent", fetch = FetchType.LAZY)
+  private List<FeatureCatalog> children;
 
   @PrePersist
   protected void onCreate() {

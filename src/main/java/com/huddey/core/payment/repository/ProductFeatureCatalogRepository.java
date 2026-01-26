@@ -28,7 +28,7 @@ public interface ProductFeatureCatalogRepository
   Optional<ProductFeatureCatalog> findByProductIdAndFeatureId(Long productId, Long featureId);
 
   @Query(
-      "SELECT DISTINCT pfc FROM ProductFeatureCatalog pfc JOIN FETCH pfc.product JOIN FETCH pfc.feature")
+      "SELECT DISTINCT pfc FROM ProductFeatureCatalog pfc JOIN FETCH pfc.product JOIN FETCH pfc.feature LEFT JOIN FETCH pfc.feature.parent")
   List<ProductFeatureCatalog> findAllWithProduct();
 
   @Query(

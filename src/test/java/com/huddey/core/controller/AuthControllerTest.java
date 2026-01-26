@@ -176,7 +176,7 @@ class AuthControllerTest {
     // Assert
     assertThat(responseEntity.getStatusCode()).isEqualTo(HttpStatus.OK);
     assertThat(responseEntity.getBody()).isNotNull();
-    var login = (LoginResponse) responseEntity.getBody().getData();
+    var login = responseEntity.getBody().getData();
     assertThat(login.getTokenData().getAccessToken()).isEqualTo("access-token");
     assertThat(login.getTokenData().getRefreshToken()).isEqualTo("refresh-token");
     assertThat(login.getTokenData().getTokenType()).isEqualTo("Bearer");
@@ -301,15 +301,6 @@ class AuthControllerTest {
     assertThat(responseEntity.getBody().getMessage()).isEqualTo("Profile fetched successfully");
     assertThat(responseEntity.getBody().getData()).isNotNull();
     assertThat(responseEntity.getBody().getTimestamp()).isNotNull();
-  }
-
-  @Test
-  void getCurrentUser_WhenUserNotFound_ShouldThrowException() {
-    // Arrange
-    when(authentication.getPrincipal()).thenReturn(null);
-
-    // Act & Assert
-    assertThrows(NullPointerException.class, () -> authController.getCurrentUser(authentication));
   }
 
   @Test

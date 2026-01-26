@@ -1,7 +1,6 @@
 package com.huddey.core.payment.utils;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 import com.huddey.core.payment.data.dto.ProductFeatureDto;
 import com.huddey.core.payment.data.dto.ProductPriceDto;
@@ -22,21 +21,72 @@ public class DtoConverter {
                     .currency(price.getCurrency())
                     .recurringInterval(price.getRecurringInterval())
                     .active(price.getActive())
-                    .createdAt(price.getCreatedAt())
-                    .updatedAt(price.getUpdatedAt())
                     .build())
-        .collect(Collectors.toList());
+        .toList();
   }
 
   public static List<ProductFeatureDto> convertToFeatureDtos(List<ProductFeatureCatalog> features) {
-    return features.stream()
-        .map(
-            pfc ->
-                ProductFeatureDto.builder()
-                    .featureName(pfc.getFeature().getFeatureName())
-                    .featureCategory(pfc.getFeature().getFeatureCategory())
-                    .displayValue(pfc.getFeature().getDisplayName() + ": " + pfc.getFeatureValue())
-                    .build())
-        .collect(Collectors.toList());
+    java.util.Map<Long, ProductFeatureDto> dtoMap = new java.util.HashMap<>();
+    java.util.Map<Long, Long> childToParentMap = new java.util.HashMap<>();
+
+    // 1. Initialize with explicit features
+    for (ProductFeatureCatalog pfc : features) {
+      ProductFeatureDto dto =
+          ProductFeatureDto.builder()
+              .featureName(pfc.getFeature().getFeatureName())
+              .featureCategory(pfc.getFeature().getFeatureCategory())
+              .displayValue(pfc.getFeature().getDisplayName() + ": " + pfc.getFeatureValue())
+              .subFeatures(new java.util.ArrayList<>())
+              .build();
+
+      dtoMap.put(pfc.getFeature().getId(), dto);
+    }
+
+    // 2. Build Hierarchy (traverse up)
+    for (ProductFeatureCatalog pfc : features) {
+      Long childId = pfc.getFeature().getId();
+      ProductFeatureDto childDto = dtoMap.get(childId);
+
+      com.huddey.core.payment.data.entity.FeatureCatalog parent = pfc.getFeature().getParent();
+
+      while (parent != null) {
+        Long parentId = parent.getId();
+        // If parent DTO doesn't exist, create it (Successor/Group node)
+        var finalParent = parent;
+        ProductFeatureDto parentDto =
+            dtoMap.computeIfAbsent(
+                parentId,
+                k ->
+                    ProductFeatureDto.builder()
+                        .featureName(finalParent.getFeatureName())
+                        .featureCategory(finalParent.getFeatureCategory())
+                        .displayValue(finalParent.getDisplayName()) // Use name as value for groups
+                        .subFeatures(new java.util.ArrayList<>())
+                        .build());
+
+        // Link Child to Parent
+        if (!parentDto.getSubFeatures().contains(childDto)) {
+          parentDto.getSubFeatures().add(childDto);
+        }
+
+        // Track relationship
+        childToParentMap.put(childId, parentId);
+
+        // Move one level up
+        childId = parentId;
+        childDto = parentDto;
+        parent = parent.getParent();
+      }
+    }
+
+    // 3. Collect Roots
+    java.util.List<ProductFeatureDto> roots = new java.util.ArrayList<>();
+    for (java.util.Map.Entry<Long, ProductFeatureDto> entry : dtoMap.entrySet()) {
+      if (!childToParentMap.containsKey(entry.getKey())) {
+        roots.add(entry.getValue());
+      }
+    }
+
+    return roots;
   }
 }
