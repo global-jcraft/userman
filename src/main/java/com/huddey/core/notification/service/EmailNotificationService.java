@@ -3,6 +3,7 @@ package com.huddey.core.notification.service;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -19,10 +20,11 @@ import software.amazon.awssdk.services.ses.model.*;
  */
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class EmailNotificationService implements NotificationService {
 
-  @Autowired private SesClient sesClient;
-  @Autowired private SpringTemplateEngine templateEngine;
+  private final SesClient sesClient;
+  private final SpringTemplateEngine templateEngine;
 
   @Value("${aws.ses.from}")
   private String senderEmail;
