@@ -191,6 +191,7 @@ public class AuthController {
       "isAuthenticated() and hasAnyAuthority('ROLE_USER', 'ROLE_CONTENT_CREATOR', 'ROLE_ADMIN')")
   public ResponseEntity<ApiResponse<UserDTO>> getCurrentUser(Authentication authentication) {
     SecurityUser securityUser = (SecurityUser) authentication.getPrincipal();
+    assert securityUser != null;
     var user = UserMapper.toDto(securityUser.getUser());
     var userSubscription = subscriptionService.getUserSubscription(user.getId());
     userSubscription.ifPresent(

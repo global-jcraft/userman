@@ -40,6 +40,9 @@ public class Product {
   @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
   private List<ProductPrice> prices;
 
+  @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+  private List<ProductFeatureCatalog> features;
+
   @PrePersist
   protected void onCreate() {
     createdAt = OffsetDateTime.now();

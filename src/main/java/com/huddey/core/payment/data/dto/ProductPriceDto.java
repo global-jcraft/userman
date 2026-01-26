@@ -1,7 +1,6 @@
 package com.huddey.core.payment.data.dto;
 
 import java.math.BigDecimal;
-import java.time.OffsetDateTime;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -18,6 +17,4 @@ public class ProductPriceDto {
   private String currency;
   private String recurringInterval;
   private Boolean active;
-  private OffsetDateTime createdAt;
-  private OffsetDateTime updatedAt;
 }
