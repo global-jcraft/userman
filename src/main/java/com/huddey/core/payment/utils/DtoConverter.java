@@ -149,7 +149,7 @@ public class DtoConverter {
     }
 
     // 3. Collect Roots
-    java.util.List<ProductFeatureDto> roots = new java.util.ArrayList<>();
+    List<ProductFeatureDto> roots = new java.util.ArrayList<>();
     for (java.util.Map.Entry<Long, ProductFeatureDto> entry : dtoMap.entrySet()) {
       if (!childToParentMap.containsKey(entry.getKey())) {
         roots.add(entry.getValue());
