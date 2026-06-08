@@ -1,9 +1,12 @@
 package com.huddey.core.payment.utils;
 
 import java.util.List;
+import java.util.Map;
 
 import com.huddey.core.payment.data.dto.ProductFeatureDto;
 import com.huddey.core.payment.data.dto.ProductPriceDto;
+import com.huddey.core.payment.data.entity.EffectiveProductFeature;
+import com.huddey.core.payment.data.entity.FeatureCatalog;
 import com.huddey.core.payment.data.entity.ProductFeatureCatalog;
 import com.huddey.core.payment.data.entity.ProductPrice;
 
@@ -47,7 +50,7 @@ public class DtoConverter {
       Long childId = pfc.getFeature().getId();
       ProductFeatureDto childDto = dtoMap.get(childId);
 
-      com.huddey.core.payment.data.entity.FeatureCatalog parent = pfc.getFeature().getParent();
+      FeatureCatalog parent = pfc.getFeature().getParent();
 
       while (parent != null) {
         Long parentId = parent.getId();
@@ -90,12 +93,13 @@ public class DtoConverter {
     return roots;
   }
 
-  public static List<ProductFeatureDto> convertToFeatureDtosFromEffective(List<com.huddey.core.payment.data.entity.EffectiveProductFeature> features) {
-    java.util.Map<Long, ProductFeatureDto> dtoMap = new java.util.HashMap<>();
-    java.util.Map<Long, Long> childToParentMap = new java.util.HashMap<>();
+  public static List<ProductFeatureDto> convertToFeatureDtosFromEffective(
+      List<EffectiveProductFeature> features) {
+    Map<Long, ProductFeatureDto> dtoMap = new java.util.HashMap<>();
+    Map<Long, Long> childToParentMap = new java.util.HashMap<>();
 
     // 1. Initialize with explicit features
-    for (com.huddey.core.payment.data.entity.EffectiveProductFeature epf : features) {
+    for (EffectiveProductFeature epf : features) {
       ProductFeatureDto dto =
           ProductFeatureDto.builder()
               .featureName(epf.getFeature().getFeatureName())
@@ -108,11 +112,11 @@ public class DtoConverter {
     }
 
     // 2. Build Hierarchy (traverse up)
-    for (com.huddey.core.payment.data.entity.EffectiveProductFeature epf : features) {
+    for (EffectiveProductFeature epf : features) {
       Long childId = epf.getFeature().getId();
       ProductFeatureDto childDto = dtoMap.get(childId);
 
-      com.huddey.core.payment.data.entity.FeatureCatalog parent = epf.getFeature().getParent();
+      FeatureCatalog parent = epf.getFeature().getParent();
 
       while (parent != null) {
         Long parentId = parent.getId();

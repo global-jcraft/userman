@@ -5,7 +5,6 @@ import static org.mockito.Mockito.*;
 
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
@@ -15,21 +14,17 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.huddey.core.payment.data.dto.ProductResponse;
-import com.huddey.core.payment.data.entity.Product;
 import com.huddey.core.payment.data.entity.EffectiveProductFeature;
 import com.huddey.core.payment.data.entity.FeatureCatalog;
-import com.huddey.core.payment.repository.ProductCatalogRepository;
+import com.huddey.core.payment.data.entity.Product;
 import com.huddey.core.payment.repository.EffectiveProductFeatureRepository;
-import com.huddey.core.payment.repository.ProductFeatureCatalogRepository;
-import com.huddey.core.payment.repository.ProductPriceRepository;
+import com.huddey.core.payment.repository.ProductCatalogRepository;
 import com.stripe.exception.StripeException;
 
 @ExtendWith(MockitoExtension.class)
 class ProductCatalogServiceTest {
 
   @Mock private ProductCatalogRepository productCatalogRepository;
-  @Mock private ProductFeatureCatalogRepository productFeatureCatalogRepository;
-  @Mock private ProductPriceRepository productPriceRepository;
   @Mock private EffectiveProductFeatureRepository effectiveProductFeatureRepository;
 
   @InjectMocks private ProductCatalogService productCatalogService;
@@ -69,11 +64,11 @@ class ProductCatalogServiceTest {
     // Assert
     assertNotNull(result);
     assertEquals(1, result.size());
-    ProductResponse response = result.get(0);
+    ProductResponse response = result.getFirst();
     assertEquals("prod_123", response.getStripeProductId());
     assertEquals("Pro Plan", response.getName());
     assertEquals(1, response.getFeatures().size());
-    assertEquals("Social networks: 7", response.getFeatures().get(0).getDisplayValue());
+    assertEquals("Social networks: 7", response.getFeatures().getFirst().getDisplayValue());
 
     verify(productCatalogRepository).findAllActiveWithPrices();
     verify(effectiveProductFeatureRepository).findAllWithProduct();

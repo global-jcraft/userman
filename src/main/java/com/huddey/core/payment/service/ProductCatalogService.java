@@ -10,14 +10,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.huddey.core.payment.data.dto.ProductResponse;
-import com.huddey.core.payment.data.entity.Product;
-import com.huddey.core.payment.data.entity.ProductFeatureCatalog;
-import com.huddey.core.payment.data.entity.ProductPrice;
 import com.huddey.core.payment.data.entity.EffectiveProductFeature;
-import com.huddey.core.payment.repository.ProductCatalogRepository;
-import com.huddey.core.payment.repository.ProductFeatureCatalogRepository;
-import com.huddey.core.payment.repository.ProductPriceRepository;
+import com.huddey.core.payment.data.entity.Product;
+import com.huddey.core.payment.data.entity.ProductPrice;
 import com.huddey.core.payment.repository.EffectiveProductFeatureRepository;
+import com.huddey.core.payment.repository.ProductCatalogRepository;
+import com.huddey.core.payment.repository.ProductPriceRepository;
 import com.huddey.core.payment.utils.DtoConverter;
 import com.stripe.exception.StripeException;
 import com.stripe.model.Price;
@@ -33,7 +31,6 @@ import lombok.extern.slf4j.Slf4j;
 public class ProductCatalogService {
 
   private final ProductCatalogRepository productCatalogRepository;
-  private final ProductFeatureCatalogRepository productFeatureCatalogRepository;
   private final ProductPriceRepository productPriceRepository;
   private final EffectiveProductFeatureRepository effectiveProductFeatureRepository;
 
@@ -49,7 +46,8 @@ public class ProductCatalogService {
       products = syncProductsFromStripe();
     }
     // Fetch all effective features in one query and group by product ID
-    List<EffectiveProductFeature> allFeatures = effectiveProductFeatureRepository.findAllWithProduct();
+    List<EffectiveProductFeature> allFeatures =
+        effectiveProductFeatureRepository.findAllWithProduct();
     Map<Long, List<EffectiveProductFeature>> featuresByProduct =
         allFeatures.stream().collect(Collectors.groupingBy(epf -> epf.getProduct().getId()));
 
@@ -112,7 +110,7 @@ public class ProductCatalogService {
     var prices = Price.list(params);
 
     for (Price stripePrice : prices.getData()) {
-      if (!productPriceRepository.findByStripePriceId(stripePrice.getId()).isPresent()) {
+      if (productPriceRepository.findByStripePriceId(stripePrice.getId()).isEmpty()) {
         ProductPrice productPrice = getProductPrice(product, stripePrice);
         productPriceRepository.save(productPrice);
       }
