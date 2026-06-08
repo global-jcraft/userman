@@ -38,58 +38,32 @@ spring:
   application:
     name: huddey
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/huddey_core?reWriteBatchedInserts=true&cachePrepStmts=true&useServerPrepStmts=true&prepStmtCacheSize=250&prepStmtCacheSqlLimit=2048&maxResultBuffer=20971520&sslmode=disable}
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/huddey_core?reWriteBatchedInserts=true&sslmode=disable}
     username: ${SPRING_DATASOURCE_USERNAME:postgres}
     password: ${SPRING_DATASOURCE_PASSWORD:dev_password}
     driver-class-name: org.postgresql.Driver
-    # HikariCP Configuration - Optimized for 500 concurrent users with virtual threads
+    # HikariCP Configuration - Local Dev (Direct to PostgreSQL, no PgBouncer)
     hikari:
       auto-commit: false
-      # Connection pool name
       pool-name: HikariPool-Local
 
-      # Maximum number of connections in the pool
-      # Reduced since PgBouncer handles connection pooling
-      maximum-pool-size: 75
+      # Conservative pool size for local dev
+      maximum-pool-size: 20
+      minimum-idle: 5
 
-      # Minimum idle connections to maintain
-      minimum-idle: 25
-
-      # Maximum time (ms) to wait for a connection from the pool
-      connection-timeout: 2000
-
-      # Maximum idle time (ms) for a connection
+      # Standard timeouts
+      connection-timeout: 30000
       idle-timeout: 600000
-
-      # Maximum lifetime (ms) of a connection in the pool
       max-lifetime: 1800000
 
-      # Time (ms) to attempt to keep a connection alive
-      keepalive-time: 300000
-
-      # Validation timeout (ms)
-      validation-timeout: 250
-
-      # Leak detection threshold (ms) - helps identify connection leaks
-      leak-detection-threshold: 5000
-
-      # Connection init SQL
       connection-init-sql: "SET TIME ZONE 'UTC'"
-
-      # Connection test query
       connection-test-query: "SELECT 1"
 
       data-source-properties:
-        # PostgreSQL specific optimizations
-        preparedStatementCacheQueries: 256
-        preparedStatementCacheSizeMiB: 5
         cachePrepStmts: true
+        prepStmtCacheSize: 250
+        prepStmtCacheSqlLimit: 2048
         useServerPrepStmts: true
-        rewriteBatchedStatements: true
-        cacheResultSetMetadata: true
-        cacheServerConfiguration: true
-        elideSetAutoCommits: true
-        maintainTimeStats: false
   jpa:
     database: POSTGRESQL
     database-platform: org.hibernate.dialect.PostgreSQLDialect

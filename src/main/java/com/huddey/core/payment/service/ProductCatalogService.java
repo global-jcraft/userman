@@ -13,9 +13,11 @@ import com.huddey.core.payment.data.dto.ProductResponse;
 import com.huddey.core.payment.data.entity.Product;
 import com.huddey.core.payment.data.entity.ProductFeatureCatalog;
 import com.huddey.core.payment.data.entity.ProductPrice;
+import com.huddey.core.payment.data.entity.EffectiveProductFeature;
 import com.huddey.core.payment.repository.ProductCatalogRepository;
 import com.huddey.core.payment.repository.ProductFeatureCatalogRepository;
 import com.huddey.core.payment.repository.ProductPriceRepository;
+import com.huddey.core.payment.repository.EffectiveProductFeatureRepository;
 import com.huddey.core.payment.utils.DtoConverter;
 import com.stripe.exception.StripeException;
 import com.stripe.model.Price;
@@ -33,11 +35,12 @@ public class ProductCatalogService {
   private final ProductCatalogRepository productCatalogRepository;
   private final ProductFeatureCatalogRepository productFeatureCatalogRepository;
   private final ProductPriceRepository productPriceRepository;
+  private final EffectiveProductFeatureRepository effectiveProductFeatureRepository;
 
   /**
    * Get all products from stripe
    *
-   * @return
+   * @return List of products
    */
   @Transactional(readOnly = true)
   public List<ProductResponse> getAllProducts() throws StripeException {
@@ -45,10 +48,10 @@ public class ProductCatalogService {
     if (products.isEmpty()) {
       products = syncProductsFromStripe();
     }
-    // Fetch all features in one query and group by product ID
-    List<ProductFeatureCatalog> allFeatures = productFeatureCatalogRepository.findAllWithProduct();
-    Map<Long, List<ProductFeatureCatalog>> featuresByProduct =
-        allFeatures.stream().collect(Collectors.groupingBy(pfc -> pfc.getProduct().getId()));
+    // Fetch all effective features in one query and group by product ID
+    List<EffectiveProductFeature> allFeatures = effectiveProductFeatureRepository.findAllWithProduct();
+    Map<Long, List<EffectiveProductFeature>> featuresByProduct =
+        allFeatures.stream().collect(Collectors.groupingBy(epf -> epf.getProduct().getId()));
 
     return products.stream()
         .map(
@@ -66,7 +69,7 @@ public class ProductCatalogService {
                     .updatedAt(product.getUpdatedAt())
                     .prices(DtoConverter.convertToPriceDto(product.getPrices()))
                     .features(
-                        DtoConverter.convertToFeatureDtos(
+                        DtoConverter.convertToFeatureDtosFromEffective(
                             featuresByProduct.getOrDefault(product.getId(), new ArrayList<>())))
                     .build())
         .collect(Collectors.toList());
