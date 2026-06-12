@@ -213,7 +213,7 @@ public class SubscriptionController {
   }
 
   /**
-   * Backward-compatible endpoint; now proxies product catalog instead of enum
+   * /** Backward-compatible endpoint; proxies product catalog
    *
    * @return
    */
