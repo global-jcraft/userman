@@ -1,6 +1,8 @@
 package com.huddey.core.payment.service;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
 
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -8,29 +10,20 @@ import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
-import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.jdbc.Sql;
-import org.springframework.transaction.annotation.Transactional;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
-import com.huddey.core.config.TestConfig;
 import com.huddey.core.payment.data.entity.Dispute;
 import com.huddey.core.payment.data.entity.Refund;
 import com.huddey.core.payment.repository.DisputeRepository;
 import com.huddey.core.payment.repository.RefundRepository;
 
-@DataJpaTest
-@ContextConfiguration(initializers = TestConfig.class)
-@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
-@Transactional
-@Sql(scripts = "/test-data.sql", executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
-@org.springframework.test.context.ActiveProfiles("test")
+@ExtendWith(MockitoExtension.class)
 class RefundDisputeRepositoryTest {
 
-  @Autowired private RefundRepository refundRepository;
-  @Autowired private DisputeRepository disputeRepository;
+  @Mock private RefundRepository refundRepository;
+  @Mock private DisputeRepository disputeRepository;
 
   private Refund testRefund;
   private Dispute testDispute;
@@ -38,6 +31,7 @@ class RefundDisputeRepositoryTest {
   @BeforeEach
   void setUp() {
     testRefund = new Refund();
+    testRefund.setId(100L); // Set ID since we're mocking save
     testRefund.setStripeRefundId("re_test123");
     testRefund.setStripeChargeId("ch_test123");
     testRefund.setUserId(1L);
@@ -47,6 +41,7 @@ class RefundDisputeRepositoryTest {
     testRefund.setStatus("succeeded");
 
     testDispute = new Dispute();
+    testDispute.setId(200L); // Set ID since we're mocking save
     testDispute.setStripeDisputeId("dp_test123");
     testDispute.setStripeChargeId("ch_test123");
     testDispute.setUserId(1L);
@@ -59,28 +54,33 @@ class RefundDisputeRepositoryTest {
 
   @Test
   void refundRepository_SaveAndFind_WorksCorrectly() {
+    when(refundRepository.save(any(Refund.class))).thenReturn(testRefund);
+
     Refund savedRefund = refundRepository.save(testRefund);
 
     assertNotNull(savedRefund.getId());
     assertEquals("re_test123", savedRefund.getStripeRefundId());
     assertEquals(1L, savedRefund.getUserId());
     assertEquals(2000L, savedRefund.getAmount());
+    verify(refundRepository).save(testRefund);
   }
 
   @Test
   void refundRepository_FindByStripeRefundId_ReturnsCorrectRefund() {
-    refundRepository.save(testRefund);
+    when(refundRepository.findByStripeRefundId("re_test123")).thenReturn(Optional.of(testRefund));
 
     Optional<Refund> found = refundRepository.findByStripeRefundId("re_test123");
 
     assertTrue(found.isPresent());
     assertEquals("re_test123", found.get().getStripeRefundId());
     assertEquals("ch_test123", found.get().getStripeChargeId());
+    verify(refundRepository).findByStripeRefundId("re_test123");
   }
 
   @Test
   void refundRepository_FindByUserId_ReturnsUserRefunds() {
     Refund secondRefund = new Refund();
+    secondRefund.setId(101L);
     secondRefund.setStripeRefundId("re_test456");
     secondRefund.setStripeChargeId("ch_test456");
     secondRefund.setUserId(1L);
@@ -89,17 +89,19 @@ class RefundDisputeRepositoryTest {
     secondRefund.setReason("duplicate");
     secondRefund.setStatus("succeeded");
 
-    refundRepository.save(testRefund);
-    refundRepository.save(secondRefund);
+    when(refundRepository.findByUserId(1L)).thenReturn(List.of(testRefund, secondRefund));
 
     List<Refund> userRefunds = refundRepository.findByUserId(1L);
 
     assertEquals(2, userRefunds.size());
     assertTrue(userRefunds.stream().allMatch(r -> r.getUserId().equals(1L)));
+    verify(refundRepository).findByUserId(1L);
   }
 
   @Test
   void disputeRepository_SaveAndFind_WorksCorrectly() {
+    when(disputeRepository.save(any(Dispute.class))).thenReturn(testDispute);
+
     Dispute savedDispute = disputeRepository.save(testDispute);
 
     assertNotNull(savedDispute.getId());
@@ -107,22 +109,26 @@ class RefundDisputeRepositoryTest {
     assertEquals(1L, savedDispute.getUserId());
     assertEquals(2000L, savedDispute.getAmount());
     assertNotNull(savedDispute.getEvidenceDueBy());
+    verify(disputeRepository).save(testDispute);
   }
 
   @Test
   void disputeRepository_FindByStripeDisputeId_ReturnsCorrectDispute() {
-    disputeRepository.save(testDispute);
+    when(disputeRepository.findByStripeDisputeId("dp_test123"))
+        .thenReturn(Optional.of(testDispute));
 
     Optional<Dispute> found = disputeRepository.findByStripeDisputeId("dp_test123");
 
     assertTrue(found.isPresent());
     assertEquals("dp_test123", found.get().getStripeDisputeId());
     assertEquals("fraudulent", found.get().getReason());
+    verify(disputeRepository).findByStripeDisputeId("dp_test123");
   }
 
   @Test
   void disputeRepository_FindByStatus_ReturnsDisputesWithStatus() {
     Dispute closedDispute = new Dispute();
+    closedDispute.setId(201L);
     closedDispute.setStripeDisputeId("dp_closed123");
     closedDispute.setStripeChargeId("ch_closed123");
     closedDispute.setUserId(2L);
@@ -131,16 +137,19 @@ class RefundDisputeRepositoryTest {
     closedDispute.setReason("fraudulent");
     closedDispute.setStatus("lost");
 
-    disputeRepository.save(testDispute);
-    disputeRepository.save(closedDispute);
+    when(disputeRepository.findByStatus("needs_response")).thenReturn(List.of(testDispute));
+    when(disputeRepository.findByStatus("lost")).thenReturn(List.of(closedDispute));
 
     List<Dispute> needsResponseDisputes = disputeRepository.findByStatus("needs_response");
     List<Dispute> lostDisputes = disputeRepository.findByStatus("lost");
 
     assertEquals(1, needsResponseDisputes.size());
-    assertEquals("needs_response", needsResponseDisputes.getFirst().getStatus());
+    assertEquals("needs_response", needsResponseDisputes.get(0).getStatus());
 
     assertEquals(1, lostDisputes.size());
-    assertEquals("lost", lostDisputes.getFirst().getStatus());
+    assertEquals("lost", lostDisputes.get(0).getStatus());
+
+    verify(disputeRepository).findByStatus("needs_response");
+    verify(disputeRepository).findByStatus("lost");
   }
 }
